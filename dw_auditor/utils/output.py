@@ -104,5 +104,6 @@ def get_summary_stats(results: Dict) -> Dict:
         'total_issues': total_issues,
         'columns_with_issues': columns_with_issues,
         'issue_breakdown': issue_types,
-        'timestamp': results.get('timestamp', '')
+        'timestamp': results.get('timestamp', ''),
+        'duration_seconds': results.get('duration_seconds', 0)
     }

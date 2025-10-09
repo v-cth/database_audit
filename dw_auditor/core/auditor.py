@@ -200,6 +200,9 @@ class SecureTableAuditor:
         Returns:
             Dictionary with audit results
         """
+        # Start timing
+        start_time = datetime.now()
+
         print(f"\n{'='*60}")
         print(f"Auditing: {table_name}")
         print(f"Total rows: {len(df):,}")
@@ -217,7 +220,8 @@ class SecureTableAuditor:
             'sampled': len(df) < original_size,
             'analyzed_rows': len(df),
             'columns': {},
-            'timestamp': datetime.now().isoformat()
+            'timestamp': start_time.isoformat(),
+            'start_time': start_time.isoformat()
         }
 
         # Default check config
@@ -237,7 +241,15 @@ class SecureTableAuditor:
             if col_results['issues']:
                 results['columns'][col] = col_results
 
+        # Calculate duration
+        end_time = datetime.now()
+        duration = (end_time - start_time).total_seconds()
+        results['end_time'] = end_time.isoformat()
+        results['duration_seconds'] = round(duration, 2)
+
         print_results(results)
+        print(f"⏱️  Audit duration: {duration:.2f} seconds\n")
+
         return results
 
     def _audit_column(self, df: pl.DataFrame, col: str, check_config: Dict) -> Dict:
