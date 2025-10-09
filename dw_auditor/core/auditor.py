@@ -134,8 +134,8 @@ class SecureTableAuditor:
             if mask_pii:
                 df = mask_pii_columns(df, custom_pii_keywords)
 
-            # Run audit
-            results = self.audit_table(df, table_name)
+            # Run audit - pass the actual row count if we have it
+            results = self.audit_table(df, table_name, total_row_count=row_count)
 
             # Clear from memory
             del df
@@ -187,7 +187,8 @@ class SecureTableAuditor:
         self,
         df: pl.DataFrame,
         table_name: str = "table",
-        check_config: Optional[Dict] = None
+        check_config: Optional[Dict] = None,
+        total_row_count: Optional[int] = None
     ) -> Dict:
         """
         Main audit function - runs all checks on a Polars DataFrame
@@ -196,6 +197,7 @@ class SecureTableAuditor:
             df: Polars DataFrame to audit
             table_name: Name of the table for reporting
             check_config: Optional configuration for which checks to run
+            total_row_count: Optional total row count from database (if known)
 
         Returns:
             Dictionary with audit results
@@ -203,22 +205,30 @@ class SecureTableAuditor:
         # Start timing
         start_time = datetime.now()
 
+        # Determine the actual total row count
+        # If we have it from the database, use that; otherwise use DataFrame length
+        actual_total_rows = total_row_count if total_row_count is not None else len(df)
+
         print(f"\n{'='*60}")
         print(f"Auditing: {table_name}")
-        print(f"Total rows: {len(df):,}")
+        print(f"Total rows in table: {actual_total_rows:,}")
+        if total_row_count is not None and len(df) < actual_total_rows:
+            print(f"Analyzing sample: {len(df):,} rows")
         print(f"{'='*60}\n")
 
         # Sample if needed (only if not already sampled in DB)
-        original_size = len(df)
-        if len(df) > self.sample_threshold:
+        analyzed_rows = len(df)
+        if len(df) > self.sample_threshold and total_row_count is None:
+            # Only sample in-memory if we didn't already sample in DB
             df = df.sample(n=min(self.sample_size, len(df)), seed=42)
-            print(f"⚠️  Sampling {len(df):,} rows (table has {original_size:,} rows)\n")
+            analyzed_rows = len(df)
+            print(f"⚠️  Sampling {analyzed_rows:,} rows from loaded data\n")
 
         results = {
             'table_name': table_name,
-            'total_rows': original_size,
-            'sampled': len(df) < original_size,
-            'analyzed_rows': len(df),
+            'total_rows': actual_total_rows,
+            'sampled': analyzed_rows < actual_total_rows,
+            'analyzed_rows': analyzed_rows,
             'columns': {},
             'timestamp': start_time.isoformat(),
             'start_time': start_time.isoformat()
