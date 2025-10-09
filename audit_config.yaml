@@ -7,32 +7,39 @@
 # Database Connection
 # ----------------------------------------------------------------------------
 database:
-  # Connection string for your database
-  # Examples:
-  #   PostgreSQL: postgresql://user:password@localhost:5432/database
-  #   MySQL: mysql://user:password@localhost:3306/database
-  #   SQLite: sqlite:///path/to/database.db
-  #   Snowflake: snowflake://user:password@account/database/schema
-  connection_string: "postgresql://user:password@localhost:5432/mydb"
-  
-  # Optional: Schema name (e.g., 'public', 'dbo', 'analytics')
-  schema: "public"
+  # Database backend: 'bigquery' or 'snowflake'
+  backend: "bigquery"
+
+  # Connection parameters (backend-specific)
+  connection_params:
+    # For BigQuery:
+    project_id: "portfolio-402"
+    dataset_id: "dbt_prod"
+    #credentials_path: "/path/to/service-account-key.json"
+    # Or use credentials_json for JSON string/dict
+
+    # For Snowflake (comment out BigQuery params and uncomment these):
+    # account: "my-account"
+    # user: "my-user"
+    # password: "my-password"
+    # database: "my_database"
+    # warehouse: "my_warehouse"
+    # role: "my_role"  # optional
+
+  # Optional: Schema name (overrides connection default)
+  # For BigQuery, this would be the dataset
+  # For Snowflake, this would be the schema
+  schema: null
 
 # Tables to Audit
 # ----------------------------------------------------------------------------
 # Can be a simple list of table names OR objects with custom queries
 tables:
   # Simple table names
-  - customers
-  - orders
-  - products
+  - fct_avaibility
   
   # Table with custom query (for filtering or joining)
-  - name: recent_transactions
-    query: "SELECT * FROM transactions WHERE created_at > NOW() - INTERVAL '30 days'"
-  
-  - name: active_users
-    query: "SELECT * FROM users WHERE status = 'active'"
+
 
 # Sampling Configuration
 # ----------------------------------------------------------------------------
@@ -67,19 +74,22 @@ security:
 checks:
   # Check for leading/trailing whitespace
   trailing_spaces: true
-  
+
   # Check for values that differ only in case (e.g., "JOHN" vs "john")
   case_duplicates: true
-  
+
   # Check for special characters (emojis, accents, etc.)
   special_characters: true
-  
+
   # Check for string columns containing only numbers
   numeric_strings: true
-  
+
   # Check for timestamps that are effectively dates
   timestamp_patterns: true
-  
+
+  # Check for date/timestamp outliers (very old or future dates)
+  date_outliers: true
+
   # Custom regex pattern for special characters
   # Default: [^a-zA-Z0-9\s\.,\-_@]
   special_chars_pattern: "[^a-zA-Z0-9\\s\\.,\\-_@]"
@@ -90,14 +100,25 @@ thresholds:
   # Percentage of numeric values to flag a string column as "should be numeric"
   # Example: If 85% of values in a string column are numbers, flag it
   numeric_string_pct: 80
-  
+
   # Percentage threshold for constant hour detection
   # Example: If 92% of timestamps have the same hour, flag as date-only
   constant_hour_pct: 90
-  
+
   # Percentage threshold for midnight timestamps
   # Example: If 96% of timestamps are at midnight, suggest DATE type
   midnight_pct: 95
+
+  # Date outlier detection thresholds
+  # Minimum reasonable year (dates before this are flagged)
+  min_year: 1950
+
+  # Maximum reasonable year (dates after this are flagged)
+  max_year: 2100
+
+  # Minimum percentage to report as outlier (default: 0.01 = 1%)
+  # Only report if at least this % of rows have outliers
+  outlier_threshold_pct: 0.01
 
 # Output Configuration
 # ----------------------------------------------------------------------------

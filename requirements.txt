@@ -5,27 +5,21 @@
 # Core Dependencies
 # ----------------------------------------------------------------------------
 polars>=0.20.0              # Fast DataFrame library with lazy evaluation
-connectorx>=0.3.0           # Fast database connections (PostgreSQL, MySQL, etc.)
 pyyaml>=6.0                 # YAML configuration file parsing
 
-# Optional: Database-Specific Drivers
+# Ibis - Universal database interface
 # ----------------------------------------------------------------------------
-# Uncomment based on your database(s)
+ibis-framework[duckdb]>=9.0.0  # Core ibis framework with DuckDB backend
 
-# PostgreSQL
-# psycopg2-binary>=2.9.0    # PostgreSQL adapter (alternative to connectorx)
-
-# MySQL
-# pymysql>=1.0.0            # MySQL connector (alternative to connectorx)
-
-# SQL Server
-# pyodbc>=4.0.0             # ODBC connector for SQL Server
-
-# Oracle
-# cx-Oracle>=8.0.0          # Oracle database connector
+# Database-Specific Backends (Required)
+# ----------------------------------------------------------------------------
+# BigQuery
+google-cloud-bigquery>=3.0.0    # Google BigQuery backend
+ibis-framework[bigquery]>=9.0.0 # Ibis BigQuery backend
 
 # Snowflake
-# snowflake-connector-python>=3.0.0  # Snowflake connector
+snowflake-connector-python>=3.0.0  # Snowflake connector
+ibis-framework[snowflake]>=9.0.0   # Ibis Snowflake backend
 
 # Optional: Enhanced Features
 # ----------------------------------------------------------------------------

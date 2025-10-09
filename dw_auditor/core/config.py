@@ -14,7 +14,8 @@ class AuditConfig:
         """Initialize from dictionary (parsed from YAML)"""
         # Database connection
         db_config = config_dict.get('database', {})
-        self.connection_string = db_config.get('connection_string')
+        self.backend = db_config.get('backend')  # 'bigquery' or 'snowflake'
+        self.connection_params = db_config.get('connection_params', {})
         self.schema = db_config.get('schema')
 
         # Tables to audit
@@ -38,6 +39,7 @@ class AuditConfig:
         self.check_special_chars = checks.get('special_characters', True)
         self.check_numeric_strings = checks.get('numeric_strings', True)
         self.check_timestamp_patterns = checks.get('timestamp_patterns', True)
+        self.check_date_outliers = checks.get('date_outliers', True)
 
         # Special characters configuration
         self.special_chars_pattern = checks.get('special_chars_pattern', r'[^a-zA-Z0-9\s\.,\-_@]')
@@ -47,6 +49,11 @@ class AuditConfig:
         self.numeric_string_threshold = thresholds.get('numeric_string_pct', 80) / 100
         self.constant_hour_threshold = thresholds.get('constant_hour_pct', 90) / 100
         self.midnight_threshold = thresholds.get('midnight_pct', 95) / 100
+
+        # Date outlier thresholds
+        self.min_year = thresholds.get('min_year', 1950)
+        self.max_year = thresholds.get('max_year', 2100)
+        self.outlier_threshold_pct = thresholds.get('outlier_threshold_pct', 0.01)
 
         # Output configuration
         output = config_dict.get('output', {})
@@ -70,7 +77,8 @@ class AuditConfig:
         """Convert config back to dictionary"""
         return {
             'database': {
-                'connection_string': self.connection_string,
+                'backend': self.backend,
+                'connection_params': self.connection_params,
                 'schema': self.schema
             },
             'tables': self.tables,
@@ -89,12 +97,16 @@ class AuditConfig:
                 'special_characters': self.check_special_chars,
                 'numeric_strings': self.check_numeric_strings,
                 'timestamp_patterns': self.check_timestamp_patterns,
+                'date_outliers': self.check_date_outliers,
                 'special_chars_pattern': self.special_chars_pattern
             },
             'thresholds': {
                 'numeric_string_pct': self.numeric_string_threshold * 100,
                 'constant_hour_pct': self.constant_hour_threshold * 100,
-                'midnight_pct': self.midnight_threshold * 100
+                'midnight_pct': self.midnight_threshold * 100,
+                'min_year': self.min_year,
+                'max_year': self.max_year,
+                'outlier_threshold_pct': self.outlier_threshold_pct
             },
             'output': {
                 'directory': str(self.output_dir),

@@ -57,6 +57,23 @@ def print_results(results: Dict):
                 print(f"   ⚠️  ALWAYS MIDNIGHT: {issue['pct']:.1f}% of timestamps")
                 print(f"      💡 {issue['suggestion']}")
 
+            elif issue_type == 'DATES_TOO_OLD':
+                print(f"   ⚠️  DATES TOO OLD: {issue['count']:,} rows ({issue['pct']:.1f}%)")
+                print(f"      Oldest year: {issue['min_year_found']} (threshold: {issue['threshold_year']})")
+                print(f"      💡 {issue['suggestion']}")
+                print(f"      Examples: {issue['examples'][:3]}")
+
+            elif issue_type == 'DATES_TOO_FUTURE':
+                print(f"   ⚠️  DATES TOO FUTURE: {issue['count']:,} rows ({issue['pct']:.1f}%)")
+                print(f"      Latest year: {issue['max_year_found']} (threshold: {issue['threshold_year']})")
+                print(f"      💡 {issue['suggestion']}")
+                print(f"      Examples: {issue['examples'][:3]}")
+
+            elif issue_type == 'SUSPICIOUS_YEAR':
+                print(f"   ⚠️  SUSPICIOUS YEAR {issue['year']}: {issue['count']:,} rows ({issue['pct']:.1f}%)")
+                print(f"      💡 {issue['suggestion']}")
+                print(f"      Examples: {issue['examples'][:3]}")
+
         print()
 
 

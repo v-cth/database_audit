@@ -13,31 +13,46 @@ from ..checks.string_checks import (
     check_special_chars,
     check_numeric_strings
 )
-from ..checks.timestamp_checks import check_timestamp_patterns
+from ..checks.timestamp_checks import check_timestamp_patterns, check_date_outliers
 from ..utils.security import mask_pii_columns, sanitize_connection_string
 from ..utils.output import print_results, get_summary_stats
 from ..exporters.dataframe_export import export_to_dataframe
 from ..exporters.json_export import export_to_json
 from ..exporters.html_export import export_to_html
+from .database import DatabaseConnection
 
 
 class SecureTableAuditor:
     """Audit data warehouse tables with security controls"""
 
-    def __init__(self, sample_size: int = 100000, sample_threshold: int = 1000000):
+    def __init__(
+        self,
+        sample_size: int = 100000,
+        sample_threshold: int = 1000000,
+        min_year: int = 1950,
+        max_year: int = 2100,
+        outlier_threshold_pct: float = 0.01
+    ):
         """
         Args:
             sample_size: Number of rows to sample if table exceeds threshold
             sample_threshold: Row count threshold for sampling
+            min_year: Minimum reasonable year for date outlier detection (default: 1950)
+            max_year: Maximum reasonable year for date outlier detection (default: 2100)
+            outlier_threshold_pct: Minimum percentage to report outliers (default: 0.01 = 1%)
         """
         self.sample_size = sample_size
         self.sample_threshold = sample_threshold
+        self.min_year = min_year
+        self.max_year = max_year
+        self.outlier_threshold_pct = outlier_threshold_pct
         self.audit_log = []
 
     def audit_from_database(
         self,
         table_name: str,
-        connection_string: str,
+        backend: str,
+        connection_params: Dict,
         schema: Optional[str] = None,
         mask_pii: bool = True,
         sample_in_db: bool = True,
@@ -45,17 +60,29 @@ class SecureTableAuditor:
         custom_pii_keywords: List[str] = None
     ) -> Dict:
         """
-        Audit table directly from database (RECOMMENDED)
+        Audit table directly from database using Ibis (RECOMMENDED)
         No intermediate files - query directly and audit in memory
 
         Args:
             table_name: Name of table to audit
-            connection_string: Database connection string
-                Examples:
-                - PostgreSQL: "postgresql://user:pass@host:5432/db"
-                - MySQL: "mysql://user:pass@host:3306/db"
-                - SQLite: "sqlite:///path/to/db.sqlite"
-            schema: Schema name (optional, e.g., 'public', 'dbo')
+            backend: Database backend ('bigquery' or 'snowflake')
+            connection_params: Database connection parameters (backend-specific)
+                BigQuery example:
+                {
+                    'project_id': 'my-project',
+                    'dataset_id': 'my_dataset',
+                    'credentials_path': '/path/to/credentials.json'
+                }
+                Snowflake example:
+                {
+                    'account': 'my-account',
+                    'user': 'my-user',
+                    'password': 'my-password',
+                    'database': 'my_db',
+                    'schema': 'my_schema',
+                    'warehouse': 'my_warehouse'
+                }
+            schema: Schema name (optional, overrides connection default)
             mask_pii: Automatically mask columns with PII keywords
             sample_in_db: Use database sampling for large tables (faster & more secure)
             custom_query: Custom SQL query instead of SELECT * (advanced)
@@ -64,68 +91,60 @@ class SecureTableAuditor:
         Returns:
             Dictionary with audit results
         """
+        # Log the audit
+        self._log_audit(table_name, f"{backend}://{connection_params.get('project_id') or connection_params.get('account')}")
+
+        print(f"🔐 Secure audit mode: Direct database query via Ibis (no file export)")
+
+        # Create database connection
+        db_conn = DatabaseConnection(backend, **connection_params)
+        db_conn.connect()
+
         try:
-            import connectorx as cx
-        except ImportError:
-            raise ImportError(
-                "connectorx is required for database connections.\n"
-                "Install with: pip install connectorx"
+            # Get row count if sampling is enabled
+            row_count = None
+            if sample_in_db:
+                try:
+                    row_count = db_conn.get_row_count(table_name, schema)
+                    if row_count is not None:
+                        print(f"📊 Table has {row_count:,} rows")
+                    else:
+                        print(f"⚠️  Could not determine row count, will load full table")
+                except Exception as e:
+                    print(f"⚠️  Could not get row count: {e}")
+                    print(f"   Will load full table")
+
+            # Determine if we should sample
+            should_sample = sample_in_db and row_count and row_count > self.sample_threshold
+
+            if should_sample:
+                print(f"🔍 Sampling {self.sample_size:,} rows from table")
+
+            # Execute query
+            df = db_conn.execute_query(
+                table_name=table_name,
+                schema=schema,
+                custom_query=custom_query,
+                sample_size=self.sample_size if should_sample else None
             )
 
-        # Log the audit
-        self._log_audit(table_name, connection_string)
+            print(f"✅ Loaded {len(df):,} rows into memory")
 
-        print(f"🔐 Secure audit mode: Direct database query (no file export)")
+            # Mask PII if requested
+            if mask_pii:
+                df = mask_pii_columns(df, custom_pii_keywords)
 
-        # Build query
-        if custom_query:
-            query = custom_query
-        else:
-            full_table = f"{schema}.{table_name}" if schema else table_name
+            # Run audit
+            results = self.audit_table(df, table_name)
 
-            # Check if we should sample in DB
-            if sample_in_db:
-                # Try to get row count first
-                try:
-                    count_query = f"SELECT COUNT(*) as cnt FROM {full_table}"
-                    count_df = pl.read_database_uri(count_query, connection_string)
-                    row_count = count_df['cnt'][0]
+            # Clear from memory
+            del df
 
-                    if row_count > self.sample_threshold:
-                        print(f"📊 Table has {row_count:,} rows - sampling in database")
-                        # Use database-native sampling (works for PostgreSQL, may need adjustment for others)
-                        query = f"""
-                            SELECT * FROM {full_table}
-                            TABLESAMPLE SYSTEM (10)
-                            LIMIT {self.sample_size}
-                        """
-                    else:
-                        query = f"SELECT * FROM {full_table}"
-                except Exception as e:
-                    # If count fails, just query with limit
-                    print(f"⚠️  Could not get row count, using LIMIT")
-                    query = f"SELECT * FROM {full_table} LIMIT {self.sample_size}"
-            else:
-                query = f"SELECT * FROM {full_table}"
+            return results
 
-        print(f"🔍 Executing: {query[:100]}...")
-
-        # Query directly - no intermediate storage
-        df = pl.read_database_uri(query, connection_string)
-
-        print(f"✅ Loaded {len(df):,} rows into memory")
-
-        # Mask PII if requested
-        if mask_pii:
-            df = mask_pii_columns(df, custom_pii_keywords)
-
-        # Run audit
-        results = self.audit_table(df, table_name)
-
-        # Clear from memory
-        del df
-
-        return results
+        finally:
+            # Always close the connection
+            db_conn.close()
 
     def audit_from_file(
         self,
@@ -208,7 +227,8 @@ class SecureTableAuditor:
                 'case_duplicates': True,
                 'special_chars': True,
                 'numeric_strings': True,
-                'timestamp_patterns': True
+                'timestamp_patterns': True,
+                'date_outliers': True
             }
 
         # Analyze each column
@@ -257,6 +277,13 @@ class SecureTableAuditor:
         elif dtype in [pl.Datetime, pl.Date]:
             if check_config.get('timestamp_patterns', True):
                 col_result['issues'].extend(check_timestamp_patterns(df, col))
+            if check_config.get('date_outliers', True):
+                col_result['issues'].extend(check_date_outliers(
+                    df, col,
+                    min_year=getattr(self, 'min_year', 1950),
+                    max_year=getattr(self, 'max_year', 2100),
+                    outlier_threshold_pct=getattr(self, 'outlier_threshold_pct', 0.01)
+                ))
 
         return col_result
 

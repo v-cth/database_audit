@@ -32,10 +32,11 @@ database_audit/
 
 ## Features
 
-- **Direct Database Auditing**: Query tables directly without exporting files
+- **Direct Database Auditing**: Query tables directly without exporting files using Ibis
+- **Multi-Database Support**: BigQuery and Snowflake (via Ibis framework)
 - **PII Protection**: Automatic masking of sensitive columns
 - **Smart Sampling**: Database-native sampling for large tables
-- **Multiple Checks**: Trailing spaces, case duplicates, special characters, numeric strings, timestamp patterns
+- **Multiple Checks**: Trailing spaces, case duplicates, special characters, numeric strings, timestamp patterns, date outliers
 - **Flexible Export**: HTML reports, JSON, CSV, or Polars DataFrames
 - **Audit Logging**: Track all audit activities with sanitized connection strings
 
@@ -45,20 +46,55 @@ database_audit/
 pip install -r requirements.txt
 ```
 
+Or install manually:
+```bash
+pip install polars ibis-framework[bigquery,snowflake] google-cloud-bigquery snowflake-connector-python pyyaml
+```
+
 ## Quick Start
 
-### Basic Usage
+### Basic Usage - BigQuery
 
 ```python
 from dw_auditor import SecureTableAuditor
 
 auditor = SecureTableAuditor()
 
-# Audit from database
+# Audit from BigQuery
 results = auditor.audit_from_database(
     table_name='users',
-    connection_string='postgresql://user:pass@localhost:5432/mydb',
-    schema='public',
+    backend='bigquery',
+    connection_params={
+        'project_id': 'my-gcp-project',
+        'dataset_id': 'analytics',
+        'credentials_path': '/path/to/service-account-key.json'
+    },
+    mask_pii=True
+)
+
+# Export results
+auditor.export_results_to_html(results, 'report.html')
+```
+
+### Basic Usage - Snowflake
+
+```python
+from dw_auditor import SecureTableAuditor
+
+auditor = SecureTableAuditor()
+
+# Audit from Snowflake
+results = auditor.audit_from_database(
+    table_name='CUSTOMERS',
+    backend='snowflake',
+    connection_params={
+        'account': 'my-account',
+        'user': 'my-user',
+        'password': 'my-password',
+        'database': 'ANALYTICS_DB',
+        'warehouse': 'COMPUTE_WH',
+        'schema': 'PUBLIC'
+    },
     mask_pii=True
 )
 
@@ -84,11 +120,15 @@ auditor = SecureTableAuditor(
 for table in config.tables:
     results = auditor.audit_from_database(
         table_name=table,
-        connection_string=config.connection_string,
+        backend=config.backend,
+        connection_params=config.connection_params,
         schema=config.schema,
-        mask_pii=config.mask_pii
+        mask_pii=config.mask_pii,
+        custom_pii_keywords=config.custom_pii_keywords
     )
 ```
+
+See `audit_config.yaml` for the main configuration template and `audit_config_examples.yaml` for detailed examples for both BigQuery and Snowflake.
 
 ## Modules
 
@@ -96,6 +136,7 @@ for table in config.tables:
 
 - **`auditor.py`**: Main `SecureTableAuditor` class that coordinates all auditing
 - **`config.py`**: `AuditConfig` class for YAML-based configuration
+- **`database.py`**: `DatabaseConnection` class for Ibis-based database connections (BigQuery, Snowflake)
 
 ### Checks (`dw_auditor/checks/`)
 
@@ -116,13 +157,37 @@ for table in config.tables:
 ## Configuration
 
 See `audit_config.yaml` for a complete configuration example with:
-- Database connection settings
+- Database connection settings (backend + connection_params)
+  - BigQuery: project_id, dataset_id, credentials_path
+  - Snowflake: account, user, password, database, warehouse, schema
 - Sampling configuration
 - Security settings (PII masking)
 - Check enablement/disablement
 - Thresholds
 - Output formats
 - Column filters
+
+For detailed examples, see `audit_config_examples.yaml` which includes:
+- BigQuery with service account authentication
+- BigQuery with Application Default Credentials
+- Snowflake with basic authentication
+- Custom queries for both databases
+- Production configurations
+- Minimal configurations
+
+## Supported Databases
+
+The auditor uses **Ibis** as the database abstraction layer, currently supporting:
+
+- **BigQuery** (Google Cloud)
+  - Service account authentication
+  - Application Default Credentials
+  - Dataset-level access control
+
+- **Snowflake**
+  - User/password authentication
+  - Role-based access control
+  - Warehouse and database selection
 
 ## Examples
 
@@ -131,6 +196,10 @@ Run the example file to see usage patterns:
 ```bash
 python main.py
 ```
+
+For configuration examples:
+- `audit_config.yaml` - Main configuration template
+- `audit_config_examples.yaml` - Complete examples for BigQuery and Snowflake
 
 ## License
 
