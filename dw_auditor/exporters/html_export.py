@@ -161,6 +161,44 @@ def _generate_css_styles() -> str:
             max-height: 0 !important;
             opacity: 0;
         }
+                /* Tabs Navigation */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #4b5563;
+            background: #f9fafb;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            margin-right: 5px;
+            transition: all 0.2s ease;
+        }
+        .tab.active {
+            background: white;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+            border-bottom: 2px solid white;
+        }
+        .tab:hover {
+            background: #f3f4f6;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
 """
 
 
@@ -195,6 +233,32 @@ def _generate_javascript() -> str:
                 icon.classList.add('collapsed');
             });
         });
+
+        // Tab switching logic
+        function openTab(tabId, element) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+            // Remove active state from all tabs
+            document.querySelectorAll('.tab').forEach(function(tabButton) {
+                tabButton.classList.remove('active');
+            });
+            // Activate selected tab
+            document.getElementById(tabId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        // Activate the first tab by default
+        window.addEventListener('DOMContentLoaded', function() {
+            const firstTab = document.querySelector('.tab');
+            const firstContent = document.querySelector('.tab-content');
+            if (firstTab && firstContent) {
+                firstTab.classList.add('active');
+                firstContent.classList.add('active');
+            }
+        });
+
 """
 
 
@@ -1050,9 +1114,30 @@ def export_to_html(results: Dict, file_path: str = "audit_report.html", thousand
     # Assemble the HTML report from components
     html = _generate_header(results)
     html += _generate_metadata_cards(results, has_issues)
-    html += _generate_column_summary_table(results)
-    html += _generate_column_insights(results, thousand_separator, decimal_places)
-    html += _generate_issues_section(results, has_issues)
+#    html += _generate_column_summary_table(results)
+    html += """
+        <div class="tabs">
+            <div class="tab active" onclick="openTab('summaryTab', this)">Summary</div>
+            <div class="tab" onclick="openTab('columnsTab', this)">Columns</div>
+            <div class="tab" onclick="openTab('issuesTab', this)">Issues</div>
+        </div>
+
+        <div id="summaryTab" class="tab-content active">
+        """ + _generate_column_summary_table(results) + """
+        </div>
+
+        <div id="columnsTab" class="tab-content">
+        """ + _generate_column_insights(results, thousand_separator, decimal_places) + """    
+            <p>Column details and insights will appear here.</p>
+        </div>
+
+        <div id="issuesTab" class="tab-content">
+        """ + _generate_issues_section(results, has_issues) + """
+            <p>All data quality issues will be listed here.</p>
+        </div>
+        """
+#    html += _generate_column_insights(results, thousand_separator, decimal_places)
+#    html += _generate_issues_section(results, has_issues)
 
     # Footer
     html += """
