@@ -33,18 +33,28 @@ database:
 
 # Tables to Audit
 # ----------------------------------------------------------------------------
-# Can be a simple list of table names OR objects with custom queries and primary keys
+# Option 1: Explicit list of tables (recommended for small number of tables)
 tables:
-  # Simple table names
   - name: fct_avaibility
   - name: dim_station
     primary_key: station_code  # Optional: specify primary key column(s)
   - name: dtm_station_distance
 
-  # Table with custom query (for filtering or joining)
-  # - name: custom_table
-  #   query: "SELECT * FROM my_table WHERE date > '2024-01-01'"
-  #   primary_key: id
+# Option 2: Auto-discover tables and apply filters
+# ----------------------------------------------------------------------------
+# Uncomment to enable auto-discovery (will discover all tables if tables list is empty)
+# table_filters:
+#   # Enable auto-discovery of all tables in schema
+#   auto_discover: true
+#
+#   # Exclude tables matching these patterns (applied first)
+#   exclude_patterns:
+#     - "stg_*"          # Exclude staging tables with stg_ prefix
+#
+#   # Include only tables matching these patterns (applied second, optional)
+#   include_patterns:
+#     - "fct_*"          # Only fact tables
+
 
 
 # Column-Level Check Configuration Matrix
@@ -61,6 +71,7 @@ column_checks:
     datetime:
       timestamp_patterns: true
       date_outliers: true
+      future_dates: true
 
   # Per-table, per-column overrides
   tables:
@@ -134,13 +145,31 @@ column_insights:
 sampling:
   # Number of rows to sample if table exceeds threshold
   sample_size: 10000
-  
+
   # Row count threshold to trigger sampling
   sample_threshold: 10000
-  
+
   # Use database-native sampling (faster, more secure)
   # If true, sampling happens in the database before loading data
   sample_in_db: true
+
+  # Sampling strategy (global default)
+  # Options: random, recent, top, systematic
+  method: "random"
+
+  # Column to use for non-random sampling (optional, required for recent/top/systematic)
+  # For 'recent': sorts descending, takes last N rows
+  # For 'top': sorts ascending, takes first N rows
+  # For 'systematic': uses modulo filter (e.g., WHERE id % stride = 0)
+  key_column: null
+
+  # Per-table sampling overrides
+  tables:
+    fct_avaibility:
+      method: "recent"
+      key_column: "collected_at"  # Sample most recent data
+    # dim_station:
+    #   method: "random"  # Explicit random for this table
 
 # Security Settings
 # ----------------------------------------------------------------------------
@@ -178,6 +207,9 @@ checks:
   # Check for date/timestamp outliers (very old or future dates)
   date_outliers: true
 
+  # Check for dates/datetimes that are in the future (relative to current time)
+  future_dates: true
+
   # Custom regex pattern for special characters
   # Default: [^a-zA-Z0-9\s\.,\-_@]
   special_chars_pattern: "[^a-zA-Z0-9\\s\\.,\\-_@]"
@@ -204,25 +236,28 @@ thresholds:
   # Maximum reasonable year (dates after this are flagged)
   max_year: 2100
 
-  # Minimum percentage to report as outlier (default: 0.01 = 1%)
+  # Minimum percentage to report as outlier (default: 0.0 = report all)
   # Only report if at least this % of rows have outliers
-  outlier_threshold_pct: 0.01
+  outlier_threshold_pct: 0.0
 
 # Output Configuration
 # ----------------------------------------------------------------------------
 output:
   # Directory where audit results will be saved
   directory: "audit_results"
-  
+
   # Export formats: html, json, csv, parquet
   formats:
     - html      # Beautiful interactive report
     - csv       # For Excel/analysis
     - json      # For APIs/automation
-  
+
   # Prefix for output filenames
   # Final format: {prefix}_{table_name}_{timestamp}.{extension}
   file_prefix: "audit"
+
+  # Automatically open HTML reports in browser after generation
+  auto_open_html: true
 
 # Column Filters (Optional)
 # ----------------------------------------------------------------------------

@@ -1,0 +1,381 @@
+{
+  "table_name": "dtm_station_distance",
+  "total_rows": 2516982,
+  "sampled": true,
+  "analyzed_rows": 10000,
+  "columns": {
+    "origin_station_name": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1568,
+      "issues": [
+        {
+          "type": "CASE_DUPLICATES",
+          "count": 1,
+          "examples": [
+            [
+              "place du g\u00e9n\u00e9ral de gaulle",
+              [
+                "Place du G\u00e9n\u00e9ral de Gaulle",
+                "Place Du G\u00e9n\u00e9ral De Gaulle"
+              ]
+            ]
+          ]
+        },
+        {
+          "type": "SPECIAL_CHARACTERS",
+          "count": 3867,
+          "pct": 38.67,
+          "special_chars": [
+            "\u00ef",
+            "\u00e8",
+            "\u00fc",
+            "\u00e2",
+            "\u00f4",
+            "\u00e7",
+            "\u00e9",
+            "\u00e0",
+            "'",
+            "\u00ea"
+          ],
+          "examples": [
+            "Mairie du 20\u00e8me",
+            "Cordeli\u00e8res - Arago"
+          ]
+        }
+      ]
+    },
+    "dest_station_name": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1566,
+      "issues": [
+        {
+          "type": "CASE_DUPLICATES",
+          "count": 1,
+          "examples": [
+            [
+              "place du g\u00e9n\u00e9ral de gaulle",
+              [
+                "Place du G\u00e9n\u00e9ral de Gaulle",
+                "Place Du G\u00e9n\u00e9ral De Gaulle"
+              ]
+            ]
+          ]
+        },
+        {
+          "type": "SPECIAL_CHARACTERS",
+          "count": 3767,
+          "pct": 37.669999999999995,
+          "special_chars": [
+            "\u00e8",
+            "\u00e7",
+            "\u00f4",
+            "\u00e2",
+            "\u00e9",
+            "\u00eb",
+            "'",
+            "\u00ea"
+          ],
+          "examples": [
+            "Gabriel P\u00e9ri - Danielle Casanova",
+            "Mairie d'Ivry-sur-Seine"
+          ]
+        }
+      ]
+    }
+  },
+  "column_summary": {
+    "origin_station_code": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1585,
+      "status": "NOT_CHECKED"
+    },
+    "origin_station_name": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1568,
+      "status": "ERROR"
+    },
+    "dest_station_code": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1582,
+      "status": "NOT_CHECKED"
+    },
+    "dest_station_name": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1566,
+      "status": "ERROR"
+    },
+    "distance_meters": {
+      "dtype": "Float64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 9973,
+      "status": "NOT_CHECKED"
+    }
+  },
+  "column_insights": {
+    "origin_station_code": {
+      "min": 1001.0,
+      "max": 92008.0,
+      "mean": 19195.5702,
+      "median": 17020.5,
+      "quantiles": {
+        "p25": 11040.0,
+        "p50": 17021.0,
+        "p75": 22403.0
+      },
+      "top_values": [
+        {
+          "value": 42019.0,
+          "count": 16,
+          "percentage": 0.16
+        },
+        {
+          "value": 13011.0,
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": 18114.0,
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": 1022.0,
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": 92004.0,
+          "count": 15,
+          "percentage": 0.15
+        }
+      ]
+    },
+    "origin_station_name": {
+      "top_values": [
+        {
+          "value": "Place de la Gare",
+          "count": 20,
+          "percentage": 0.2
+        },
+        {
+          "value": "Ch\u00e2teau - R\u00e9publique",
+          "count": 17,
+          "percentage": 0.16999999999999998
+        },
+        {
+          "value": "Place Nelson Mandela",
+          "count": 16,
+          "percentage": 0.16
+        },
+        {
+          "value": "Evariste Galois",
+          "count": 16,
+          "percentage": 0.16
+        },
+        {
+          "value": "Lampes",
+          "count": 16,
+          "percentage": 0.16
+        },
+        {
+          "value": "Nanterre - Universit\u00e9",
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": "V\u00e9ron - Lepic",
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": "H\u00f4pital - Campo-Formio",
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": "Simon Bolivar - Henri Turot",
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": "Buisson Saint-Louis - Saint-Maur",
+          "count": 15,
+          "percentage": 0.15
+        }
+      ],
+      "length_stats": {
+        "min": 6,
+        "max": 58,
+        "avg": 23.81
+      }
+    },
+    "dest_station_code": {
+      "min": 1001.0,
+      "max": 92008.0,
+      "mean": 18885.5141,
+      "median": 16129.0,
+      "quantiles": {
+        "p25": 11035.0,
+        "p50": 16129.0,
+        "p75": 22101.0
+      },
+      "top_values": [
+        {
+          "value": 9022.0,
+          "count": 16,
+          "percentage": 0.16
+        },
+        {
+          "value": 31301.0,
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": 44015.0,
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": 16024.0,
+          "count": 14,
+          "percentage": 0.13999999999999999
+        },
+        {
+          "value": 43402.0,
+          "count": 14,
+          "percentage": 0.13999999999999999
+        }
+      ]
+    },
+    "dest_station_name": {
+      "top_values": [
+        {
+          "value": "Simon Bolivar - Henri Turot",
+          "count": 19,
+          "percentage": 0.19
+        },
+        {
+          "value": "Rossini - Laffitte",
+          "count": 16,
+          "percentage": 0.16
+        },
+        {
+          "value": "Ch\u00e2teau - R\u00e9publique",
+          "count": 16,
+          "percentage": 0.16
+        },
+        {
+          "value": "Gare RER",
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": "Rouget de L'isle - Watteau",
+          "count": 15,
+          "percentage": 0.15
+        },
+        {
+          "value": "Place Nelson Mandela",
+          "count": 14,
+          "percentage": 0.13999999999999999
+        },
+        {
+          "value": "Rocher - Laborde",
+          "count": 14,
+          "percentage": 0.13999999999999999
+        },
+        {
+          "value": "Ranelagh - Maison de la Radio",
+          "count": 14,
+          "percentage": 0.13999999999999999
+        },
+        {
+          "value": "R\u00e9aumur - Montmartre",
+          "count": 14,
+          "percentage": 0.13999999999999999
+        },
+        {
+          "value": "Place de Verdun",
+          "count": 14,
+          "percentage": 0.13999999999999999
+        }
+      ],
+      "length_stats": {
+        "min": 6,
+        "max": 58,
+        "avg": 23.77
+      }
+    },
+    "distance_meters": {
+      "min": 35.48310105649525,
+      "max": 26302.898883731214,
+      "mean": 6934.5866,
+      "median": 6338.803532755003,
+      "quantiles": {
+        "p25": 4065.3191819263516,
+        "p50": 6338.854873772694,
+        "p75": 9249.116492606745
+      },
+      "top_values": [
+        {
+          "value": 12150.553441604234,
+          "count": 2,
+          "percentage": 0.02
+        },
+        {
+          "value": 6089.129251856065,
+          "count": 2,
+          "percentage": 0.02
+        },
+        {
+          "value": 7413.0611343373885,
+          "count": 2,
+          "percentage": 0.02
+        },
+        {
+          "value": 3099.9036392727535,
+          "count": 2,
+          "percentage": 0.02
+        },
+        {
+          "value": 7917.611926866333,
+          "count": 2,
+          "percentage": 0.02
+        }
+      ]
+    }
+  },
+  "timestamp": "2025-10-20T19:14:38.783771",
+  "start_time": "2025-10-20T19:14:38.783771",
+  "check_durations": {
+    "string_checks": 0.056815000000000004
+  },
+  "end_time": "2025-10-20T19:14:38.850765",
+  "duration_seconds": 0.07,
+  "table_metadata": {
+    "table_name": "dtm_station_distance",
+    "table_type": "BASE TABLE",
+    "created_time": "2025-10-20 01:00:57.852000+00:00",
+    "table_uid": "portfolio-402.dbt_prod.dtm_station_distance",
+    "row_count": 2516982
+  },
+  "phase_timings": {
+    "connection": 0.234726,
+    "metadata": 6.288518,
+    "data_loading": 3.105197,
+    "audit_checks": 0.068117
+  }
+}

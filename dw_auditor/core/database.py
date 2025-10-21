@@ -5,7 +5,7 @@ Supports BigQuery and Snowflake
 
 import ibis
 import polars as pl
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pathlib import Path
 import json
 
@@ -131,7 +131,9 @@ class DatabaseConnection:
         schema: Optional[str] = None,
         limit: Optional[int] = None,
         custom_query: Optional[str] = None,
-        sample_size: Optional[int] = None
+        sample_size: Optional[int] = None,
+        sampling_method: str = 'random',
+        sampling_key_column: Optional[str] = None
     ) -> pl.DataFrame:
         """
         Execute query and return Polars DataFrame
@@ -142,6 +144,8 @@ class DatabaseConnection:
             limit: Limit number of rows
             custom_query: Custom SQL query (overrides table_name)
             sample_size: Sample size for large tables
+            sampling_method: Sampling strategy ('random', 'recent', 'top', 'systematic')
+            sampling_key_column: Column to use for non-random sampling methods
 
         Returns:
             Polars DataFrame with query results
@@ -158,14 +162,12 @@ class DatabaseConnection:
 
             # Apply sampling if specified
             if sample_size:
-                if self.backend == 'bigquery':
-                    # BigQuery uses TABLESAMPLE
-                    # Note: BigQuery requires percent, so calculate based on estimate
-                    # For simplicity, we'll use limit after sample
-                    table = table.order_by(ibis.random()).limit(sample_size)
-                elif self.backend == 'snowflake':
-                    # Snowflake supports SAMPLE
-                    table = table.order_by(ibis.random()).limit(sample_size)
+                table = self._apply_sampling(
+                    table,
+                    sample_size,
+                    sampling_method,
+                    sampling_key_column
+                )
             elif limit:
                 table = table.limit(limit)
 
@@ -175,6 +177,127 @@ class DatabaseConnection:
         # Ibis natively supports Polars conversion
         polars_df = result.to_polars()
         return polars_df
+
+    def _apply_sampling(
+        self,
+        table: 'ibis.expr.types.Table',
+        sample_size: int,
+        method: str = 'random',
+        key_column: Optional[str] = None
+    ) -> 'ibis.expr.types.Table':
+        """
+        Apply sampling strategy to table
+
+        Args:
+            table: Ibis table expression
+            sample_size: Number of rows to sample
+            method: Sampling method ('random', 'recent', 'top', 'systematic')
+            key_column: Column to use for ordering/filtering (required for non-random methods)
+
+        Returns:
+            Ibis table expression with sampling applied
+        """
+        if method == 'random':
+            # Random sampling using database random function
+            return table.order_by(ibis.random()).limit(sample_size)
+
+        elif method == 'recent':
+            # Most recent rows based on key column (descending order)
+            if not key_column:
+                raise ValueError("'recent' sampling method requires a key_column")
+            return table.order_by(ibis.desc(key_column)).limit(sample_size)
+
+        elif method == 'top':
+            # First N rows based on key column (ascending order)
+            if not key_column:
+                raise ValueError("'top' sampling method requires a key_column")
+            return table.order_by(key_column).limit(sample_size)
+
+        elif method == 'systematic':
+            # Systematic sampling using modulo on key column
+            if not key_column:
+                raise ValueError("'systematic' sampling method requires a key_column")
+
+            # For systematic sampling, we need to estimate the stride
+            # Try to get row count first (if available)
+            try:
+                row_count = table.count().execute()
+                if row_count and row_count > sample_size:
+                    stride = max(1, row_count // sample_size)
+                    # Use modulo filter: WHERE key_column % stride = 0
+                    return table.filter(table[key_column] % stride == 0).limit(sample_size)
+                else:
+                    # If we can't get count or table is small, fallback to limit
+                    return table.limit(sample_size)
+            except Exception:
+                # If count fails, fallback to every Nth row with estimated stride
+                # Default stride of 10 for safety
+                stride = 10
+                return table.filter(table[key_column] % stride == 0).limit(sample_size)
+
+        else:
+            raise ValueError(f"Unknown sampling method: {method}. Use 'random', 'recent', 'top', or 'systematic'")
+
+    def get_all_tables(self, schema: Optional[str] = None) -> List[str]:
+        """
+        Get list of all tables in the schema from INFORMATION_SCHEMA
+
+        Args:
+            schema: Optional schema name (overrides connection default)
+
+        Returns:
+            List of table names
+        """
+        if self.conn is None:
+            self.connect()
+
+        table_names = []
+
+        try:
+            if self.backend == 'bigquery':
+                # BigQuery INFORMATION_SCHEMA.TABLES
+                dataset = schema or self.connection_params.get('dataset_id')
+                if not dataset:
+                    return table_names
+
+                # Query INFORMATION_SCHEMA.TABLES for all tables
+                info_schema_table = f"`{dataset}.INFORMATION_SCHEMA.TABLES`"
+
+                # Get all tables (excluding views by default, or include them if needed)
+                result = self.conn.sql(
+                    f"SELECT table_name "
+                    f"FROM {info_schema_table} "
+                    f"WHERE table_type IN ('BASE TABLE', 'TABLE') "
+                    f"ORDER BY table_name"
+                ).to_polars()
+
+                if len(result) > 0:
+                    table_names = result['table_name'].to_list()
+
+            elif self.backend == 'snowflake':
+                # Snowflake INFORMATION_SCHEMA.TABLES
+                schema_name = schema or self.connection_params.get('schema')
+                database_name = self.connection_params.get('database')
+
+                if not database_name or not schema_name:
+                    return table_names
+
+                # Query INFORMATION_SCHEMA.TABLES
+                result = self.conn.sql(
+                    f"SELECT table_name "
+                    f"FROM {database_name}.INFORMATION_SCHEMA.TABLES "
+                    f"WHERE table_schema = '{schema_name}' "
+                    f"AND table_type = 'BASE TABLE' "
+                    f"ORDER BY table_name"
+                ).to_polars()
+
+                if len(result) > 0:
+                    table_names = result['table_name'].to_list()
+
+        except Exception as e:
+            print(f"⚠️  Could not query INFORMATION_SCHEMA for table list: {e}")
+
+        return table_names
 
     def get_table_metadata(self, table_name: str, schema: Optional[str] = None) -> Dict[str, Any]:
         """

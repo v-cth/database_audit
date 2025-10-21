@@ -13,7 +13,7 @@ from ..checks.string_checks import (
     check_special_chars,
     check_numeric_strings
 )
-from ..checks.timestamp_checks import check_timestamp_patterns, check_date_outliers
+from ..checks.timestamp_checks import check_timestamp_patterns, check_date_outliers, check_future_dates
 from ..utils.security import mask_pii_columns, sanitize_connection_string
 from ..utils.output import print_results
 from .database import DatabaseConnection
@@ -30,7 +30,7 @@ class SecureTableAuditor(AuditorExporterMixin):
         sample_threshold: int = 1000000,
         min_year: int = 1950,
         max_year: int = 2100,
-        outlier_threshold_pct: float = 0.01
+        outlier_threshold_pct: float = 0.0
     ):
         """
         Args:
@@ -38,7 +38,7 @@ class SecureTableAuditor(AuditorExporterMixin):
             sample_threshold: Row count threshold for sampling
             min_year: Minimum reasonable year for date outlier detection (default: 1950)
             max_year: Maximum reasonable year for date outlier detection (default: 2100)
-            outlier_threshold_pct: Minimum percentage to report outliers (default: 0.01 = 1%)
+            outlier_threshold_pct: Minimum percentage to report outliers (default: 0.0 = report all)
         """
         self.sample_size = sample_size
         self.sample_threshold = sample_threshold
@@ -58,7 +58,9 @@ class SecureTableAuditor(AuditorExporterMixin):
         custom_query: Optional[str] = None,
         custom_pii_keywords: List[str] = None,
         user_primary_key: Optional[List[str]] = None,
-        column_check_config: Optional[any] = None
+        column_check_config: Optional[any] = None,
+        sampling_method: str = 'random',
+        sampling_key_column: Optional[str] = None
     ) -> Dict:
         """
         Audit table directly from database using Ibis (RECOMMENDED)
@@ -162,7 +164,10 @@ class SecureTableAuditor(AuditorExporterMixin):
             should_sample = sample_in_db and row_count and row_count > self.sample_threshold
 
             if should_sample:
-                print(f"🔍 Sampling {self.sample_size:,} rows from table")
+                method_display = sampling_method
+                if sampling_key_column:
+                    method_display = f"{sampling_method} (key: {sampling_key_column})"
+                print(f"🔍 Sampling {self.sample_size:,} rows from table using '{method_display}' method")
 
             # Execute query
             phase_start = datetime.now()
@@ -170,7 +175,9 @@ class SecureTableAuditor(AuditorExporterMixin):
                 table_name=table_name,
                 schema=schema,
                 custom_query=custom_query,
-                sample_size=self.sample_size if should_sample else None
+                sample_size=self.sample_size if should_sample else None,
+                sampling_method=sampling_method,
+                sampling_key_column=sampling_key_column
             )
             phase_timings['data_loading'] = (datetime.now() - phase_start).total_seconds()
 
@@ -434,7 +441,12 @@ class SecureTableAuditor(AuditorExporterMixin):
                     df, col,
                     min_year=getattr(self, 'min_year', 1950),
                     max_year=getattr(self, 'max_year', 2100),
-                    outlier_threshold_pct=getattr(self, 'outlier_threshold_pct', 0.01)
+                    outlier_threshold_pct=getattr(self, 'outlier_threshold_pct', 0.0)
+                ))
+            if check_config.get('future_dates', True):
+                col_result['issues'].extend(check_future_dates(
+                    df, col,
+                    threshold_pct=getattr(self, 'outlier_threshold_pct', 0.0)
                 ))
 
         return col_result

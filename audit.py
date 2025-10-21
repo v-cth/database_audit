@@ -5,6 +5,7 @@ Usage: python audit.py [config_file]
 """
 
 import sys
+import webbrowser
 from pathlib import Path
 from dw_auditor import AuditConfig, SecureTableAuditor
 
@@ -68,9 +69,46 @@ def main():
         outlier_threshold_pct=config.outlier_threshold_pct
     )
 
+    # Determine tables to audit
+    tables_to_audit = config.tables
+
+    # Auto-discover tables if enabled and no explicit list provided
+    if not tables_to_audit and config.auto_discover:
+        print(f"\n🔍 Auto-discovering tables in schema...")
+
+        # Create temporary database connection for discovery
+        from dw_auditor.core.database import DatabaseConnection
+        db_conn = DatabaseConnection(config.backend, **config.connection_params)
+        db_conn.connect()
+
+        try:
+            all_tables = db_conn.get_all_tables(config.schema)
+            print(f"📋 Found {len(all_tables)} tables in schema")
+
+            # Apply filters
+            tables_to_audit = [t for t in all_tables if config.should_include_table(t)]
+
+            # Show filtering results
+            excluded_count = len(all_tables) - len(tables_to_audit)
+            if excluded_count > 0:
+                print(f"🔽 Filtered out {excluded_count} tables based on patterns")
+            print(f"✅ Will audit {len(tables_to_audit)} tables")
+
+            # Show excluded tables if there are any
+            if excluded_count > 0 and excluded_count <= 10:
+                excluded_tables = [t for t in all_tables if not config.should_include_table(t)]
+                print(f"   Excluded: {', '.join(excluded_tables)}")
+
+        finally:
+            db_conn.close()
+
+        if not tables_to_audit:
+            print(f"⚠️  No tables match the filter criteria")
+            sys.exit(0)
+
     # Audit tables
     try:
-        for table in config.tables:
+        for table in tables_to_audit:
             print(f"\n{'='*70}")
             print(f"🔍 Auditing table: {table}")
             print(f"{'='*70}")
@@ -78,6 +116,9 @@ def main():
             try:
                 # Get primary key from config if specified
                 user_defined_primary_key = config.table_primary_keys.get(table, None)
+
+                # Get table-specific sampling configuration
+                sampling_config = config.get_table_sampling_config(table)
 
                 results = auditor.audit_from_database(
                     table_name=table,
@@ -87,7 +128,9 @@ def main():
                     mask_pii=config.mask_pii,
                     custom_pii_keywords=config.custom_pii_keywords,
                     user_primary_key=user_defined_primary_key,
-                    column_check_config=config  # Pass entire config for column-level checks
+                    column_check_config=config,  # Pass entire config for column-level checks
+                    sampling_method=sampling_config['method'],
+                    sampling_key_column=sampling_config['key_column']
                 )
 
                 # Print phase timings if available
@@ -102,6 +145,14 @@ def main():
                 if 'html' in config.export_formats:
                     output_file = run_dir / f'{config.file_prefix}_{table}.html'
                     auditor.export_results_to_html(results, str(output_file))
+
+                    # Auto-open HTML in browser if configured
+                    if config.auto_open_html:
+                        try:
+                            webbrowser.open(f'file://{output_file.absolute()}')
+                            print(f"🌐 Opened report in browser")
+                        except Exception as e:
+                            print(f"⚠️  Could not open browser: {e}")
 
                 if 'json' in config.export_formats:
                     output_file = run_dir / f'{config.file_prefix}_{table}.json'

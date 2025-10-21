@@ -4,7 +4,7 @@ Timestamp/datetime data quality checks
 
 import polars as pl
 from typing import List, Dict
-from datetime import datetime
+from datetime import datetime, date, timezone
 
 
 def check_timestamp_patterns(
@@ -77,7 +77,7 @@ def check_date_outliers(
     col: str,
     min_year: int = 1950,
     max_year: int = 2100,
-    outlier_threshold_pct: float = 0.01
+    outlier_threshold_pct: float = 0.0
 ) -> List[Dict]:
     """
     Detect date/timestamp outliers (unusually old or future dates)
@@ -87,7 +87,7 @@ def check_date_outliers(
         col: Column name
         min_year: Minimum reasonable year (default: 1950)
         max_year: Maximum reasonable year (default: 2100)
-        outlier_threshold_pct: Minimum percentage to report as issue (default: 0.01 = 1%)
+        outlier_threshold_pct: Minimum percentage to report as issue (default: 0.0 = report all)
 
     Returns:
         List of issues found
@@ -167,5 +167,86 @@ def check_date_outliers(
                     'suggestion': f'Year {problem_year} appears frequently - often used as placeholder/default value',
                     'examples': examples
                 })
+
+    return issues
+
+
+def check_future_dates(
+    df: pl.DataFrame,
+    col: str,
+    threshold_pct: float = 0.0
+) -> List[Dict]:
+    """
+    Detect dates/datetimes that are in the future relative to current time.
+
+    Args:
+        df: DataFrame to check
+        col: Column name
+        threshold_pct: Minimum percentage to report as issue (default: 0.0 = report all)
+
+    Returns:
+        List of issues found
+    """
+    issues = []
+
+    non_null_df = df.filter(pl.col(col).is_not_null())
+    non_null_count = len(non_null_df)
+
+    if non_null_count == 0:
+        return issues
+
+    # Get current date/datetime based on column type
+    col_dtype = df[col].dtype
+
+    if col_dtype == pl.Date:
+        # For Date columns, compare against today's date
+        current_ref = date.today()
+        future_rows = non_null_df.filter(pl.col(col) > current_ref)
+    else:
+        # For Datetime columns, compare against current datetime
+        # Handle timezone-aware vs timezone-naive
+        if hasattr(col_dtype, 'time_zone') and col_dtype.time_zone is not None:
+            # Timezone-aware: use current UTC time with timezone
+            current_ref = datetime.now(timezone.utc)
+        else:
+            # Timezone-naive: use current local time without timezone
+            current_ref = datetime.now()
+
+        future_rows = non_null_df.filter(pl.col(col) > current_ref)
+
+    if len(future_rows) > 0:
+        pct_future = len(future_rows) / non_null_count * 100
+
+        # Only report if above threshold
+        if pct_future >= threshold_pct:
+            examples = future_rows[col].head(5).to_list()
+
+            # Calculate how far into the future
+            if col_dtype == pl.Date:
+                max_future_date = future_rows[col].max()
+                days_in_future = (max_future_date - current_ref).days if max_future_date else 0
+            else:
+                max_future_date = future_rows[col].max()
+                if max_future_date:
+                    if hasattr(col_dtype, 'time_zone') and col_dtype.time_zone is not None:
+                        # For timezone-aware, both should be timezone-aware
+                        time_diff = max_future_date - current_ref
+                    else:
+                        # For timezone-naive
+                        time_diff = max_future_date - current_ref
+                    days_in_future = time_diff.days
+                else:
+                    days_in_future = 0
+
+            issues.append({
+                'type': 'FUTURE_DATES',
+                'count': len(future_rows),
+                'pct': pct_future,
+                'max_days_future': days_in_future,
+                'current_reference': current_ref,
+                'max_future_value': max_future_date,
+                'suggestion': f'Found {len(future_rows)} dates in the future - check if these are valid or data entry errors',
+                'examples': examples
+            })
 
     return issues

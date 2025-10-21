@@ -5,6 +5,7 @@ Configuration management for the data warehouse auditor
 from typing import Dict, List, Union
 from pathlib import Path
 import yaml
+import fnmatch
 
 
 class AuditConfig:
@@ -41,11 +42,24 @@ class AuditConfig:
                         elif isinstance(primary_key, list):
                             self.table_primary_keys[table_name] = primary_key
 
+        # Table filtering configuration
+        table_filters = config_dict.get('table_filters', {})
+        self.auto_discover = table_filters.get('auto_discover', False)
+        self.exclude_patterns = table_filters.get('exclude_patterns', [])
+        self.include_patterns = table_filters.get('include_patterns', [])
+
         # Sampling configuration
         sampling = config_dict.get('sampling', {})
         self.sample_size = sampling.get('sample_size', 100000)
         self.sample_threshold = sampling.get('sample_threshold', 1000000)
         self.sample_in_db = sampling.get('sample_in_db', True)
+
+        # Sampling strategy configuration
+        self.sampling_method = sampling.get('method', 'random')  # random, recent, top, systematic
+        self.sampling_key_column = sampling.get('key_column')  # Column to use for non-random sampling
+
+        # Per-table sampling overrides
+        self.table_sampling_config = sampling.get('tables', {})
 
         # Security settings
         security = config_dict.get('security', {})
@@ -73,13 +87,14 @@ class AuditConfig:
         # Date outlier thresholds
         self.min_year = thresholds.get('min_year', 1950)
         self.max_year = thresholds.get('max_year', 2100)
-        self.outlier_threshold_pct = thresholds.get('outlier_threshold_pct', 0.01)
+        self.outlier_threshold_pct = thresholds.get('outlier_threshold_pct', 0.0)
 
         # Output configuration
         output = config_dict.get('output', {})
         self.output_dir = Path(output.get('directory', 'audit_results'))
         self.export_formats = output.get('formats', ['html', 'csv'])
         self.file_prefix = output.get('file_prefix', 'audit')
+        self.auto_open_html = output.get('auto_open_html', False)
 
         # Column filters (optional)
         filters = config_dict.get('filters', {})
@@ -198,6 +213,59 @@ class AuditConfig:
                 base_config.update(column_overrides)
 
         return base_config
+
+    def get_table_sampling_config(self, table_name: str) -> Dict:
+        """
+        Get sampling configuration for a specific table
+
+        Args:
+            table_name: Name of the table
+
+        Returns:
+            Dictionary with sampling configuration (method, key_column)
+        """
+        # Start with global defaults
+        sampling_config = {
+            'method': self.sampling_method,
+            'key_column': self.sampling_key_column
+        }
+
+        # Apply table-specific overrides
+        if table_name in self.table_sampling_config:
+            table_config = self.table_sampling_config[table_name]
+            if 'method' in table_config:
+                sampling_config['method'] = table_config['method']
+            if 'key_column' in table_config:
+                sampling_config['key_column'] = table_config['key_column']
+
+        return sampling_config
+
+    def should_include_table(self, table_name: str) -> bool:
+        """
+        Determine if a table should be included based on filter patterns
+
+        Args:
+            table_name: Name of the table
+
+        Returns:
+            True if table should be included, False otherwise
+        """
+        # Step 1: Check exclude patterns (blacklist)
+        for pattern in self.exclude_patterns:
+            if fnmatch.fnmatch(table_name.lower(), pattern.lower()):
+                return False
+
+        # Step 2: Check include patterns (whitelist) - only if patterns are specified
+        if self.include_patterns:
+            # If include patterns are specified, table must match at least one
+            for pattern in self.include_patterns:
+                if fnmatch.fnmatch(table_name.lower(), pattern.lower()):
+                    return True
+            # Didn't match any include pattern
+            return False
+
+        # No include patterns specified, and didn't match exclude patterns
+        return True
 
     @classmethod
     def from_yaml(cls, yaml_path: Union[str, Path]) -> 'AuditConfig':

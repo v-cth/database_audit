@@ -6,7 +6,7 @@ from .string_checks import (
     check_special_chars,
     check_numeric_strings
 )
-from .timestamp_checks import check_timestamp_patterns, check_date_outliers
+from .timestamp_checks import check_timestamp_patterns, check_date_outliers, check_future_dates
 
 __all__ = [
     "check_trailing_spaces",
@@ -14,5 +14,6 @@ __all__ = [
     "check_special_chars",
     "check_numeric_strings",
     "check_timestamp_patterns",
-    "check_date_outliers"
+    "check_date_outliers",
+    "check_future_dates"
 ]

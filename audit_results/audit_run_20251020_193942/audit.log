@@ -1,0 +1,489 @@
+📁 Audit run directory: audit_results/audit_run_20251020_193942
+📝 Logs will be saved to: audit_results/audit_run_20251020_193942/audit.log
+
+======================================================================
+🔍 Auditing table: fct_avaibility
+======================================================================
+🔐 Secure audit mode: Direct database query via Ibis (no file export)
+✅ Connected to BIGQUERY
+🔖 Table UID: portfolio-402.dbt_prod.fct_avaibility
+📑 Table type: BASE TABLE
+📊 Table has 24,417,603 rows
+🔍 Sampling 10,000 rows from table using 'recent (key: collected_at)' method
+✅ Loaded 10,000 rows into memory
+
+============================================================
+Auditing: fct_avaibility
+Total rows in table: 24,417,603
+Analyzing sample: 10,000 rows
+============================================================
+
+
+📋 Column Summary (All Columns):
+====================================================================================================
+Column Name                    Type            Status       Nulls           Distinct       
+----------------------------------------------------------------------------------------------------
+station_code                   Int64           - NOT_CHECKED 0 (0.0%)        1,462          
+station_name                   String          ✗ ERROR      0 (0.0%)        1,459          
+capacity                       Int64           - NOT_CHECKED 0 (0.0%)        65             
+docks_available                Int64           - NOT_CHECKED 0 (0.0%)        71             
+mechanical                     Int64           - NOT_CHECKED 0 (0.0%)        60             
+ebike                          Int64           - NOT_CHECKED 0 (0.0%)        31             
+duedate                        Datetime(time_unit='ns', time_zone='UTC') ✓ OK         0 (0.0%)        3,665          
+bikes_available                Int64           - NOT_CHECKED 0 (0.0%)        69             
+rate_bike_available            Float64         - NOT_CHECKED 0 (0.0%)        973            
+rate_dock_available            Float64         - NOT_CHECKED 0 (0.0%)        983            
+bikes_out_of_order             Int64           - NOT_CHECKED 0 (0.0%)        32             
+collected_at                   Datetime(time_unit='ns', time_zone=None) ✓ OK         0 (0.0%)        7              
+rounded_collected_at           Datetime(time_unit='ns', time_zone=None) ✓ OK         0 (0.0%)        7              
+====================================================================================================
+
+
+💡 Column Insights:
+
+📊 station_code:
+   Top 5 Values:
+      • '40012.0' (9x, 0.1%)
+      • '20201.0' (9x, 0.1%)
+      • '16027.0' (9x, 0.1%)
+      • '5005.0' (9x, 0.1%)
+      • '18138.0' (9x, 0.1%)
+   Stats: min=1001.00, max=92008.00, mean=18892.38, median=16139.00
+   Quantiles: p25=11037.00, p50=16139.00, p75=22203.00
+
+📊 station_name:
+   Top 10 Values:
+      • 'Verdun - Carnot' (14x, 0.1%)
+      • 'Place de la Gare' (14x, 0.1%)
+      • 'Place Nelson Mandela' (13x, 0.1%)
+      • 'Gay Lussac - Saint-Jacques' (9x, 0.1%)
+      • 'Champ de Mars - Cler' (9x, 0.1%)
+      • 'Général De Gaulle - Vivien' (9x, 0.1%)
+      • 'Place du Moulin de Javel' (9x, 0.1%)
+      • 'Gare de Nanterre Ville' (9x, 0.1%)
+      • 'Porte d'Orléans' (9x, 0.1%)
+      • 'Cassini - Denfert-Rochereau' (9x, 0.1%)
+   Length: min=6, max=50, avg=23.9
+
+📊 capacity:
+   Top 5 Values:
+      • '30.0' (591x, 5.9%)
+      • '20.0' (536x, 5.4%)
+      • '28.0' (497x, 5.0%)
+      • '25.0' (444x, 4.4%)
+      • '24.0' (436x, 4.4%)
+   Stats: min=10.00, max=78.00, mean=32.22, median=30.00
+   Quantiles: p25=23.00, p50=30.00, p75=38.00
+
+📊 docks_available:
+   Top 5 Values:
+      • '18.0' (387x, 3.9%)
+      • '15.0' (367x, 3.7%)
+      • '16.0' (367x, 3.7%)
+      • '17.0' (367x, 3.7%)
+      • '14.0' (350x, 3.5%)
+   Stats: min=0.00, max=71.00, mean=18.44, median=17.00
+   Quantiles: p25=10.00, p50=17.00, p75=25.00
+
+📊 mechanical:
+   Top 5 Values:
+      • '0.0' (1,447x, 14.5%)
+      • '1.0' (1,111x, 11.1%)
+      • '2.0' (915x, 9.2%)
+      • '3.0' (795x, 8.0%)
+      • '4.0' (609x, 6.1%)
+   Stats: min=0.00, max=65.00, mean=7.84, median=5.00
+   Quantiles: p25=1.00, p50=5.00, p75=11.00
+
+📊 ebike:
+   Top 5 Values:
+      • '2.0' (1,473x, 14.7%)
+      • '3.0' (1,470x, 14.7%)
+      • '1.0' (1,228x, 12.3%)
+      • '4.0' (1,223x, 12.2%)
+      • '5.0' (921x, 9.2%)
+   Stats: min=0.00, max=33.00, mean=4.60, median=4.00
+   Quantiles: p25=2.00, p50=4.00, p75=6.00
+
+📊 duedate:
+   Date Range: from 2025-10-16 23:02:37+00:00 to 2025-10-19 22:44:28+00:00 (2 days)
+   Timezone: UTC
+   Most Common Dates:
+      • 2025-10-19 (9,995x, 100.0%)
+      • 2025-10-16 (5x, 0.1%)
+   Most Common Days of Week:
+      • Sunday (9,995x, 100.0%)
+      • Thursday (5x, 0.1%)
+   Most Common Hours:
+      • 18:00 (1,460x, 14.6%)
+      • 20:00 (1,368x, 13.7%)
+      • 16:00 (1,363x, 13.6%)
+      • 19:00 (1,265x, 12.7%)
+      • 17:00 (1,261x, 12.6%)
+      • 21:00 (1,076x, 10.8%)
+      • 22:00 (872x, 8.7%)
+      • 15:00 (599x, 6.0%)
+      • 14:00 (446x, 4.5%)
+      • 13:00 (100x, 1.0%)
+
+📊 bikes_available:
+   Top 5 Values:
+      • '4.0' (661x, 6.6%)
+      • '3.0' (601x, 6.0%)
+      • '5.0' (587x, 5.9%)
+      • '6.0' (579x, 5.8%)
+      • '7.0' (530x, 5.3%)
+   Stats: min=0.00, max=68.00, mean=12.43, median=10.00
+   Quantiles: p25=5.00, p50=10.00, p75=17.00
+
+📊 rate_bike_available:
+   Top 5 Values:
+      • '0.5' (180x, 1.8%)
+      • '0.25' (175x, 1.8%)
+      • '0.2' (167x, 1.7%)
+      • '0.3333333333333333' (142x, 1.4%)
+      • '0.16666666666666666' (115x, 1.1%)
+   Stats: min=0.00, max=1.68, mean=0.39, median=0.33
+   Quantiles: p25=0.17, p50=0.33, p75=0.58
+
+📊 rate_dock_available:
+   Top 5 Values:
+      • '0.5' (236x, 2.4%)
+      • '0.0' (195x, 1.9%)
+      • '0.6666666666666666' (167x, 1.7%)
+      • '0.8' (157x, 1.6%)
+      • '0.75' (144x, 1.4%)
+   Stats: min=0.00, max=1.00, mean=0.56, median=0.61
+   Quantiles: p25=0.36, p50=0.61, p75=0.79
+
+📊 bikes_out_of_order:
+   Top 5 Values:
+      • '0.0' (3,391x, 33.9%)
+      • '1.0' (3,189x, 31.9%)
+      • '2.0' (1,800x, 18.0%)
+      • '3.0' (726x, 7.3%)
+      • '4.0' (437x, 4.4%)
+   Stats: min=-17.00, max=34.00, mean=1.35, median=1.00
+   Quantiles: p25=0.00, p50=1.00, p75=2.00
+
+📊 collected_at:
+   Date Range: from 2025-10-19 20:06:32 to 2025-10-20 02:06:17 (0 days)
+   Timezone: None (timezone-naive)
+   Most Common Dates:
+      • 2025-10-19 (5,612x, 56.1%)
+      • 2025-10-20 (4,388x, 43.9%)
+   Most Common Days of Week:
+      • Sunday (5,612x, 56.1%)
+      • Monday (4,388x, 43.9%)
+   Most Common Hours:
+      • 02:00 (1,464x, 14.6%)
+      • 21:00 (1,464x, 14.6%)
+      • 00:00 (1,463x, 14.6%)
+      • 22:00 (1,462x, 14.6%)
+      • 01:00 (1,461x, 14.6%)
+      • 23:00 (1,460x, 14.6%)
+      • 20:00 (1,226x, 12.3%)
+
+📊 rounded_collected_at:
+   Date Range: from 2025-10-19 20:00:00 to 2025-10-20 02:00:00 (0 days)
+   Timezone: None (timezone-naive)
+   Most Common Dates:
+      • 2025-10-19 (5,612x, 56.1%)
+      • 2025-10-20 (4,388x, 43.9%)
+   Most Common Days of Week:
+      • Sunday (5,612x, 56.1%)
+      • Monday (4,388x, 43.9%)
+   Most Common Hours:
+      • 02:00 (1,464x, 14.6%)
+      • 21:00 (1,464x, 14.6%)
+      • 00:00 (1,463x, 14.6%)
+      • 22:00 (1,462x, 14.6%)
+      • 01:00 (1,461x, 14.6%)
+      • 23:00 (1,460x, 14.6%)
+      • 20:00 (1,226x, 12.3%)
+
+🔍 Issues Found:
+
+📊 Column: station_name (String)
+   Nulls: 0 (0.0%)
+   Distinct values: 1,459
+   ⚠️  CASE DUPLICATES: 1 unique values with case variations
+      'place du général de gaulle' → ['Place Du Général De Gaulle', 'Place du Général de Gaulle']
+   ⚠️  SPECIAL CHARS: 3,822 rows (38.2%)
+      Found chars: ['è', 'â', 'É', 'ç', 'ê', 'ô', 'é', 'à', "'", 'û']
+      Examples: ['Félix Faure - Convention', 'Lucien Bossoutrot - Général Martial Vallin']
+
+
+⏱️  Audit Duration Breakdown:
+   • string_checks: 0.030s
+   • date_checks: 0.013s
+   • Total: 0.08s
+
+🔒 Closed BIGQUERY connection
+
+⏱️  Table Audit Phase Breakdown:
+   • Connection: 1.182s
+   • Metadata: 6.570s
+   • Data Loading: 2.645s
+   • Audit Checks: 0.078s
+   • Total Table Audit: 0.08s
+📄 HTML report saved to: audit_results/audit_run_20251020_193942/audit_fct_avaibility.html
+🌐 Opened report in browser
+📄 Results saved to: audit_results/audit_run_20251020_193942/audit_fct_avaibility.json
+📄 CSV saved to: audit_results/audit_run_20251020_193942/audit_fct_avaibility.csv
+📄 Column summary CSV saved to: audit_results/audit_run_20251020_193942/audit_fct_avaibility_summary.csv
+
+======================================================================
+🔍 Auditing table: dim_station
+======================================================================
+🔐 Secure audit mode: Direct database query via Ibis (no file export)
+✅ Connected to BIGQUERY
+🔖 Table UID: portfolio-402.dbt_prod.dim_station
+📑 Table type: BASE TABLE
+📊 Table has 1,587 rows
+🔑 Primary key from config: station_code
+✅ Loaded 1,587 rows into memory
+
+============================================================
+Auditing: dim_station
+Total rows in table: 1,587
+============================================================
+
+
+🔑 Potential primary key column(s): station_code, lat
+
+📋 Column Summary (All Columns):
+====================================================================================================
+Column Name                    Type            Status       Nulls           Distinct       
+----------------------------------------------------------------------------------------------------
+station_code                   Int64           - NOT_CHECKED 0 (0.0%)        1,587          
+station_name                   String          ✓ OK         0 (0.0%)        1,570          
+capacity                       Int64           - NOT_CHECKED 0 (0.0%)        72             
+lon                            Float64         - NOT_CHECKED 0 (0.0%)        1,586          
+lat                            Float64         - NOT_CHECKED 0 (0.0%)        1,587          
+city                           String          ✓ OK         0 (0.0%)        68             
+is_renting                     Boolean         - NOT_CHECKED 0 (0.0%)        2              
+is_returning                   Boolean         - NOT_CHECKED 0 (0.0%)        2              
+station_plus                   Boolean         - NOT_CHECKED 0 (0.0%)        2              
+====================================================================================================
+
+
+💡 Column Insights:
+
+📊 station_code:
+   Stats: min=1001.00, max=92008.00, mean=19021.43, median=17007.00
+   Quantiles: p25=11042.00, p50=17007.00, p75=22304.00
+
+📊 station_name:
+   Top 10 Values:
+      • 'René Boulanger - Lancry' (2x, 0.1%)
+      • 'Gare RER - Canadiens' (2x, 0.1%)
+      • 'Place Nelson Mandela' (2x, 0.1%)
+      • 'Simon Bolivar - Henri Turot' (2x, 0.1%)
+      • 'Buisson Saint-Louis - Saint-Maur' (2x, 0.1%)
+      • 'Paul Bodin - Clichy' (2x, 0.1%)
+      • 'Evariste Galois' (2x, 0.1%)
+      • 'Square Bela Bartok' (2x, 0.1%)
+      • 'Place des Marseillais' (2x, 0.1%)
+      • 'Quai des Célestins - Henri IV' (2x, 0.1%)
+   Length: min=6, max=58, avg=23.88
+
+📊 capacity:
+   Top 5 Values:
+      • '30.0' (93x, 5.9%)
+      • '20.0' (82x, 5.2%)
+      • '28.0' (72x, 4.5%)
+      • '0.0' (71x, 4.5%)
+      • '25.0' (68x, 4.3%)
+   Stats: min=0.00, max=1200.00, mean=31.57, median=29.00
+   Quantiles: p10=17.00, p25=22.00, p50=29.00, p75=37.00, p90=50.00, p95=56.00, p99=68.00
+
+📊 lon:
+   Top 5 Values:
+      • '2.4345204234123234' (2x, 0.1%)
+      • '2.383553994571467' (1x, 0.1%)
+      • '2.3869940266013' (1x, 0.1%)
+      • '2.250257' (1x, 0.1%)
+      • '2.4398955702781677' (1x, 0.1%)
+   Stats: min=2.17, max=2.54, mean=2.34, median=2.34
+   Quantiles: p25=2.30, p50=2.34, p75=2.38
+
+📊 lat:
+   Top 5 Values:
+      • '48.86131452758348' (1x, 0.1%)
+      • '48.787714467944' (1x, 0.1%)
+      • '48.826262366227' (1x, 0.1%)
+      • '48.84970399548416' (1x, 0.1%)
+      • '48.863443132848' (1x, 0.1%)
+   Stats: min=48.76, max=48.96, mean=48.86, median=48.86
+   Quantiles: p25=48.84, p50=48.86, p75=48.88
+
+📊 city:
+   Top 10 Values:
+      • 'Paris' (1,056x, 66.5%)
+      • 'Boulogne-Billancourt' (29x, 1.8%)
+      • 'Montreuil' (24x, 1.5%)
+      • 'Issy-les-Moulineaux' (22x, 1.4%)
+      • 'Saint-Denis' (22x, 1.4%)
+      • 'Pantin' (21x, 1.3%)
+      • 'Ivry-sur-Seine' (18x, 1.1%)
+      • 'Vitry-sur-Seine' (17x, 1.1%)
+      • 'Neuilly-sur-Seine' (16x, 1.0%)
+      • 'Créteil' (16x, 1.0%)
+   Length: min=5, max=21, avg=7.4
+
+✅ No issues found!
+
+
+⏱️  Audit Duration Breakdown:
+   • string_checks: 0.007s
+   • Total: 0.02s
+
+🔒 Closed BIGQUERY connection
+
+⏱️  Table Audit Phase Breakdown:
+   • Connection: 0.314s
+   • Metadata: 5.833s
+   • Data Loading: 2.374s
+   • Audit Checks: 0.017s
+   • Total Table Audit: 0.02s
+📄 HTML report saved to: audit_results/audit_run_20251020_193942/audit_dim_station.html
+🌐 Opened report in browser
+📄 Results saved to: audit_results/audit_run_20251020_193942/audit_dim_station.json
+📄 CSV saved to: audit_results/audit_run_20251020_193942/audit_dim_station.csv
+📄 Column summary CSV saved to: audit_results/audit_run_20251020_193942/audit_dim_station_summary.csv
+
+======================================================================
+🔍 Auditing table: dtm_station_distance
+======================================================================
+🔐 Secure audit mode: Direct database query via Ibis (no file export)
+✅ Connected to BIGQUERY
+🔖 Table UID: portfolio-402.dbt_prod.dtm_station_distance
+📑 Table type: BASE TABLE
+📊 Table has 2,516,982 rows
+🔍 Sampling 10,000 rows from table using 'random' method
+✅ Loaded 10,000 rows into memory
+
+============================================================
+Auditing: dtm_station_distance
+Total rows in table: 2,516,982
+Analyzing sample: 10,000 rows
+============================================================
+
+
+📋 Column Summary (All Columns):
+====================================================================================================
+Column Name                    Type            Status       Nulls           Distinct       
+----------------------------------------------------------------------------------------------------
+origin_station_code            Int64           - NOT_CHECKED 0 (0.0%)        1,583          
+origin_station_name            String          ✗ ERROR      0 (0.0%)        1,566          
+dest_station_code              Int64           - NOT_CHECKED 0 (0.0%)        1,584          
+dest_station_name              String          ✗ ERROR      0 (0.0%)        1,567          
+distance_meters                Float64         - NOT_CHECKED 0 (0.0%)        9,973          
+====================================================================================================
+
+
+💡 Column Insights:
+
+📊 origin_station_code:
+   Top 5 Values:
+      • '23009.0' (17x, 0.2%)
+      • '47006.0' (15x, 0.1%)
+      • '14019.0' (15x, 0.1%)
+      • '19036.0' (15x, 0.1%)
+      • '6027.0' (14x, 0.1%)
+   Stats: min=1001.00, max=92008.00, mean=19271.25, median=17020.50
+   Quantiles: p25=11107.00, p50=17021.00, p75=22603.00
+
+📊 origin_station_name:
+   Top 10 Values:
+      • 'Verdun - Carnot' (23x, 0.2%)
+      • 'Les Planètes' (22x, 0.2%)
+      • 'Anatole France - Louise Michel' (17x, 0.2%)
+      • 'Sarrette - Général Leclerc' (15x, 0.1%)
+      • 'Réaumur - Montmartre' (15x, 0.1%)
+      • 'Evariste Galois' (15x, 0.1%)
+      • 'Hôpital Robert Debré' (15x, 0.1%)
+      • 'Gare RER - Canadiens' (15x, 0.1%)
+      • 'Blaise-Desgoffe - Vaugirard' (14x, 0.1%)
+      • 'Place des Marseillais' (14x, 0.1%)
+   Length: min=6, max=58, avg=23.86
+
+📊 dest_station_code:
+   Top 5 Values:
+      • '24010.0' (15x, 0.1%)
+      • '12153.0' (15x, 0.1%)
+      • '6029.0' (15x, 0.1%)
+      • '12005.0' (14x, 0.1%)
+      • '5021.0' (14x, 0.1%)
+   Stats: min=1001.00, max=92008.00, mean=19161.21, median=17020.00
+   Quantiles: p25=11047.00, p50=17020.00, p75=22402.00
+
+📊 dest_station_name:
+   Top 10 Values:
+      • 'Verdun - Carnot' (19x, 0.2%)
+      • 'Simon Bolivar - Henri Turot' (16x, 0.2%)
+      • 'Charles de Gaulle - Rue de l'Alma' (15x, 0.1%)
+      • 'Vaugirard - Monsieur le Prince' (15x, 0.1%)
+      • 'Terroirs de France - Lheureux' (15x, 0.1%)
+      • 'Gaston Roussel - Commune de Paris' (15x, 0.1%)
+      • 'Quai du Président Roosevelt - Pont Aval' (14x, 0.1%)
+      • 'Chevreuse - Montparnasse' (14x, 0.1%)
+      • 'Place des Marseillais' (14x, 0.1%)
+      • 'Jussieu - Fossés Saint-Bernard' (14x, 0.1%)
+   Length: min=6, max=58, avg=23.96
+
+📊 distance_meters:
+   Top 5 Values:
+      • '11815.350457290771' (2x, 0.0%)
+      • '3222.456417348665' (2x, 0.0%)
+      • '4075.0939773416603' (2x, 0.0%)
+      • '9970.391487427414' (2x, 0.0%)
+      • '10205.573439698885' (2x, 0.0%)
+   Stats: min=136.57, max=25248.38, mean=7000.72, median=6539.10
+   Quantiles: p25=4161.79, p50=6539.32, p75=9270.36
+
+🔍 Issues Found:
+
+📊 Column: origin_station_name (String)
+   Nulls: 0 (0.0%)
+   Distinct values: 1,566
+   ⚠️  CASE DUPLICATES: 1 unique values with case variations
+      'place du général de gaulle' → ['Place Du Général De Gaulle', 'Place du Général de Gaulle']
+   ⚠️  SPECIAL CHARS: 3,771 rows (37.7%)
+      Found chars: ['è', 'â', 'ç', 'ê', 'ô', 'ï', 'é', 'ü', "'"]
+      Examples: ['Le Corbusier - Jean Jaurès', 'Mairie du 11ème']
+
+📊 Column: dest_station_name (String)
+   Nulls: 0 (0.0%)
+   Distinct values: 1,567
+   ⚠️  CASE DUPLICATES: 1 unique values with case variations
+      'place du général de gaulle' → ['Place du Général de Gaulle', 'Place Du Général De Gaulle']
+   ⚠️  SPECIAL CHARS: 3,872 rows (38.7%)
+      Found chars: ['è', 'â', 'ç', 'ê', 'ô', 'î', 'é', 'à', "'", 'û']
+      Examples: ['Stalingrad - Général de Gaulle', 'Mairie du Kremlin-Bicêtre']
+
+
+⏱️  Audit Duration Breakdown:
+   • string_checks: 0.024s
+   • Total: 0.03s
+
+🔒 Closed BIGQUERY connection
+
+⏱️  Table Audit Phase Breakdown:
+   • Connection: 0.289s
+   • Metadata: 5.876s
+   • Data Loading: 3.367s
+   • Audit Checks: 0.035s
+   • Total Table Audit: 0.03s
+📄 HTML report saved to: audit_results/audit_run_20251020_193942/audit_dtm_station_distance.html
+🌐 Opened report in browser
+📄 Results saved to: audit_results/audit_run_20251020_193942/audit_dtm_station_distance.json
+📄 CSV saved to: audit_results/audit_run_20251020_193942/audit_dtm_station_distance.csv
+📄 Column summary CSV saved to: audit_results/audit_run_20251020_193942/audit_dtm_station_distance_summary.csv
+
+======================================================================
+✅ Audit completed! Results saved to: audit_results/audit_run_20251020_193942
+⏱️  Total duration: 29.16 seconds
+📝 Logs saved to: audit_results/audit_run_20251020_193942/audit.log
+======================================================================

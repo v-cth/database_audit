@@ -1,0 +1,5 @@
+table_name,total_rows,analyzed_rows,sampled,column_name,column_dtype,null_count,null_pct,distinct_count,issue_type,issue_count,issue_pct,suggestion,examples,audit_timestamp
+dtm_station_distance,2516982,10000,true,origin_station_name,String,0,0.0,1566,CASE_DUPLICATES,1,0.0,"","[('place du général de gaulle', ['Place Du Général De Gaulle', 'Place du Général de Gaulle'])]",2025-10-20T19:40:11.162806
+dtm_station_distance,2516982,10000,true,origin_station_name,String,0,0.0,1566,SPECIAL_CHARACTERS,3771,37.71,"","['Le Corbusier - Jean Jaurès', 'Mairie du 11ème']",2025-10-20T19:40:11.162806
+dtm_station_distance,2516982,10000,true,dest_station_name,String,0,0.0,1567,CASE_DUPLICATES,1,0.0,"","[('place du général de gaulle', ['Place du Général de Gaulle', 'Place Du Général De Gaulle'])]",2025-10-20T19:40:11.162806
+dtm_station_distance,2516982,10000,true,dest_station_name,String,0,0.0,1567,SPECIAL_CHARACTERS,3872,38.72,"","['Stalingrad - Général de Gaulle', 'Mairie du Kremlin-Bicêtre']",2025-10-20T19:40:11.162806
