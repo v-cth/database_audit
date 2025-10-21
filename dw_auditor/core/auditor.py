@@ -98,7 +98,8 @@ class SecureTableAuditor(AuditorExporterMixin):
         user_primary_key: Optional[List[str]] = None,
         column_check_config: Optional[any] = None,
         sampling_method: str = 'random',
-        sampling_key_column: Optional[str] = None
+        sampling_key_column: Optional[str] = None,
+        discover_mode: bool = False
     ) -> Dict:
         """
         Audit table directly from database using Ibis (RECOMMENDED)
@@ -128,6 +129,7 @@ class SecureTableAuditor(AuditorExporterMixin):
             sample_in_db: Use database sampling for large tables (faster & more secure)
             custom_query: Custom SQL query instead of SELECT * (advanced)
             custom_pii_keywords: Additional PII keywords beyond defaults
+            discover_mode: Discovery mode - skip quality checks and insights (only metadata)
 
         Returns:
             Dictionary with audit results
@@ -260,7 +262,8 @@ class SecureTableAuditor(AuditorExporterMixin):
                 table_name,
                 total_row_count=row_count,
                 primary_key_columns=primary_key_columns,
-                column_check_config=column_check_config
+                column_check_config=column_check_config,
+                discover_mode=discover_mode
             )
             phase_timings['audit_checks'] = (datetime.now() - phase_start).total_seconds()
 
@@ -322,7 +325,8 @@ class SecureTableAuditor(AuditorExporterMixin):
         check_config: Optional[Dict] = None,
         total_row_count: Optional[int] = None,
         primary_key_columns: Optional[List[str]] = None,
-        column_check_config: Optional[any] = None
+        column_check_config: Optional[any] = None,
+        discover_mode: bool = False
     ) -> Dict:
         """
         Main audit function - runs all checks on a Polars DataFrame
@@ -332,6 +336,9 @@ class SecureTableAuditor(AuditorExporterMixin):
             table_name: Name of the table for reporting
             check_config: Optional configuration for which checks to run
             total_row_count: Optional total row count from database (if known)
+            primary_key_columns: Optional list of primary key column names
+            column_check_config: Optional column-level check configuration
+            discover_mode: Discovery mode - skip quality checks and insights (only metadata)
 
         Returns:
             Dictionary with audit results
@@ -397,12 +404,15 @@ class SecureTableAuditor(AuditorExporterMixin):
                 # Fallback to global check_config
                 col_check_config = check_config or {}
 
-            col_results = self._audit_column(df, col, col_check_config, primary_key_columns)
+            col_results = self._audit_column(df, col, col_check_config, primary_key_columns, discover_mode)
             col_duration = (datetime.now() - col_start).total_seconds()
 
             # Determine status based on column type and issues found
             dtype = df[col].dtype
-            if dtype in [pl.Utf8, pl.String, pl.Datetime, pl.Date]:
+            if discover_mode:
+                # In discover mode, all columns are marked as DISCOVERED
+                status = 'DISCOVERED'
+            elif dtype in [pl.Utf8, pl.String, pl.Datetime, pl.Date]:
                 # Columns that are checked for quality issues
                 status = 'ERROR' if col_results['issues'] else 'OK'
                 check_type = 'string_checks' if dtype in [pl.Utf8, pl.String] else 'date_checks'
@@ -428,8 +438,8 @@ class SecureTableAuditor(AuditorExporterMixin):
             if col_results['issues']:
                 results['columns'][col] = col_results
 
-            # Generate column insights
-            if column_check_config and hasattr(column_check_config, 'get_column_insights'):
+            # Generate column insights (skip in discover mode)
+            if not discover_mode and column_check_config and hasattr(column_check_config, 'get_column_insights'):
                 col_insights_config = column_check_config.get_column_insights(table_name, col, col_dtype)
                 if col_insights_config:
                     insights = generate_column_insights(df, col, col_insights_config)
@@ -486,8 +496,16 @@ class SecureTableAuditor(AuditorExporterMixin):
             'status': 'SKIPPED_COMPLEX_TYPE'
         }
 
-    def _audit_column(self, df: pl.DataFrame, col: str, check_config: Dict, primary_key_columns: Optional[List[str]] = None) -> Dict:
-        """Audit a single column for all issues"""
+    def _audit_column(self, df: pl.DataFrame, col: str, check_config: Dict, primary_key_columns: Optional[List[str]] = None, discover_mode: bool = False) -> Dict:
+        """Audit a single column for all issues
+
+        Args:
+            df: Polars DataFrame
+            col: Column name
+            check_config: Configuration for which checks to run
+            primary_key_columns: Optional list of primary key column names
+            discover_mode: If True, skip quality checks (only return metadata)
+        """
         dtype = df[col].dtype
 
         # Check if complex type - skip detailed checks
@@ -507,6 +525,10 @@ class SecureTableAuditor(AuditorExporterMixin):
             'distinct_count': distinct_count,
             'issues': []
         }
+
+        # In discover mode, return only metadata (skip all checks)
+        if discover_mode:
+            return col_result
 
         # Skip if all nulls or masked
         if null_count == total_rows:

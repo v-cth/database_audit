@@ -1,2 +1,0 @@
-table_name,total_rows,sampled,analyzed_rows,column_count,issues_found,columns_with_issues,status,duration_seconds,audit_timestamp,table_type,created_time
-blocks,2000,false,2000,13,1,1,WARNING,0.09,2025-10-21T13:18:58.544876,BASE TABLE,2019-01-14 18:28:17.012000+00:00

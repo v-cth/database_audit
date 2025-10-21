@@ -294,36 +294,46 @@ def export_to_html(results: Dict, file_path: str = "audit_report.html") -> str:
             <h3 style="margin-top: 0; color: #4b5563;">📊 {col_name}</h3>
 """
 
-            # String insights - top values
+            # String insights - top values (visual bar chart)
             if 'top_values' in insights and insights['top_values']:
                 html += """
             <div style="margin-bottom: 15px;">
                 <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
-                        <thead>
-                            <tr style="background: #e5e7eb;">
-                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
-                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
-                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div style="background: white; padding: 10px; border-radius: 6px; border: 1px solid #e5e7eb;">
 """
+                # Find max percentage for scaling if needed
+                max_pct = max((item['percentage'] for item in insights['top_values']), default=100)
+
                 for item in insights['top_values']:
-                    value_str = str(item['value'])[:50]
-                    if len(str(item['value'])) > 50:
-                        value_str += '...'
+                    value_str = str(item['value'])
+                    full_value = value_str  # Keep full value for hover
+
+                    # Truncate display value if too long
+                    if len(value_str) > 35:
+                        value_str = value_str[:32] + '...'
+
+                    # Calculate bar width (percentage of max)
+                    bar_width = item['percentage']
+
+                    # Color gradient based on percentage (darker = more common)
+                    if item['percentage'] > 50:
+                        bar_color = '#3b82f6'  # Blue for high percentage
+                    elif item['percentage'] > 20:
+                        bar_color = '#60a5fa'  # Light blue for medium
+                    else:
+                        bar_color = '#93c5fd'  # Lighter blue for low
+
                     html += f"""
-                            <tr style="border-bottom: 1px solid #e5e7eb;">
-                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>{value_str}</code></td>
-                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">{item['count']:,}</td>
-                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">{item['percentage']:.1f}%</td>
-                            </tr>
+                    <div style="background: linear-gradient(to right, {bar_color} 0%, {bar_color} {bar_width}%, #f3f4f6 {bar_width}%, #f3f4f6 100%);
+                                border-radius: 4px; padding: 6px 10px; margin: 3px 0;
+                                font-size: 0.9em; position: relative; overflow: hidden;"
+                         title="{full_value}">
+                        <span style="font-weight: 500; color: #1f2937;"><code>{value_str}</code></span>
+                        <span style="float: right; font-weight: bold; color: #1f2937; margin-left: 8px;">{item['percentage']:.1f}%</span>
+                        <span style="float: right; color: #6b7280;">({item['count']:,})</span>
+                    </div>
 """
                 html += """
-                        </tbody>
-                    </table>
                 </div>
             </div>
 """
@@ -443,95 +453,98 @@ def export_to_html(results: Dict, file_path: str = "audit_report.html") -> str:
             </div>
 """
 
-            # DateTime - most common dates
+            # DateTime - most common dates (visual bar chart)
             if 'most_common_dates' in insights and insights['most_common_dates']:
                 html += """
             <div style="margin-bottom: 15px;">
                 <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Most Common Dates:</h4>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
-                        <thead>
-                            <tr style="background: #e5e7eb;">
-                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Date</th>
-                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
-                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div style="background: white; padding: 10px; border-radius: 6px; border: 1px solid #e5e7eb;">
 """
                 for item in insights['most_common_dates']:
+                    bar_width = item['percentage']
+
+                    # Color gradient based on percentage
+                    if item['percentage'] > 50:
+                        bar_color = '#10b981'  # Green for high percentage
+                    elif item['percentage'] > 20:
+                        bar_color = '#34d399'  # Light green for medium
+                    else:
+                        bar_color = '#6ee7b7'  # Lighter green for low
+
                     html += f"""
-                            <tr style="border-bottom: 1px solid #e5e7eb;">
-                                <td style="padding: 8px; border: 1px solid #d1d5db;">{item['date']}</td>
-                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">{item['count']:,}</td>
-                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">{item['percentage']:.1f}%</td>
-                            </tr>
+                    <div style="background: linear-gradient(to right, {bar_color} 0%, {bar_color} {bar_width}%, #f3f4f6 {bar_width}%, #f3f4f6 100%);
+                                border-radius: 4px; padding: 6px 10px; margin: 3px 0;
+                                font-size: 0.9em; position: relative; overflow: hidden;">
+                        <span style="font-weight: 500; color: #1f2937;">{item['date']}</span>
+                        <span style="float: right; font-weight: bold; color: #1f2937; margin-left: 8px;">{item['percentage']:.1f}%</span>
+                        <span style="float: right; color: #6b7280;">({item['count']:,})</span>
+                    </div>
 """
                 html += """
-                        </tbody>
-                    </table>
                 </div>
             </div>
 """
 
-            # DateTime - most common days of week
+            # DateTime - most common days of week (visual bar chart)
             if 'most_common_days' in insights and insights['most_common_days']:
                 html += """
             <div style="margin-bottom: 15px;">
                 <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Most Common Days of Week:</h4>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
-                        <thead>
-                            <tr style="background: #e5e7eb;">
-                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Day</th>
-                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
-                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div style="background: white; padding: 10px; border-radius: 6px; border: 1px solid #e5e7eb;">
 """
                 for item in insights['most_common_days']:
+                    bar_width = item['percentage']
+
+                    # Color gradient based on percentage
+                    if item['percentage'] > 50:
+                        bar_color = '#8b5cf6'  # Purple for high percentage
+                    elif item['percentage'] > 20:
+                        bar_color = '#a78bfa'  # Light purple for medium
+                    else:
+                        bar_color = '#c4b5fd'  # Lighter purple for low
+
                     html += f"""
-                            <tr style="border-bottom: 1px solid #e5e7eb;">
-                                <td style="padding: 8px; border: 1px solid #d1d5db;">{item['day']}</td>
-                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">{item['count']:,}</td>
-                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">{item['percentage']:.1f}%</td>
-                            </tr>
+                    <div style="background: linear-gradient(to right, {bar_color} 0%, {bar_color} {bar_width}%, #f3f4f6 {bar_width}%, #f3f4f6 100%);
+                                border-radius: 4px; padding: 6px 10px; margin: 3px 0;
+                                font-size: 0.9em; position: relative; overflow: hidden;">
+                        <span style="font-weight: 500; color: #1f2937;">{item['day']}</span>
+                        <span style="float: right; font-weight: bold; color: #1f2937; margin-left: 8px;">{item['percentage']:.1f}%</span>
+                        <span style="float: right; color: #6b7280;">({item['count']:,})</span>
+                    </div>
 """
                 html += """
-                        </tbody>
-                    </table>
                 </div>
             </div>
 """
 
-            # DateTime - most common hours
+            # DateTime - most common hours (visual bar chart)
             if 'most_common_hours' in insights and insights['most_common_hours']:
                 html += """
             <div style="margin-bottom: 15px;">
                 <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Most Common Hours:</h4>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
-                        <thead>
-                            <tr style="background: #e5e7eb;">
-                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Hour</th>
-                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
-                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div style="background: white; padding: 10px; border-radius: 6px; border: 1px solid #e5e7eb;">
 """
                 for item in insights['most_common_hours']:
+                    bar_width = item['percentage']
+
+                    # Color gradient based on percentage
+                    if item['percentage'] > 50:
+                        bar_color = '#f59e0b'  # Orange/amber for high percentage
+                    elif item['percentage'] > 20:
+                        bar_color = '#fbbf24'  # Light orange for medium
+                    else:
+                        bar_color = '#fcd34d'  # Lighter orange for low
+
                     html += f"""
-                            <tr style="border-bottom: 1px solid #e5e7eb;">
-                                <td style="padding: 8px; border: 1px solid #d1d5db;">{item['hour']:02d}:00</td>
-                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">{item['count']:,}</td>
-                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">{item['percentage']:.1f}%</td>
-                            </tr>
+                    <div style="background: linear-gradient(to right, {bar_color} 0%, {bar_color} {bar_width}%, #f3f4f6 {bar_width}%, #f3f4f6 100%);
+                                border-radius: 4px; padding: 6px 10px; margin: 3px 0;
+                                font-size: 0.9em; position: relative; overflow: hidden;">
+                        <span style="font-weight: 500; color: #1f2937;">{item['hour']:02d}:00</span>
+                        <span style="float: right; font-weight: bold; color: #1f2937; margin-left: 8px;">{item['percentage']:.1f}%</span>
+                        <span style="float: right; color: #6b7280;">({item['count']:,})</span>
+                    </div>
 """
                 html += """
-                        </tbody>
-                    </table>
                 </div>
             </div>
 """

@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 """
 Simple CLI for running database audits
-Usage: python audit.py [config_file]
+Usage: python audit.py [config_file] [--discover]
 """
 
 import sys
+import argparse
 import webbrowser
 from pathlib import Path
 from dw_auditor import AuditConfig, SecureTableAuditor
@@ -33,15 +34,40 @@ class TeeLogger:
 def main():
     from datetime import datetime
 
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description='Run database audit with quality checks and insights',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python audit.py                         # Use default config (audit_config.yaml)
+  python audit.py my_config.yaml          # Use custom config
+  python audit.py --discover              # Discovery mode (metadata only, no checks)
+  python audit.py my_config.yaml --discover
+        """
+    )
+    parser.add_argument(
+        'config_file',
+        nargs='?',
+        default='audit_config.yaml',
+        help='Path to YAML configuration file (default: audit_config.yaml)'
+    )
+    parser.add_argument(
+        '--discover',
+        action='store_true',
+        help='Discovery mode: collect metadata only (skip quality checks and insights)'
+    )
+
+    args = parser.parse_args()
+    config_file = args.config_file
+    discover_mode = args.discover
+
     # Start total timing
     total_start_time = datetime.now()
 
-    # Default config file
-    config_file = sys.argv[1] if len(sys.argv) > 1 else 'audit_config.yaml'
-
     if not Path(config_file).exists():
         print(f"❌ Config file not found: {config_file}")
-        print(f"Usage: python audit.py [config_file]")
+        print(f"Usage: python audit.py [config_file] [--discover]")
         sys.exit(1)
 
     # Load config
@@ -61,6 +87,10 @@ def main():
 
     print(f"📁 Audit run directory: {run_dir}")
     print(f"📝 Logs will be saved to: {log_file}")
+
+    # Show mode
+    if discover_mode:
+        print(f"🔍 Discovery mode: Collecting metadata only (skipping quality checks and insights)")
 
     # Create auditor
     auditor = SecureTableAuditor(
@@ -137,7 +167,8 @@ def main():
                     column_check_config=config,  # Pass entire config for column-level checks
                     sampling_method=sampling_config['method'],
                     sampling_key_column=sampling_config['key_column'],
-                    custom_query=custom_query
+                    custom_query=custom_query,
+                    discover_mode=discover_mode
                 )
 
                 # Store results for summary generation
