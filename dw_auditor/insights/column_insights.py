@@ -9,6 +9,23 @@ from .numeric_insights import generate_numeric_insights
 from .datetime_insights import generate_datetime_insights
 
 
+# Complex types that don't support insights
+def is_complex_type(dtype) -> bool:
+    """Check if dtype is a complex type"""
+    dtype_class = type(dtype)
+    complex_types = [pl.Struct, pl.List, pl.Array, pl.Binary, pl.Object]
+
+    for complex_type in complex_types:
+        if dtype_class == complex_type:
+            return True
+        try:
+            if isinstance(dtype, complex_type):
+                return True
+        except TypeError:
+            pass
+    return False
+
+
 def generate_column_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict:
     """
     Generate insights for a column based on its type
@@ -26,6 +43,10 @@ def generate_column_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict:
         return {}
 
     dtype = df[col].dtype
+
+    # Skip complex types
+    if is_complex_type(dtype):
+        return {'note': 'Complex type - insights not supported'}
 
     # Route to appropriate insights generator based on type
     if dtype in [pl.Utf8, pl.String]:

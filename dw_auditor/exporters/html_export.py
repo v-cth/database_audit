@@ -256,10 +256,14 @@ def export_to_html(results: Dict, file_path: str = "audit_report.html") -> str:
                 status_badge = '<span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">✓ OK</span>'
             elif status == 'ERROR':
                 status_badge = '<span style="background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">✗ ERROR</span>'
+            elif status == 'SKIPPED_COMPLEX_TYPE':
+                status_badge = '<span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">⊘ SKIPPED</span>'
             else:
                 status_badge = '<span style="background: #f3f4f6; color: #6b7280; padding: 4px 8px; border-radius: 12px; font-size: 0.85em;">- N/A</span>'
 
             col_name_display = f"🔑 {col_name}" if is_primary_key else col_name
+            # Handle None for distinct_count (complex types)
+            distinct_display = f"{col_data['distinct_count']:,}" if col_data['distinct_count'] is not None else "N/A"
             html += f"""
                     <tr style="border-bottom: 1px solid #e5e7eb; background: {row_color};">
                         <td style="padding: 10px; font-weight: {'bold' if is_primary_key else '500'};">{col_name_display}</td>
@@ -267,7 +271,7 @@ def export_to_html(results: Dict, file_path: str = "audit_report.html") -> str:
                         <td style="padding: 10px; text-align: center;">{status_badge}</td>
                         <td style="padding: 10px; text-align: right; color: #6b7280;">{col_data['null_count']:,}</td>
                         <td style="padding: 10px; text-align: right; color: {'#dc2626' if null_pct > 10 else '#6b7280'}; font-weight: {'bold' if null_pct > 10 else 'normal'};">{null_pct:.1f}%</td>
-                        <td style="padding: 10px; text-align: right; color: #6b7280;">{col_data['distinct_count']:,}</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">{distinct_display}</td>
                     </tr>
 """
         html += """
@@ -537,6 +541,21 @@ def export_to_html(results: Dict, file_path: str = "audit_report.html") -> str:
 """
 
         html += """
+    </div>
+"""
+
+    # Check for skipped complex type columns
+    skipped_complex_types = [col for col, data in results.get('column_summary', {}).items()
+                             if data.get('status') == 'SKIPPED_COMPLEX_TYPE']
+
+    if skipped_complex_types:
+        html += f"""
+    <div class="summary" style="background: #fffbeb; border-left: 4px solid #f59e0b;">
+        <h3 style="color: #92400e; margin: 0 0 10px 0;">ℹ️ Skipped Complex Types</h3>
+        <p style="margin: 0; color: #78350f;">
+            {len(skipped_complex_types)} column(s) with complex data types (Struct, List, Array, Binary) were skipped from quality checks:
+            <strong>{', '.join(skipped_complex_types)}</strong>
+        </p>
     </div>
 """
 

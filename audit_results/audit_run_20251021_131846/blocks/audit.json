@@ -1,0 +1,805 @@
+{
+  "table_name": "blocks",
+  "total_rows": 2000,
+  "sampled": false,
+  "analyzed_rows": 2000,
+  "columns": {
+    "bits": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 3,
+      "issues": [
+        {
+          "type": "NUMERIC_STRINGS",
+          "count": 1834,
+          "pct": 91.7,
+          "suggestion": "Consider converting to numeric type",
+          "examples": [
+            "17056102",
+            "17056102",
+            "17056102"
+          ]
+        }
+      ]
+    }
+  },
+  "column_summary": {
+    "hash": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2000,
+      "status": "OK"
+    },
+    "size": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1999,
+      "status": "NOT_CHECKED"
+    },
+    "stripped_size": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1998,
+      "status": "NOT_CHECKED"
+    },
+    "weight": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1116,
+      "status": "NOT_CHECKED"
+    },
+    "number": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2000,
+      "status": "NOT_CHECKED"
+    },
+    "version": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1304,
+      "status": "NOT_CHECKED"
+    },
+    "merkle_root": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2000,
+      "status": "OK"
+    },
+    "timestamp": {
+      "dtype": "Datetime(time_unit='ns', time_zone='UTC')",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2000,
+      "status": "OK"
+    },
+    "timestamp_month": {
+      "dtype": "Date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2,
+      "status": "OK"
+    },
+    "nonce": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2000,
+      "status": "OK"
+    },
+    "bits": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 3,
+      "status": "ERROR"
+    },
+    "coinbase_param": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2000,
+      "status": "OK"
+    },
+    "transaction_count": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1595,
+      "status": "NOT_CHECKED"
+    }
+  },
+  "column_insights": {
+    "hash": {
+      "top_values": [
+        {
+          "value": "00000000000000000000587b82368517730d23c781634ee82c5c7f65302aaab4",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "00000000000000000002bdb37639ea34a9a0254ae11fb9d651069ccd5a0caa51",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "00000000000000000001579c0518ae449ed1a0dad52ef609a5da4eb69b568110",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "00000000000000000000c3cf78596904f3296e4a2f22cc47b8c4186909a2be65",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "00000000000000000002dc8e2ccb02e847b5589897a0e95afcb074e2ddc2263a",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "00000000000000000003b7449f51b9734c3da4fbaf08f7073046a266fe87b1fa",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "000000000000000000003e6013f2ca0725a3f1d926802f585ae0b427459475b4",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "000000000000000000030e4dd51e45030411dd8b12f04b6f9d9c9c4c40f0ae56",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "0000000000000000000263c9e7a19fde94da0d24be546b9aa32116556808f5e2",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "00000000000000000003ebef28f91c20ccbc948055520a56b695a7a05a96a259",
+          "count": 1,
+          "percentage": 0.05
+        }
+      ],
+      "length_stats": {
+        "min": 64,
+        "max": 64,
+        "avg": 64.0
+      }
+    },
+    "size": {
+      "min": 441.0,
+      "max": 3629407.0,
+      "mean": 1659512.4015,
+      "median": 1639800.0,
+      "quantiles": {
+        "p25": 1508784.0,
+        "p50": 1639992.0,
+        "p75": 1814897.0
+      },
+      "top_values": [
+        {
+          "value": 1406559.0,
+          "count": 2,
+          "percentage": 0.1
+        },
+        {
+          "value": 1871826.0,
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": 1479256.0,
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": 1791874.0,
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": 1497331.0,
+          "count": 1,
+          "percentage": 0.05
+        }
+      ]
+    },
+    "stripped_size": {
+      "min": 405.0,
+      "max": 993971.0,
+      "mean": 761924.219,
+      "median": 781593.0,
+      "quantiles": {
+        "p25": 721411.0,
+        "p50": 781600.0,
+        "p75": 824738.0
+      },
+      "top_values": [
+        {
+          "value": 815777.0,
+          "count": 2,
+          "percentage": 0.1
+        },
+        {
+          "value": 779289.0,
+          "count": 2,
+          "percentage": 0.1
+        },
+        {
+          "value": 793575.0,
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": 769188.0,
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": 682814.0,
+          "count": 1,
+          "percentage": 0.05
+        }
+      ]
+    },
+    "weight": {
+      "min": 1656.0,
+      "max": 3998359.0,
+      "mean": 3945285.0585,
+      "median": 3993211.5,
+      "quantiles": {
+        "p25": 3992945.0,
+        "p50": 3993212.0,
+        "p75": 3993533.0
+      },
+      "top_values": [
+        {
+          "value": 3993396.0,
+          "count": 8,
+          "percentage": 0.4
+        },
+        {
+          "value": 3993038.0,
+          "count": 8,
+          "percentage": 0.4
+        },
+        {
+          "value": 3993021.0,
+          "count": 7,
+          "percentage": 0.35000000000000003
+        },
+        {
+          "value": 3993028.0,
+          "count": 7,
+          "percentage": 0.35000000000000003
+        },
+        {
+          "value": 3993051.0,
+          "count": 6,
+          "percentage": 0.3
+        }
+      ]
+    },
+    "number": {
+      "min": 798336.0,
+      "max": 920088.0,
+      "mean": 809486.8675,
+      "median": 799545.5,
+      "quantiles": {
+        "p25": 798942.0,
+        "p50": 799546.0,
+        "p75": 800129.0
+      },
+      "top_values": [
+        {
+          "value": 799354.0,
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": 801051.0,
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": 799720.0,
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": 920074.0,
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": 798577.0,
+          "count": 1,
+          "percentage": 0.05
+        }
+      ]
+    },
+    "version": {
+      "min": 536870912.0,
+      "max": 1073733632.0,
+      "mean": 651580813.43,
+      "median": 604397568.0,
+      "quantiles": {
+        "p25": 541065216.0,
+        "p50": 604815360.0,
+        "p75": 734633984.0
+      },
+      "top_values": [
+        {
+          "value": 536870912.0,
+          "count": 155,
+          "percentage": 7.75
+        },
+        {
+          "value": 541065216.0,
+          "count": 54,
+          "percentage": 2.7
+        },
+        {
+          "value": 1073676288.0,
+          "count": 52,
+          "percentage": 2.6
+        },
+        {
+          "value": 536879104.0,
+          "count": 48,
+          "percentage": 2.4
+        },
+        {
+          "value": 545259520.0,
+          "count": 43,
+          "percentage": 2.15
+        }
+      ]
+    },
+    "merkle_root": {
+      "top_values": [
+        {
+          "value": "b92492dafa6476c66d88fc333240a1bba7a662c732ce513a320058d4969ba0b4",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "90d348ef58f359a1473d86778349e2fbaaf74b2ba052b1d3b4e7a26dbe6923ef",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "9b97bc9cf5ca325f715885d90a189aceebfeecf41fb8f584264a51314aaf9bad",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "3dc6097bdbb43acb75909e17056679d2057c9c6fb64e2b23f1f0e942d34936a2",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "48f6c063f29a408d693dc3817c009947e8cbd7f1dd46fecd941c5be0511ce6db",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "fdf94cbe62312e60b34a0f61dce3c2081fc013bb87e642788e2f26d7e3201cf6",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "4e49ad9c7ab06536ef1960973d88af5f4f9220be2c9153199aa4f9e694f30087",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "4ccca59715a087277ac7689883ab5532f8b9ef06c1f904ae3565ef18cfdaf942",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "a8aec1563e7ca1750dd1608c115b972a6319de4eb19d4d496616777b85a86d54",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "bafdc4d68d78925c9606e140e267ab6800c416d0714b52e617f94d56b41fc092",
+          "count": 1,
+          "percentage": 0.05
+        }
+      ],
+      "length_stats": {
+        "min": 64,
+        "max": 64,
+        "avg": 64.0
+      }
+    },
+    "timestamp": {
+      "min_date": "2023-07-12 02:29:39+00:00",
+      "max_date": "2025-10-21 10:01:02+00:00",
+      "date_range_days": 832,
+      "most_common_dates": [
+        {
+          "date": "2023-07-31",
+          "count": 141,
+          "percentage": 7.049999999999999
+        },
+        {
+          "date": "2023-07-18",
+          "count": 135,
+          "percentage": 6.75
+        },
+        {
+          "date": "2023-07-24",
+          "count": 130,
+          "percentage": 6.5
+        },
+        {
+          "date": "2023-07-19",
+          "count": 125,
+          "percentage": 6.25
+        },
+        {
+          "date": "2023-07-16",
+          "count": 125,
+          "percentage": 6.25
+        }
+      ],
+      "most_common_hours": [
+        {
+          "hour": 9,
+          "count": 111,
+          "percentage": 5.55
+        },
+        {
+          "hour": 3,
+          "count": 106,
+          "percentage": 5.3
+        },
+        {
+          "hour": 4,
+          "count": 98,
+          "percentage": 4.9
+        },
+        {
+          "hour": 19,
+          "count": 98,
+          "percentage": 4.9
+        },
+        {
+          "hour": 12,
+          "count": 96,
+          "percentage": 4.8
+        },
+        {
+          "hour": 6,
+          "count": 95,
+          "percentage": 4.75
+        },
+        {
+          "hour": 10,
+          "count": 92,
+          "percentage": 4.6
+        },
+        {
+          "hour": 20,
+          "count": 88,
+          "percentage": 4.3999999999999995
+        },
+        {
+          "hour": 2,
+          "count": 88,
+          "percentage": 4.3999999999999995
+        },
+        {
+          "hour": 13,
+          "count": 84,
+          "percentage": 4.2
+        }
+      ],
+      "most_common_days": [
+        {
+          "day": "Monday",
+          "weekday": 1,
+          "count": 481,
+          "percentage": 24.05
+        },
+        {
+          "day": "Tuesday",
+          "weekday": 2,
+          "count": 324,
+          "percentage": 16.2
+        },
+        {
+          "day": "Wednesday",
+          "weekday": 3,
+          "count": 302,
+          "percentage": 15.1
+        },
+        {
+          "day": "Sunday",
+          "weekday": 7,
+          "count": 247,
+          "percentage": 12.35
+        },
+        {
+          "day": "Saturday",
+          "weekday": 6,
+          "count": 224,
+          "percentage": 11.200000000000001
+        },
+        {
+          "day": "Friday",
+          "weekday": 5,
+          "count": 218,
+          "percentage": 10.9
+        },
+        {
+          "day": "Thursday",
+          "weekday": 4,
+          "count": 204,
+          "percentage": 10.2
+        }
+      ],
+      "timezone": "UTC"
+    },
+    "timestamp_month": {
+      "min_date": "2023-07-01",
+      "max_date": "2025-10-01",
+      "date_range_days": 823,
+      "most_common_dates": [
+        {
+          "date": "2023-07-01",
+          "count": 1834,
+          "percentage": 91.7
+        },
+        {
+          "date": "2025-10-01",
+          "count": 166,
+          "percentage": 8.3
+        }
+      ],
+      "most_common_days": [
+        {
+          "day": "Saturday",
+          "weekday": 6,
+          "count": 1834,
+          "percentage": 91.7
+        },
+        {
+          "day": "Wednesday",
+          "weekday": 3,
+          "count": 166,
+          "percentage": 8.3
+        }
+      ],
+      "timezone": "None (timezone-naive)"
+    },
+    "nonce": {
+      "top_values": [
+        {
+          "value": "86451376",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "4bc0543",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "4c82a740",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "a9f1f061",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "bc5b6e1a",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "66931abe",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "e7be4554",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "a010057d",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "65e28e18",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "246c8ea3",
+          "count": 1,
+          "percentage": 0.05
+        }
+      ],
+      "length_stats": {
+        "min": 6,
+        "max": 8,
+        "avg": 7.93
+      }
+    },
+    "bits": {
+      "top_values": [
+        {
+          "value": "17053894",
+          "count": 1693,
+          "percentage": 84.65
+        },
+        {
+          "value": "1701eb21",
+          "count": 166,
+          "percentage": 8.3
+        },
+        {
+          "value": "17056102",
+          "count": 141,
+          "percentage": 7.049999999999999
+        }
+      ],
+      "length_stats": {
+        "min": 8,
+        "max": 8,
+        "avg": 8.0
+      }
+    },
+    "coinbase_param": {
+      "top_values": [
+        {
+          "value": "0345360c044ddfc0642f466f756e6472792055534120506f6f6c202364726f70676f6c642f2b6051397c01000000000000",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "033b320c04cff0b6642f466f756e6472792055534120506f6f6c202364726f70676f6c642f027ec8c60505000000000000",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "038d350c1b4d696e656420627920416e74506f6f6c383733a4000100362b0c06fabe6d6d3ea376bf9ddae70af36c6a80660a6330009c115033bf79f8fdea7c226cb96ef002000000000000000000c6f7fd20000000000000",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "03d4350c0b2f4d61726120506f6f6c2f1a01000200000003000000c5153c58ab03000000000000",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "03c6330c0464f8ba642f466f756e6472792055534120506f6f6c202364726f70676f6c642f3885ca53360f000000000000",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "033f390c0431d2c7642f466f756e6472792055534120506f6f6c202364726f70676f6c642f3e601933dbc4000000000000",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "0309330c194d696e656420627920416e74506f6f6c204100480497220be2fabe6d6d7c183b319ff2abeccaf7850a0281c0eeb0ae0443691db809644aee00b05692e90200000000000000000103968163010000000000",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "03cc350c194d696e656420627920416e74506f6f6c2040006905fd1f53f6fabe6d6d981a40d113be667aa1b60fcaa55fab6729ac9a0e5dc1eb65bf96fbea76866b6b0200000000000000198a0000a362000000000000",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "039a2f0c194d696e656420627920416e74506f6f6c2041004804747244f5fabe6d6dd664748ea527c23f363ce1b73b410cd1851b6ae69393463855f6f740dba53409020000000000000020370000de00000000000000",
+          "count": 1,
+          "percentage": 0.05
+        },
+        {
+          "value": "03a52e0ca2002f42696e616e63652f313632fabe6d6d94ee0a22e90198123f6e9313f74e8bd51907af9cba79c81c9b6b8092d1bad8af010000000000000088921064ea0ca5de72aa35a8e82a72fca200e0cefb2a010000000000",
+          "count": 1,
+          "percentage": 0.05
+        }
+      ],
+      "length_stats": {
+        "min": 50,
+        "max": 200,
+        "avg": 147.56
+      }
+    },
+    "transaction_count": {
+      "min": 1.0,
+      "max": 7215.0,
+      "mean": 3251.0105,
+      "median": 3124.5,
+      "quantiles": {
+        "p25": 2412.0,
+        "p50": 3125.0,
+        "p75": 3912.0
+      },
+      "top_values": [
+        {
+          "value": 2687.0,
+          "count": 6,
+          "percentage": 0.3
+        },
+        {
+          "value": 3173.0,
+          "count": 5,
+          "percentage": 0.25
+        },
+        {
+          "value": 3174.0,
+          "count": 4,
+          "percentage": 0.2
+        },
+        {
+          "value": 3192.0,
+          "count": 4,
+          "percentage": 0.2
+        },
+        {
+          "value": 2153.0,
+          "count": 4,
+          "percentage": 0.2
+        }
+      ]
+    }
+  },
+  "timestamp": "2025-10-21T13:18:58.544876",
+  "start_time": "2025-10-21T13:18:58.544876",
+  "check_durations": {
+    "string_checks": 0.057297,
+    "date_checks": 0.015157
+  },
+  "potential_primary_keys": [
+    "hash",
+    "number",
+    "merkle_root",
+    "timestamp",
+    "nonce",
+    "coinbase_param"
+  ],
+  "end_time": "2025-10-21T13:18:58.635637",
+  "duration_seconds": 0.09,
+  "table_metadata": {
+    "table_name": "blocks",
+    "table_type": "BASE TABLE",
+    "created_time": "2019-01-14 18:28:17.012000+00:00",
+    "table_uid": "bigquery-public-data.crypto_bitcoin.blocks",
+    "row_count": 2000,
+    "primary_key_columns": [
+      "block_id"
+    ],
+    "primary_key_source": "user_config",
+    "query_result_count": 2000
+  },
+  "phase_timings": {
+    "connection": 1.299747,
+    "metadata": 6.99225,
+    "data_loading": 3.9294,
+    "audit_checks": 0.092533
+  }
+}

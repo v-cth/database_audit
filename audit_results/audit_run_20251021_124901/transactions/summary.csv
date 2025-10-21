@@ -1,0 +1,12 @@
+table_name,column_name,data_type,status,null_count,null_pct,distinct_count
+transactions,timestamp,Int64,NOT_CHECKED,0,0.0,11368
+transactions,transaction_id,String,OK,0,0.0,20000
+transactions,inputs,"List(Struct({'input_script_bytes': Binary, 'input_script_string': String, 'input_script_string_error': String, 'input_sequence_number': Int64, 'input_pubkey_base58': String, 'input_pubkey_base58_error': String}))",NOT_CHECKED,0,0.0,
+transactions,outputs,"List(Struct({'output_satoshis': Int64, 'output_script_bytes': Binary, 'output_script_string': String, 'output_script_string_error': String, 'output_pubkey_base58': String, 'output_pubkey_base58_error': String}))",NOT_CHECKED,0,0.0,
+transactions,block_id,String,OK,0,0.0,11369
+transactions,previous_block,String,OK,0,0.0,11369
+transactions,merkle_root,String,OK,0,0.0,11369
+transactions,nonce,Int64,NOT_CHECKED,0,0.0,11369
+transactions,version,Int64,NOT_CHECKED,0,0.0,14
+transactions,work_terahash,Int64,NOT_CHECKED,0,0.0,21
+transactions,work_error,String,OK,20000,100.0,1

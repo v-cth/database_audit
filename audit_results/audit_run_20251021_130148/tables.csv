@@ -1,0 +1,2 @@
+table_name,total_rows,sampled,analyzed_rows,column_count,issues_found,columns_with_issues,status,duration_seconds,audit_timestamp,table_type,created_time
+transactions,20000,false,20000,11,0,0,OK,0.11,2025-10-21T13:01:59.847949,BASE TABLE,2018-01-30 17:41:12.059000+00:00

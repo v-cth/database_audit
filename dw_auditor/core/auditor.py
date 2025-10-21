@@ -21,6 +21,44 @@ from ..insights import generate_column_insights
 from .exporter_mixin import AuditorExporterMixin
 
 
+# Complex types that don't support standard quality checks
+COMPLEX_TYPES = [
+    pl.Struct,     # Nested structures
+    pl.List,       # Arrays/Lists
+    pl.Array,      # Fixed-size arrays
+    pl.Binary,     # Binary data
+    pl.Object,     # Python objects
+]
+
+
+def is_complex_type(dtype) -> bool:
+    """
+    Check if dtype is a complex type that can't be audited with standard checks
+
+    Args:
+        dtype: Polars data type
+
+    Returns:
+        True if complex type, False otherwise
+    """
+    # Get the base type class
+    dtype_class = type(dtype)
+
+    # Check if it's one of the complex types
+    for complex_type in COMPLEX_TYPES:
+        if dtype_class == complex_type:
+            return True
+        # Also check isinstance for parameterized types like List[Int64]
+        try:
+            if isinstance(dtype, complex_type):
+                return True
+        except TypeError:
+            # Some types don't support isinstance check
+            pass
+
+    return False
+
+
 class SecureTableAuditor(AuditorExporterMixin):
     """Audit data warehouse tables with security controls"""
 
@@ -147,7 +185,15 @@ class SecureTableAuditor(AuditorExporterMixin):
                     print(f"⚠️  Could not get primary key info: {e}")
 
             # Fallback to row count query if not in metadata
-            if row_count is None and sample_in_db:
+            # For cross-project queries (e.g., BigQuery public datasets), skip COUNT(*) as it's too expensive
+            is_cross_project = backend == 'bigquery' and hasattr(db_conn, 'source_project_id') and db_conn.source_project_id
+
+            # If using a custom query, we need to count the result of that query, not the base table
+            if custom_query:
+                print(f"📝 Using custom query - will count rows from query result")
+                # We'll count after executing the query
+                row_count = None
+            elif row_count is None and sample_in_db and not is_cross_project:
                 try:
                     row_count = db_conn.get_row_count(table_name, schema)
                     if row_count is not None:
@@ -157,11 +203,22 @@ class SecureTableAuditor(AuditorExporterMixin):
                 except Exception as e:
                     print(f"⚠️  Could not get row count: {e}")
                     print(f"   Will load full table")
+            elif is_cross_project:
+                print(f"⚠️  Cross-project query detected - skipping row count (too expensive)")
+                print(f"   Will sample {self.sample_size:,} rows")
 
             phase_timings['metadata'] = (datetime.now() - phase_start).total_seconds()
 
             # Determine if we should sample
-            should_sample = sample_in_db and row_count and row_count > self.sample_threshold
+            # For custom queries, don't sample - use the query as-is (user controls the data with their query)
+            # For cross-project, always sample since we don't know the row count
+            if custom_query:
+                should_sample = False
+                print(f"ℹ️  Custom query provided - using query as-is (no additional sampling)")
+            elif is_cross_project:
+                should_sample = sample_in_db and (row_count is None or row_count > self.sample_threshold)
+            else:
+                should_sample = sample_in_db and row_count and row_count > self.sample_threshold
 
             if should_sample:
                 method_display = sampling_method
@@ -182,6 +239,15 @@ class SecureTableAuditor(AuditorExporterMixin):
             phase_timings['data_loading'] = (datetime.now() - phase_start).total_seconds()
 
             print(f"✅ Loaded {len(df):,} rows into memory")
+
+            # For custom queries, the row count is the result set size
+            if custom_query and row_count is None:
+                row_count = len(df)
+                print(f"📊 Custom query returned {row_count:,} rows")
+                # Update metadata with query result count
+                if table_metadata:
+                    table_metadata['row_count'] = row_count
+                    table_metadata['query_result_count'] = row_count
 
             # Mask PII if requested
             if mask_pii:
@@ -395,9 +461,39 @@ class SecureTableAuditor(AuditorExporterMixin):
 
         return results
 
+    def _audit_complex_column(self, df: pl.DataFrame, col: str) -> Dict:
+        """
+        Handle complex data types (Struct, List, Array, Binary)
+        These types don't support standard quality checks
+
+        Args:
+            df: Polars DataFrame
+            col: Column name
+
+        Returns:
+            Basic column metadata without quality checks
+        """
+        dtype = df[col].dtype
+        total_rows = len(df)
+        null_count = df[col].null_count()
+
+        return {
+            'dtype': str(dtype),
+            'null_count': null_count,
+            'null_pct': (null_count / total_rows * 100) if total_rows > 0 else 0,
+            'distinct_count': None,  # Not applicable for complex types
+            'issues': [],  # No checks for complex types
+            'status': 'SKIPPED_COMPLEX_TYPE'
+        }
+
     def _audit_column(self, df: pl.DataFrame, col: str, check_config: Dict, primary_key_columns: Optional[List[str]] = None) -> Dict:
         """Audit a single column for all issues"""
         dtype = df[col].dtype
+
+        # Check if complex type - skip detailed checks
+        if is_complex_type(dtype):
+            return self._audit_complex_column(df, col)
+
         null_count = df[col].null_count()
         total_rows = len(df)
 

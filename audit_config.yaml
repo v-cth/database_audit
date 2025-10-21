@@ -13,8 +13,21 @@ database:
   # Connection parameters (backend-specific)
   connection_params:
     # For BigQuery:
-    project_id: "portfolio-402"
-    dataset_id: "dbt_prod"
+    # project_id: Your billing project (where queries are executed)
+    # dataset_id: Dataset to query
+    # source_project_id: (Optional) Source project for cross-project queries
+    #                    Use this when querying public datasets or external projects
+    #                    Jobs will run in project_id, data read from source_project_id
+
+    # Example: Querying public datasets
+    project_id: "portfolio-402"  # Your project (you have bigquery.jobs.create here)
+    source_project_id: "bigquery-public-data"  # Public dataset project (read-only)
+    dataset_id: "crypto_bitcoin"  # Dataset to query
+
+    # Example: Querying your own datasets (no source_project_id needed)
+    # project_id: "portfolio-402"
+    # dataset_id: "dbt_prod"
+
     #credentials_path: "/path/to/service-account-key.json"
     # Or use credentials_json for JSON string/dict
 
@@ -35,10 +48,18 @@ database:
 # ----------------------------------------------------------------------------
 # Option 1: Explicit list of tables (recommended for small number of tables)
 tables:
-  - name: fct_avaibility
-  - name: dim_station
-    primary_key: station_code  # Optional: specify primary key column(s)
-  - name: dtm_station_distance
+  # - name: fct_avaibility
+  # - name: dim_station
+  #   primary_key: station_code  # Optional: specify primary key column(s)
+  # - name: dtm_station_distance
+  - name: transactions
+    primary_key: transaction_id 
+    query: "SELECT * FROM transactions LIMIT 3000"
+
+
+  - name: blocks
+    primary_key: block_id 
+    query: "SELECT * FROM blocks LIMIT 2000"
 
 # Option 2: Auto-discover tables and apply filters
 # ----------------------------------------------------------------------------
@@ -74,15 +95,15 @@ column_checks:
       future_dates: true
 
   # Per-table, per-column overrides
-  tables:
-    dim_station:
-      # Skip special chars check for city column (we expect French accents)
-      city:
-        special_chars: false
-      # Skip case duplicates and special chars for station_name (expected variation & French accents)
-      station_name:
-        case_duplicates: false
-        special_chars: false  # Skip - French accents are expected
+  # tables:
+  #   dim_station:
+  #     # Skip special chars check for city column (we expect French accents)
+  #     city:
+  #       special_chars: false
+  #     # Skip case duplicates and special chars for station_name (expected variation & French accents)
+  #     station_name:
+  #       case_duplicates: false
+  #       special_chars: false  # Skip - French accents are expected
 
 # Column Insights Configuration
 # ----------------------------------------------------------------------------
@@ -125,20 +146,20 @@ column_insights:
       most_common_hours: 10
 
   # Per-table, per-column overrides
-  tables:
-    dim_station:
-      # Get detailed distribution for capacity column
-      capacity:
-        top_values: 5
-        quantiles: [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
-      # Minimal insights for station_code (primary key)
-      station_code:
-        top_values: 0  # Disable - primary key
+  # tables:
+  #   dim_station:
+  #     # Get detailed distribution for capacity column
+  #     capacity:
+  #       top_values: 5
+  #       quantiles: [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
+  #     # Minimal insights for station_code (primary key)
+  #     station_code:
+  #       top_values: 0  # Disable - primary key
 
-    fct_avaibility:
-      # Detailed date analysis for timestamp columns
-      last_reported:
-        most_common_dates: 3
+  #   fct_avaibility:
+  #     # Detailed date analysis for timestamp columns
+  #     last_reported:
+  #       most_common_dates: 3
 
 # Sampling Configuration
 # ----------------------------------------------------------------------------
@@ -164,10 +185,10 @@ sampling:
   key_column: null
 
   # Per-table sampling overrides
-  tables:
-    fct_avaibility:
-      method: "recent"
-      key_column: "collected_at"  # Sample most recent data
+  # tables:
+  #   fct_avaibility:
+  #     method: "recent"
+  #     key_column: "collected_at"  # Sample most recent data
     # dim_station:
     #   method: "random"  # Explicit random for this table
 

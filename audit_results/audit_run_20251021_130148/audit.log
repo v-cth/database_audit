@@ -1,0 +1,178 @@
+📁 Audit run directory: audit_results/audit_run_20251021_130148
+📝 Logs will be saved to: audit_results/audit_run_20251021_130148/audit.log
+
+======================================================================
+🔍 Auditing table: transactions
+======================================================================
+🔐 Secure audit mode: Direct database query via Ibis (no file export)
+✅ Connected to BIGQUERY
+🔖 Table UID: bigquery-public-data.bitcoin_blockchain.transactions
+📑 Table type: BASE TABLE
+📊 Table has 340,311,544 rows
+🔑 Primary key from config: transaction_id
+📝 Using custom query - will count rows from query result
+ℹ️  Custom query provided - using query as-is (no additional sampling)
+✅ Loaded 20,000 rows into memory
+📊 Custom query returned 20,000 rows
+
+============================================================
+Auditing: transactions
+Total rows in table: 20,000
+============================================================
+
+
+🔑 Potential primary key column(s): transaction_id
+
+📋 Column Summary (All Columns):
+====================================================================================================
+Column Name                    Type            Status       Nulls           Distinct       
+----------------------------------------------------------------------------------------------------
+timestamp                      Int64           - NOT_CHECKED 0 (0.0%)        11,368         
+transaction_id                 String          ✓ OK         0 (0.0%)        20,000         
+inputs                         List(Struct({'input_script_bytes': Binary, 'input_script_string': String, 'input_script_string_error': String, 'input_sequence_number': Int64, 'input_pubkey_base58': String, 'input_pubkey_base58_error': String})) - NOT_CHECKED 0 (0.0%)        N/A            
+outputs                        List(Struct({'output_satoshis': Int64, 'output_script_bytes': Binary, 'output_script_string': String, 'output_script_string_error': String, 'output_pubkey_base58': String, 'output_pubkey_base58_error': String})) - NOT_CHECKED 0 (0.0%)        N/A            
+block_id                       String          ✓ OK         0 (0.0%)        11,369         
+previous_block                 String          ✓ OK         0 (0.0%)        11,369         
+merkle_root                    String          ✓ OK         0 (0.0%)        11,369         
+nonce                          Int64           - NOT_CHECKED 0 (0.0%)        11,369         
+version                        Int64           - NOT_CHECKED 0 (0.0%)        14             
+work_terahash                  Int64           - NOT_CHECKED 0 (0.0%)        21             
+work_error                     String          ✓ OK         20,000 (100.0%) 1              
+====================================================================================================
+
+
+💡 Column Insights:
+
+📊 timestamp:
+   Top 5 Values:
+      • '1515025080000.0' (10x, 0.1%)
+      • '1515041660000.0' (10x, 0.1%)
+      • '1515049168000.0' (9x, 0.0%)
+      • '1515442580000.0' (9x, 0.0%)
+      • '1515348721000.0' (9x, 0.0%)
+   Stats: min=1234027307000.00, max=1530544944000.00, mean=1474880388389.15, median=1489168637000.00
+   Quantiles: p25=1460657507000.00, p50=1489168888000.00, p75=1515086719000.00
+
+📊 transaction_id:
+   Top 10 Values:
+      • 'e480592b1b24c104b0eb427a7f12866c5ac31a74a934778c11' (1x, 0.0%)
+      • '0616cf99a402f6888d50ba0e49d499a36e3522bbffeb40c2b0' (1x, 0.0%)
+      • '5861e6c26e63ebd7c26e4daab138c7dfc428cd013fbf4d9ec8' (1x, 0.0%)
+      • '5d49410d695ebd875d15cf696f7accd69e5d518f54357d9fb4' (1x, 0.0%)
+      • 'b411e4d850b5873b9709f98e19c215e4cc27ba5d76c14693b9' (1x, 0.0%)
+      • '7d78c9a34938a6c0d168100e723a6a39b20ae8ead6087923d7' (1x, 0.0%)
+      • 'f35539d63f27df7e60d781cb2364426c924726258687100749' (1x, 0.0%)
+      • '4a9dd10796dce952f7c165afc018ec6b33535bda58336d0323' (1x, 0.0%)
+      • '001d4231dd6795e84ac0675629e596c78bc6db48000e6f6b96' (1x, 0.0%)
+      • '0560f73e8b2c8519355e56716b518e0c6a989807adf49c8c4d' (1x, 0.0%)
+   Length: min=64, max=64, avg=64.0
+
+📊 inputs:
+
+📊 outputs:
+
+📊 block_id:
+   Top 10 Values:
+      • '00000000000000000057d86f4d1a5439114c6680d1b8aaaf67' (10x, 0.1%)
+      • '0000000000000000001fae72600f08ea73b13b350b3e3880fc' (10x, 0.1%)
+      • '0000000000000000001ddc9cb88a510ec618395569bb7cd84d' (9x, 0.0%)
+      • '0000000000000000007c6b3ffcdf629bed16bd1d620d67cd7f' (9x, 0.0%)
+      • '0000000000000000008424d8569328ca5e5a0328b6ceae2ade' (9x, 0.0%)
+      • '000000000000000000903486cd47822e39eec9176cdfdae5a3' (8x, 0.0%)
+      • '000000000000000000125475f022bb97475377cbf8049e4608' (8x, 0.0%)
+      • '00000000000000000db6615b15c1a508ede90910ee77a43362' (8x, 0.0%)
+      • '0000000000000000008f94b7ee631d4ed43a03fa65d585811c' (8x, 0.0%)
+      • '00000000000000000065a9d637f048f79951961f1492684e4a' (8x, 0.0%)
+   Length: min=64, max=64, avg=64.0
+
+📊 previous_block:
+   Top 10 Values:
+      • '0000000000000000008da2b3ccae6a68f876ae01751c433c67' (10x, 0.1%)
+      • '00000000000000000025807a6ab1697ae43ab458e60ac8dfa3' (10x, 0.1%)
+      • '0000000000000000004e092c74b744bbc4cc1bfb8127383bc8' (9x, 0.0%)
+      • '00000000000000000082b6dda33b1379164fbe42f1cf08d28c' (9x, 0.0%)
+      • '00000000000000000043cc7751d4b77021e7fedb431a989ec0' (9x, 0.0%)
+      • '000000000000000001adb5fdc68cdf558afcfba0f690ca64a7' (8x, 0.0%)
+      • '00000000000000000022fd1a07d422dce89a7334adcd364d55' (8x, 0.0%)
+      • '0000000000000000006d3b396dcc38d54a63c83d5f5312810f' (8x, 0.0%)
+      • '0000000000000000001d64b21b96125a4dd574f2f231ffd26f' (8x, 0.0%)
+      • '0000000000000000005b35ae9792917c4ffa5224adf68319d3' (8x, 0.0%)
+   Length: min=64, max=64, avg=64.0
+
+📊 merkle_root:
+   Top 10 Values:
+      • 'd40b5b764a543cab539e7e78d1fcd3037af2ccab67cc33c050' (10x, 0.1%)
+      • '1c877609cc31437cdbef23990014562bc811deb8d09b059a80' (10x, 0.1%)
+      • '6b16b1fa6bb21f6287fac123c077c3b45bd790559d72663dc7' (9x, 0.0%)
+      • 'c93fcea4aa8e633e52c8d1dd6a857c32107c0e1b91026f6caf' (9x, 0.0%)
+      • 'e7a695f410eb984ec6811c41236a03a76dda7f39aa94dbe444' (9x, 0.0%)
+      • '8f54881499a8743919eaf6c026520907f280901cbe31d2f88a' (8x, 0.0%)
+      • '9eb7f2f0920835f2c09cb6096720044e99295c170a1a1aab9e' (8x, 0.0%)
+      • 'b3814e8303416e129d3ed933b1074b35123c44f8df791250a2' (8x, 0.0%)
+      • 'a08694f07a6b5716766246784e5bf4ff0ee160c589a36f30e6' (8x, 0.0%)
+      • '00ddbbe8e72b7b8e140088ab3d07557376d0e3548ff5a1e357' (8x, 0.0%)
+   Length: min=64, max=64, avg=64.0
+
+📊 nonce:
+   Top 5 Values:
+      • '2280371770.0' (10x, 0.1%)
+      • '2288088154.0' (10x, 0.1%)
+      • '2782203970.0' (9x, 0.0%)
+      • '1142045092.0' (9x, 0.0%)
+      • '3316648239.0' (9x, 0.0%)
+   Stats: min=43322.00, max=4294618508.00, mean=2112908118.18, median=2170592460.50
+   Quantiles: p25=1078333857.00, p50=2170995030.00, p75=3229940544.00
+
+📊 version:
+   Top 5 Values:
+      • '536870912.0' (11,286x, 56.4%)
+      • '2.0' (3,448x, 17.2%)
+      • '4.0' (1,628x, 8.1%)
+      • '536870913.0' (1,266x, 6.3%)
+      • '3.0' (1,103x, 5.5%)
+   Stats: min=1.00, max=1073733632.00, mean=363999314.29, median=536870912.00
+   Quantiles: p25=4.00, p50=536870912.00, p75=536870912.00
+
+📊 work_terahash:
+   Top 5 Values:
+      • '82942944770.0' (5,030x, 25.1%)
+      • '19790195214.0' (2,410x, 12.0%)
+      • '48270297094.0' (2,334x, 11.7%)
+      • '7674291979.0' (1,863x, 9.3%)
+      • '8996081931.0' (1,847x, 9.2%)
+   Stats: min=0.00, max=218080250643.00, mean=46735818541.86, median=19790195214.00
+   Quantiles: p25=7674291979.00, p50=19790195214.00, p75=82942944770.00
+
+✅ No issues found!
+
+
+⏱️  Audit Duration Breakdown:
+   • string_checks: 0.080s
+   • Total: 0.11s
+
+🔒 Closed BIGQUERY connection
+
+⏱️  Table Audit Phase Breakdown:
+   • Connection: 1.252s
+   • Metadata: 6.089s
+   • Data Loading: 3.750s
+   • Audit Checks: 0.110s
+   • Total Table Audit: 0.11s
+📄 HTML report saved to: audit_results/audit_run_20251021_130148/transactions/audit.html
+📄 Results saved to: audit_results/audit_run_20251021_130148/transactions/audit.json
+📄 CSV saved to: audit_results/audit_run_20251021_130148/transactions/audit.csv
+📄 Column summary CSV saved to: audit_results/audit_run_20251021_130148/transactions/summary.csv
+
+======================================================================
+📊 Generating run summary reports...
+======================================================================
+📄 Summary HTML saved to: audit_results/audit_run_20251021_130148/summary.html
+📄 Summary JSON saved to: audit_results/audit_run_20251021_130148/summary.json
+📄 Detailed column summary CSV saved to: audit_results/audit_run_20251021_130148/columns.csv
+📄 Table summary CSV saved to: audit_results/audit_run_20251021_130148/tables.csv
+
+======================================================================
+✅ Audit completed! Results saved to: audit_results/audit_run_20251021_130148
+⏱️  Total duration: 11.21 seconds
+📝 Logs saved to: audit_results/audit_run_20251021_130148/audit.log
+======================================================================

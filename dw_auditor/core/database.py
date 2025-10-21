@@ -22,6 +22,10 @@ class DatabaseConnection:
         Args:
             backend: Database backend ('bigquery' or 'snowflake')
             **connection_params: Backend-specific connection parameters
+                For BigQuery cross-project queries (e.g., public datasets):
+                    project_id: Your billing project (where jobs run)
+                    source_project_id: Source project containing the data (optional)
+                    dataset_id: Dataset to query
         """
         if backend.lower() not in self.SUPPORTED_BACKENDS:
             raise ValueError(
@@ -31,6 +35,7 @@ class DatabaseConnection:
 
         self.backend = backend.lower()
         self.connection_params = connection_params
+        self.source_project_id = connection_params.get('source_project_id')  # For cross-project BigQuery queries
         self.conn = None
 
     def connect(self) -> ibis.BaseBackend:
@@ -118,6 +123,18 @@ class DatabaseConnection:
         if self.conn is None:
             self.connect()
 
+        # For BigQuery cross-project queries (e.g., querying public datasets)
+        if self.backend == 'bigquery' and self.source_project_id:
+            dataset = schema or self.connection_params.get('dataset_id')
+            if not dataset:
+                raise ValueError("dataset_id is required for BigQuery cross-project queries")
+
+            # Use fully-qualified table name for cross-project access
+            full_table_name = f"`{self.source_project_id}.{dataset}.{table_name}`"
+            # Use sql() to reference external table, then return as table expression
+            return self.conn.sql(f"SELECT * FROM {full_table_name}")
+
+        # Normal flow (same project or non-BigQuery)
         if schema:
             # Use schema.table notation
             full_name = f"{schema}.{table_name}"
@@ -155,6 +172,36 @@ class DatabaseConnection:
 
         if custom_query:
             # Execute raw SQL only if explicitly provided
+            # For BigQuery with cross-project queries, we need to qualify table names
+            if self.backend == 'bigquery':
+                dataset = schema or self.connection_params.get('dataset_id')
+
+                # If we have a source_project_id (cross-project query), use it
+                if self.source_project_id and dataset:
+                    # Build fully qualified table name
+                    full_table_name = f"`{self.source_project_id}.{dataset}.{table_name}`"
+
+                    # Replace unqualified table reference in the query
+                    # This handles cases like "SELECT * FROM transactions LIMIT 100"
+                    # and converts to "SELECT * FROM `project.dataset.transactions` LIMIT 100"
+                    import re
+                    # Match table name as a standalone word (not part of column names)
+                    pattern = r'\bFROM\s+' + re.escape(table_name) + r'\b'
+                    custom_query = re.sub(pattern, f'FROM {full_table_name}', custom_query, flags=re.IGNORECASE)
+
+                    # Also handle JOIN clauses
+                    pattern = r'\bJOIN\s+' + re.escape(table_name) + r'\b'
+                    custom_query = re.sub(pattern, f'JOIN {full_table_name}', custom_query, flags=re.IGNORECASE)
+                elif dataset:
+                    # No cross-project, but still need dataset qualification
+                    # Replace unqualified table reference with dataset.table
+                    import re
+                    pattern = r'\bFROM\s+' + re.escape(table_name) + r'\b'
+                    custom_query = re.sub(pattern, f'FROM `{dataset}.{table_name}`', custom_query, flags=re.IGNORECASE)
+
+                    pattern = r'\bJOIN\s+' + re.escape(table_name) + r'\b'
+                    custom_query = re.sub(pattern, f'JOIN `{dataset}.{table_name}`', custom_query, flags=re.IGNORECASE)
+
             result = self.conn.sql(custom_query)
         else:
             # Get table reference
@@ -260,8 +307,11 @@ class DatabaseConnection:
                 if not dataset:
                     return table_names
 
+                # Use source_project_id if querying external data
+                project_for_metadata = self.source_project_id or self.connection_params.get('project_id')
+
                 # Query INFORMATION_SCHEMA.TABLES for all tables
-                info_schema_table = f"`{dataset}.INFORMATION_SCHEMA.TABLES`"
+                info_schema_table = f"`{project_for_metadata}.{dataset}.INFORMATION_SCHEMA.TABLES`"
 
                 # Get all tables (excluding views by default, or include them if needed)
                 result = self.conn.sql(
@@ -322,11 +372,13 @@ class DatabaseConnection:
                 if not dataset:
                     return metadata
 
-                project_id = self.connection_params.get('project_id')
+                # Use source_project_id if querying external data, otherwise use project_id
+                project_for_metadata = self.source_project_id or self.connection_params.get('project_id')
+                billing_project = self.connection_params.get('project_id')
 
                 # Query INFORMATION_SCHEMA.TABLES using Ibis SQL - use region INFORMATION_SCHEMA
                 # In BigQuery, INFORMATION_SCHEMA is dataset-scoped, not project-scoped
-                info_schema_table = f"`{dataset}.INFORMATION_SCHEMA.TABLES`"
+                info_schema_table = f"`{project_for_metadata}.{dataset}.INFORMATION_SCHEMA.TABLES`"
 
                 # Use Ibis SQL interface for INFORMATION_SCHEMA views
                 result = self.conn.sql(
@@ -341,19 +393,28 @@ class DatabaseConnection:
                     metadata['table_type'] = str(result['table_type'][0]) if result['table_type'][0] is not None else None
                     metadata['created_time'] = str(result['creation_time'][0]) if result['creation_time'][0] is not None else None
                     # Construct table UID
-                    metadata['table_uid'] = f"{project_id}.{dataset}.{table_name}"
+                    metadata['table_uid'] = f"{project_for_metadata}.{dataset}.{table_name}"
 
-                # Get row count from __TABLES__ using Ibis table API (this works for system tables)
+                # Get row count from __TABLES__ using Ibis table API
+                # Note: __TABLES__ may not be accessible for cross-project queries
                 try:
-                    tables_meta = self.conn.table(f'{dataset}.__TABLES__')
-                    row_result = (
-                        tables_meta
-                        .filter(tables_meta.table_id == table_name)
-                        .select(['row_count'])
-                        .to_polars()
-                    )
-                    if len(row_result) > 0:
-                        metadata['row_count'] = int(row_result['row_count'][0]) if row_result['row_count'][0] is not None else None
+                    if self.source_project_id:
+                        # For cross-project, use COUNT(*) instead of __TABLES__
+                        # This is slower but works across projects
+                        table_expr = self.get_table(table_name, schema)
+                        count_result = table_expr.count().execute()
+                        metadata['row_count'] = int(count_result) if count_result is not None else None
+                    else:
+                        # For same-project, use __TABLES__ (faster)
+                        tables_meta = self.conn.table(f'{dataset}.__TABLES__')
+                        row_result = (
+                            tables_meta
+                            .filter(tables_meta.table_id == table_name)
+                            .select(['row_count'])
+                            .to_polars()
+                        )
+                        if len(row_result) > 0:
+                            metadata['row_count'] = int(row_result['row_count'][0]) if row_result['row_count'][0] is not None else None
                 except:
                     pass
 
@@ -471,15 +532,22 @@ class DatabaseConnection:
             try:
                 if self.backend == 'bigquery':
                     # BigQuery INFORMATION_SCHEMA uses __TABLES__ for row counts
-                    # Determine the dataset
+                    # Note: __TABLES__ may not be accessible for cross-project queries
                     dataset = schema or self.connection_params.get('dataset_id')
                     if not dataset:
                         raise ValueError("Dataset must be specified for BigQuery row count")
 
-                    project_id = self.connection_params.get('project_id')
+                    # Use source_project_id if querying external data
+                    project_for_metadata = self.source_project_id or self.connection_params.get('project_id')
 
-                    # Use Ibis API to query __TABLES__ metadata
-                    tables_meta = self.conn.table(f'{project_id}.{dataset}.__TABLES__')
+                    # For cross-project queries, __TABLES__ might not be accessible
+                    # Fall through to COUNT(*) if this fails
+                    if self.source_project_id:
+                        # Skip __TABLES__ for cross-project, use COUNT(*) instead
+                        raise Exception("Cross-project __TABLES__ not supported, using COUNT(*)")
+
+                    # Use Ibis API to query __TABLES__ metadata (same-project only)
+                    tables_meta = self.conn.table(f'{project_for_metadata}.{dataset}.__TABLES__')
                     result = (
                         tables_meta
                         .filter(tables_meta.table_id == table_name)

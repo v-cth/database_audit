@@ -14,6 +14,7 @@ class TeeLogger:
     """Write output to both console and file"""
     def __init__(self, log_file):
         self.terminal = sys.stdout
+        self.terminal_err = sys.stderr
         self.log = open(log_file, 'w', encoding='utf-8')
 
     def write(self, message):
@@ -56,6 +57,7 @@ def main():
     log_file = run_dir / "audit.log"
     logger = TeeLogger(log_file)
     sys.stdout = logger
+    sys.stderr = logger  # Also redirect stderr to capture tracebacks
 
     print(f"📁 Audit run directory: {run_dir}")
     print(f"📝 Logs will be saved to: {log_file}")
@@ -107,6 +109,7 @@ def main():
             sys.exit(0)
 
     # Audit tables
+    all_table_results = []
     try:
         for table in tables_to_audit:
             print(f"\n{'='*70}")
@@ -120,6 +123,9 @@ def main():
                 # Get table-specific sampling configuration
                 sampling_config = config.get_table_sampling_config(table)
 
+                # Get custom query from config if specified
+                custom_query = config.table_queries.get(table, None)
+
                 results = auditor.audit_from_database(
                     table_name=table,
                     backend=config.backend,
@@ -130,8 +136,12 @@ def main():
                     user_primary_key=user_defined_primary_key,
                     column_check_config=config,  # Pass entire config for column-level checks
                     sampling_method=sampling_config['method'],
-                    sampling_key_column=sampling_config['key_column']
+                    sampling_key_column=sampling_config['key_column'],
+                    custom_query=custom_query
                 )
+
+                # Store results for summary generation
+                all_table_results.append(results)
 
                 # Print phase timings if available
                 if 'phase_timings' in results:
@@ -141,9 +151,13 @@ def main():
                     total_table_duration = results.get('duration_seconds', 0)
                     print(f"   • Total Table Audit: {total_table_duration:.2f}s")
 
-                # Export results to run directory
+                # Create table-specific directory
+                table_dir = run_dir / table
+                table_dir.mkdir(parents=True, exist_ok=True)
+
+                # Export results to table directory
                 if 'html' in config.export_formats:
-                    output_file = run_dir / f'{config.file_prefix}_{table}.html'
+                    output_file = table_dir / 'audit.html'
                     auditor.export_results_to_html(results, str(output_file))
 
                     # Auto-open HTML in browser if configured
@@ -155,18 +169,18 @@ def main():
                             print(f"⚠️  Could not open browser: {e}")
 
                 if 'json' in config.export_formats:
-                    output_file = run_dir / f'{config.file_prefix}_{table}.json'
+                    output_file = table_dir / 'audit.json'
                     auditor.export_results_to_json(results, str(output_file))
 
                 if 'csv' in config.export_formats:
                     # Export issues CSV
-                    output_file = run_dir / f'{config.file_prefix}_{table}.csv'
+                    output_file = table_dir / 'audit.csv'
                     df = auditor.export_results_to_dataframe(results)
                     df.write_csv(str(output_file))
                     print(f"📄 CSV saved to: {output_file}")
 
                     # Export column summary CSV
-                    summary_file = run_dir / f'{config.file_prefix}_{table}_summary.csv'
+                    summary_file = table_dir / 'summary.csv'
                     summary_df = auditor.export_column_summary_to_dataframe(results)
                     summary_df.write_csv(str(summary_file))
                     print(f"📄 Column summary CSV saved to: {summary_file}")
@@ -176,6 +190,36 @@ def main():
                 import traceback
                 traceback.print_exc()
                 continue
+
+        # Generate run-level summary reports
+        if all_table_results:
+            print(f"\n{'='*70}")
+            print(f"📊 Generating run summary reports...")
+            print(f"{'='*70}")
+
+            # Export summary in all configured formats
+            if 'html' in config.export_formats:
+                summary_html = run_dir / 'summary.html'
+                auditor.export_run_summary_to_html(all_table_results, str(summary_html))
+                print(f"📄 Summary HTML saved to: {summary_html}")
+
+            if 'json' in config.export_formats:
+                summary_json = run_dir / 'summary.json'
+                auditor.export_run_summary_to_json(all_table_results, str(summary_json))
+                print(f"📄 Summary JSON saved to: {summary_json}")
+
+            if 'csv' in config.export_formats:
+                # Export detailed column summary for all tables
+                columns_csv = run_dir / 'columns.csv'
+                columns_df = auditor.export_combined_column_summary_to_dataframe(all_table_results)
+                columns_df.write_csv(str(columns_csv))
+                print(f"📄 Detailed column summary CSV saved to: {columns_csv}")
+
+                # Also export high-level table summary
+                tables_csv = run_dir / 'tables.csv'
+                tables_df = auditor.export_run_summary_to_dataframe(all_table_results)
+                tables_df.write_csv(str(tables_csv))
+                print(f"📄 Table summary CSV saved to: {tables_csv}")
 
         # Calculate total duration
         total_end_time = datetime.now()
@@ -188,8 +232,9 @@ def main():
         print(f"{'='*70}")
 
     finally:
-        # Restore stdout and close log file
+        # Restore stdout/stderr and close log file
         sys.stdout = logger.terminal
+        sys.stderr = logger.terminal_err
         logger.close()
 
 

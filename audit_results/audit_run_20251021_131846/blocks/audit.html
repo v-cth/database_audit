@@ -1,0 +1,1747 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Report: blocks</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        .metadata {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metadata-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metadata-card .label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .metadata-card .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 5px;
+        }
+        .summary {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary.success {
+            border-left: 4px solid #10b981;
+        }
+        .summary.warning {
+            border-left: 4px solid #f59e0b;
+        }
+        .column-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .column-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .column-type {
+            background: #e5e7eb;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #4b5563;
+        }
+        .issue {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .issue-type {
+            font-weight: bold;
+            color: #d97706;
+            margin-bottom: 8px;
+        }
+        .issue-stats {
+            color: #666;
+            margin: 5px 0;
+        }
+        .suggestion {
+            background: #dbeafe;
+            border-left: 3px solid #3b82f6;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 3px;
+            font-style: italic;
+        }
+        .examples {
+            background: #f9fafb;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        .footer {
+            text-align: center;
+            color: #666;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Data Quality Audit Report</h1>
+        <p style="margin: 5px 0;">Table: <strong>blocks</strong></p>
+        <p style="margin: 5px 0; opacity: 0.9;">Type: <strong>BASE TABLE</strong></p>
+        <p style="margin: 5px 0; opacity: 0.9;">Table UID: <strong>bigquery-public-data.crypto_bitcoin.blocks</strong></p>
+        <p style="margin: 5px 0; opacity: 0.9;">Generated: 2025-10-21T13:18:58.544876</p>
+        <p style="margin: 5px 0; opacity: 0.9;">Duration: 0.09 seconds</p>
+    </div>
+
+    <div class="metadata">
+        <div class="metadata-card">
+            <div class="label">Total Rows</div>
+            <div class="value">2,000</div>
+        </div>
+        <div class="metadata-card">
+            <div class="label">Analyzed Rows</div>
+            <div class="value">2,000</div>
+        </div>
+        <div class="metadata-card">
+            <div class="label">Columns Audited</div>
+            <div class="value">1</div>
+        </div>
+        <div class="metadata-card">
+            <div class="label">Status</div>
+            <div class="value">⚠️ Issues Found</div>
+        </div>
+        <div class="metadata-card">
+            <div class="label">Duration</div>
+            <div class="value">0.09s</div>
+        </div>
+    </div>
+
+    <!-- Column Summary Table -->
+
+    <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="margin-top: 0; color: #1f2937;">📋 Column Summary</h2>
+        <p style="color: #666; margin-bottom: 20px;">Basic metrics for all columns in the table</p>
+        <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 12px 15px; margin-bottom: 15px; border-radius: 4px;">
+            <strong>🔑 Primary Key Column(s):</strong> block_id
+        </div>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+                <thead>
+                    <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                        <th style="padding: 12px; text-align: left; font-weight: 600;">Column Name</th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600;">Data Type</th>
+                        <th style="padding: 12px; text-align: center; font-weight: 600;">Status</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600;">Null Count</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600;">Null %</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600;">Distinct Values</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">hash</td>
+                        <td style="padding: 10px; color: #6b7280;">String</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">✓ OK</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">2,000</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">size</td>
+                        <td style="padding: 10px; color: #6b7280;">Int64</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #f3f4f6; color: #6b7280; padding: 4px 8px; border-radius: 12px; font-size: 0.85em;">- N/A</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">1,999</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">stripped_size</td>
+                        <td style="padding: 10px; color: #6b7280;">Int64</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #f3f4f6; color: #6b7280; padding: 4px 8px; border-radius: 12px; font-size: 0.85em;">- N/A</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">1,998</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">weight</td>
+                        <td style="padding: 10px; color: #6b7280;">Int64</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #f3f4f6; color: #6b7280; padding: 4px 8px; border-radius: 12px; font-size: 0.85em;">- N/A</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">1,116</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">number</td>
+                        <td style="padding: 10px; color: #6b7280;">Int64</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #f3f4f6; color: #6b7280; padding: 4px 8px; border-radius: 12px; font-size: 0.85em;">- N/A</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">2,000</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">version</td>
+                        <td style="padding: 10px; color: #6b7280;">Int64</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #f3f4f6; color: #6b7280; padding: 4px 8px; border-radius: 12px; font-size: 0.85em;">- N/A</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">1,304</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">merkle_root</td>
+                        <td style="padding: 10px; color: #6b7280;">String</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">✓ OK</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">2,000</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">timestamp</td>
+                        <td style="padding: 10px; color: #6b7280;">Datetime(time_unit='ns', time_zone='UTC')</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">✓ OK</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">2,000</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">timestamp_month</td>
+                        <td style="padding: 10px; color: #6b7280;">Date</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">✓ OK</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">2</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">nonce</td>
+                        <td style="padding: 10px; color: #6b7280;">String</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">✓ OK</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">2,000</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: #fef2f2;">
+                        <td style="padding: 10px; font-weight: 500;">bits</td>
+                        <td style="padding: 10px; color: #6b7280;">String</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">✗ ERROR</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">3</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">coinbase_param</td>
+                        <td style="padding: 10px; color: #6b7280;">String</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">✓ OK</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">2,000</td>
+                    </tr>
+
+                    <tr style="border-bottom: 1px solid #e5e7eb; background: white;">
+                        <td style="padding: 10px; font-weight: 500;">transaction_count</td>
+                        <td style="padding: 10px; color: #6b7280;">Int64</td>
+                        <td style="padding: 10px; text-align: center;"><span style="background: #f3f4f6; color: #6b7280; padding: 4px 8px; border-radius: 12px; font-size: 0.85em;">- N/A</span></td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">0</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280; font-weight: normal;">0.0%</td>
+                        <td style="padding: 10px; text-align: right; color: #6b7280;">1,595</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="margin-top: 0; color: #1f2937;">💡 Column Insights</h2>
+        <p style="color: #666; margin-bottom: 20px;">Data profiling and distribution analysis</p>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 hash</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>00000000000000000000587b82368517730d23c781634ee82c...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>00000000000000000002bdb37639ea34a9a0254ae11fb9d651...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>00000000000000000001579c0518ae449ed1a0dad52ef609a5...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>00000000000000000000c3cf78596904f3296e4a2f22cc47b8...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>00000000000000000002dc8e2ccb02e847b5589897a0e95afc...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>00000000000000000003b7449f51b9734c3da4fbaf08f70730...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>000000000000000000003e6013f2ca0725a3f1d926802f585a...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>000000000000000000030e4dd51e45030411dd8b12f04b6f9d...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>0000000000000000000263c9e7a19fde94da0d24be546b9aa3...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>00000000000000000003ebef28f91c20ccbc948055520a56b6...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">String Length Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">64</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">64</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">avg</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">64.0</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 size</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>1406559.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">2</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>1871826.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>1479256.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>1791874.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>1497331.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Numeric Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">441.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">3629407.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Mean</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">1659512.40</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Median</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">1639800.00</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Quantiles:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p25</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">1508784.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p50</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">1639992.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p75</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">1814897.00</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 stripped_size</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>815777.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">2</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>779289.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">2</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>793575.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>769188.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>682814.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Numeric Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">405.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">993971.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Mean</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">761924.22</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Median</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">781593.00</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Quantiles:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p25</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">721411.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p50</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">781600.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p75</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">824738.00</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 weight</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>3993396.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">8</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.4%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>3993038.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">8</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.4%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>3993021.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">7</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.4%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>3993028.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">7</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.4%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>3993051.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">6</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.3%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Numeric Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">1656.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">3998359.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Mean</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">3945285.06</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Median</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">3993211.50</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Quantiles:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p25</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">3992945.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p50</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">3993212.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p75</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">3993533.00</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 number</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>799354.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>801051.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>799720.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>920074.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>798577.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Numeric Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">798336.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">920088.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Mean</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">809486.87</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Median</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">799545.50</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Quantiles:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p25</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">798942.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p50</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">799546.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p75</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">800129.00</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 version</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>536870912.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">155</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">7.8%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>541065216.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">54</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">2.7%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>1073676288.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">52</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">2.6%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>536879104.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">48</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">2.4%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>545259520.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">43</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">2.1%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Numeric Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">536870912.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">1073733632.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Mean</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">651580813.43</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Median</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">604397568.00</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Quantiles:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p25</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">541065216.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p50</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">604815360.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p75</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">734633984.00</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 merkle_root</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>b92492dafa6476c66d88fc333240a1bba7a662c732ce513a32...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>90d348ef58f359a1473d86778349e2fbaaf74b2ba052b1d3b4...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>9b97bc9cf5ca325f715885d90a189aceebfeecf41fb8f58426...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>3dc6097bdbb43acb75909e17056679d2057c9c6fb64e2b23f1...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>48f6c063f29a408d693dc3817c009947e8cbd7f1dd46fecd94...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>fdf94cbe62312e60b34a0f61dce3c2081fc013bb87e642788e...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>4e49ad9c7ab06536ef1960973d88af5f4f9220be2c9153199a...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>4ccca59715a087277ac7689883ab5532f8b9ef06c1f904ae35...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>a8aec1563e7ca1750dd1608c115b972a6319de4eb19d4d4966...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>bafdc4d68d78925c9606e140e267ab6800c416d0714b52e617...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">String Length Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">64</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">64</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">avg</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">64.0</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 timestamp</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Date Range:</h4>
+                <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #e5e7eb;">
+<strong>From:</strong> 2023-07-12 02:29:39+00:00<br><strong>To:</strong> 2025-10-21 10:01:02+00:00<br><strong>Range:</strong> 832 days
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Timezone:</h4>
+                <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                    UTC
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Most Common Dates:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Date</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">2023-07-31</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">141</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">7.0%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">2023-07-18</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">135</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">6.8%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">2023-07-24</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">130</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">6.5%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">2023-07-19</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">125</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">6.2%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">2023-07-16</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">125</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">6.2%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Most Common Days of Week:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Day</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">Monday</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">481</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">24.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">Tuesday</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">324</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">16.2%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">Wednesday</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">302</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">15.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">Sunday</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">247</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">12.3%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">Saturday</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">224</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">11.2%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">Friday</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">218</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">10.9%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">Thursday</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">204</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">10.2%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Most Common Hours:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Hour</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">09:00</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">111</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">5.5%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">03:00</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">106</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">5.3%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">04:00</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">98</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4.9%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">19:00</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">98</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4.9%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">12:00</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">96</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4.8%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">06:00</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">95</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4.8%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">10:00</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">92</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4.6%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">20:00</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">88</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4.4%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">02:00</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">88</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4.4%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">13:00</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">84</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4.2%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 timestamp_month</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Date Range:</h4>
+                <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #e5e7eb;">
+<strong>From:</strong> 2023-07-01<br><strong>To:</strong> 2025-10-01<br><strong>Range:</strong> 823 days
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Timezone:</h4>
+                <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                    None (timezone-naive)
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Most Common Dates:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Date</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">2023-07-01</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1,834</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">91.7%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">2025-10-01</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">166</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">8.3%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Most Common Days of Week:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Day</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">Saturday</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1,834</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">91.7%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;">Wednesday</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">166</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">8.3%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 nonce</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>86451376</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>4bc0543</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>4c82a740</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>a9f1f061</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>bc5b6e1a</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>66931abe</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>e7be4554</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>a010057d</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>65e28e18</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>246c8ea3</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">String Length Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">6</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">8</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">avg</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">7.93</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 bits</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>17053894</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1,693</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">84.7%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>1701eb21</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">166</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">8.3%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>17056102</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">141</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">7.0%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">String Length Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">8</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">8</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">avg</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">8.0</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 coinbase_param</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>0345360c044ddfc0642f466f756e6472792055534120506f6f...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>033b320c04cff0b6642f466f756e6472792055534120506f6f...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>038d350c1b4d696e656420627920416e74506f6f6c383733a4...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>03d4350c0b2f4d61726120506f6f6c2f1a0100020000000300...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>03c6330c0464f8ba642f466f756e6472792055534120506f6f...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>033f390c0431d2c7642f466f756e6472792055534120506f6f...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>0309330c194d696e656420627920416e74506f6f6c20410048...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>03cc350c194d696e656420627920416e74506f6f6c20400069...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>039a2f0c194d696e656420627920416e74506f6f6c20410048...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>03a52e0ca2002f42696e616e63652f313632fabe6d6d94ee0a...</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.1%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">String Length Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">50</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">200</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">avg</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">147.56</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+            <h3 style="margin-top: 0; color: #4b5563;">📊 transaction_count</h3>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; background: white;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">Value</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Count</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>2687.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">6</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.3%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>3173.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">5</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.2%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>3174.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.2%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>3192.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.2%</td>
+                            </tr>
+
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; border: 1px solid #d1d5db;"><code>2153.0</code></td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">4</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #d1d5db;">0.2%</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Numeric Statistics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Min</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">1.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Max</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">7215.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Mean</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">3251.01</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">Median</div>
+                        <div style="font-size: 1.2em; font-weight: bold; color: #667eea;">3124.50</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Quantiles:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p25</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">2412.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p50</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">3125.00</div>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 4px; border: 1px solid #e5e7eb;">
+                        <div style="color: #9ca3af; font-size: 0.85em; text-transform: uppercase;">p75</div>
+                        <div style="font-size: 1.1em; font-weight: bold; color: #667eea;">3912.00</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="summary warning">
+        <h2>⚠️ Data Quality Issues Detected</h2>
+        <p>Found <strong>1</strong> issue(s) across <strong>1</strong> column(s). Review details below.</p>
+    </div>
+
+    <div class="column-card">
+        <div class="column-header">
+            <div class="column-name">bits</div>
+            <div class="column-type">String</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; padding: 15px; background: #f9fafb; border-radius: 6px;">
+            <div>
+                <div style="color: #666; font-size: 0.9em;">Null Values</div>
+                <div style="font-size: 1.2em; font-weight: bold; color: #6b7280;">
+                    0 (0.0%)
+                </div>
+            </div>
+            <div>
+                <div style="color: #666; font-size: 0.9em;">Distinct Values</div>
+                <div style="font-size: 1.2em; font-weight: bold; color: #6b7280;">
+                    3
+                </div>
+            </div>
+        </div>
+
+        <div class="issue">
+            <div class="issue-type">⚠️ Numeric Strings</div>
+
+            <div class="issue-stats">
+                Affected rows: <strong>1,834</strong> (91.7%)
+            </div>
+
+            <div class="suggestion">
+                💡 Suggestion: Consider converting to numeric type
+            </div>
+
+            <div class="examples">
+                <strong>Examples:</strong><br>
+                ['17056102', '17056102', '17056102']
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <p>Generated by SecureTableAuditor</p>
+    </div>
+</body>
+</html>

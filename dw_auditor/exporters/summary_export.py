@@ -3,7 +3,49 @@ Export column summary to CSV/DataFrame
 """
 
 import polars as pl
-from typing import Dict
+from typing import Dict, List
+
+
+def export_combined_column_summary_to_dataframe(all_results: List[Dict]) -> pl.DataFrame:
+    """
+    Export combined column summary for all tables to a single Polars DataFrame
+
+    Args:
+        all_results: List of audit results dictionaries (one per table)
+
+    Returns:
+        DataFrame with one row per column across all tables
+    """
+    all_rows = []
+
+    for results in all_results:
+        if 'column_summary' not in results or not results['column_summary']:
+            continue
+
+        for col_name, col_data in results['column_summary'].items():
+            row = {
+                'table_name': results['table_name'],
+                'column_name': col_name,
+                'data_type': col_data['dtype'],
+                'status': col_data.get('status', 'UNKNOWN'),
+                'null_count': col_data['null_count'],
+                'null_pct': col_data['null_pct'],
+                'distinct_count': col_data['distinct_count']
+            }
+            all_rows.append(row)
+
+    if not all_rows:
+        return pl.DataFrame({
+            'table_name': [],
+            'column_name': [],
+            'data_type': [],
+            'status': [],
+            'null_count': [],
+            'null_pct': [],
+            'distinct_count': []
+        })
+
+    return pl.DataFrame(all_rows)
 
 
 def export_column_summary_to_dataframe(results: Dict) -> pl.DataFrame:

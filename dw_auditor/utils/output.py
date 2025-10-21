@@ -22,7 +22,9 @@ def print_column_summary(results: Dict):
 
     for col_name, col_data in results['column_summary'].items():
         null_display = f"{col_data['null_count']:,} ({col_data['null_pct']:.1f}%)"
-        distinct_display = f"{col_data['distinct_count']:,}"
+        # Handle None for distinct_count (complex types)
+        distinct_count = col_data['distinct_count']
+        distinct_display = f"{distinct_count:,}" if distinct_count is not None else "N/A"
         status = col_data.get('status', 'UNKNOWN')
 
         # Color code status for terminal

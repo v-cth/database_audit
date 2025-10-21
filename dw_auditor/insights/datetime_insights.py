@@ -26,6 +26,10 @@ def generate_datetime_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict
     if len(non_null_series) == 0:
         return insights
 
+    # Check if this is a date-only column (vs datetime/timestamp)
+    dtype = df[col].dtype
+    is_date_only = dtype == pl.Date
+
     # Min and Max dates
     if config.get('min_date', False):
         min_date = non_null_series.min()
@@ -70,8 +74,8 @@ def generate_datetime_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict
             for item in value_counts
         ]
 
-    # Most common hours
-    if config.get('most_common_hours', 0) > 0:
+    # Most common hours (only for datetime/timestamp, not date)
+    if config.get('most_common_hours', 0) > 0 and not is_date_only:
         top_n = config['most_common_hours']
 
         hour_counts = (

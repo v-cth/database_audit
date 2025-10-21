@@ -20,17 +20,18 @@ class AuditConfig:
         self.schema = db_config.get('schema')
 
         # Tables to audit - normalize format
-        # Support both simple list and dict format with primary keys
+        # Support both simple list and dict format with primary keys and custom queries
         tables_raw = config_dict.get('tables', [])
         self.tables = []
         self.table_primary_keys = {}  # Map of table_name -> primary_key_column(s)
+        self.table_queries = {}  # Map of table_name -> custom_query
 
         for table_entry in tables_raw:
             if isinstance(table_entry, str):
                 # Simple string format
                 self.tables.append(table_entry)
             elif isinstance(table_entry, dict):
-                # Dictionary format with optional primary_key
+                # Dictionary format with optional primary_key and query
                 table_name = table_entry.get('name')
                 if table_name:
                     self.tables.append(table_name)
@@ -41,6 +42,10 @@ class AuditConfig:
                             self.table_primary_keys[table_name] = [primary_key]
                         elif isinstance(primary_key, list):
                             self.table_primary_keys[table_name] = primary_key
+                    # Store custom query if provided
+                    custom_query = table_entry.get('query')
+                    if custom_query:
+                        self.table_queries[table_name] = custom_query
 
         # Table filtering configuration
         table_filters = config_dict.get('table_filters', {})

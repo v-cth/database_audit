@@ -1,0 +1,2 @@
+table_name,total_rows,analyzed_rows,sampled,column_name,column_dtype,null_count,null_pct,distinct_count,issue_type,issue_count,issue_pct,suggestion,examples,audit_timestamp
+blocks,2000,2000,false,bits,String,0,0.0,3,NUMERIC_STRINGS,1834,91.7,Consider converting to numeric type,"['17056102', '17056102', '17056102']",2025-10-21T13:18:58.544876
