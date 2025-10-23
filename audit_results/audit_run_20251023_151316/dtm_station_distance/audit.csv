@@ -1,0 +1,5 @@
+table_name,total_rows,analyzed_rows,sampled,column_name,column_dtype,null_count,null_pct,distinct_count,issue_type,issue_count,issue_pct,suggestion,examples,audit_timestamp
+dtm_station_distance,2516982,10000,true,origin_station_name,String,0,0.0,1566,CASE_DUPLICATES,1,0.0,"","[('place du général de gaulle', ['Place Du Général De Gaulle', 'Place du Général de Gaulle'])]",2025-10-23T15:15:25.080867
+dtm_station_distance,2516982,10000,true,origin_station_name,String,0,0.0,1566,SPECIAL_CHARACTERS,3790,37.9,"","['Place des Fêtes - Solitaires', 'Sibelle - Alésia']",2025-10-23T15:15:25.080867
+dtm_station_distance,2516982,10000,true,dest_station_name,String,0,0.0,1564,CASE_DUPLICATES,1,0.0,"","[('place du général de gaulle', ['Place Du Général De Gaulle', 'Place du Général de Gaulle'])]",2025-10-23T15:15:25.080867
+dtm_station_distance,2516982,10000,true,dest_station_name,String,0,0.0,1564,SPECIAL_CHARACTERS,3906,39.06,"","['Hôtel de Ville de Fontenay-aux-Roses', 'Gare Routière de Saint Cloud']",2025-10-23T15:15:25.080867

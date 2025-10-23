@@ -39,7 +39,6 @@ def export_to_html(results: Dict, file_path: str = "audit_report.html", thousand
 
     # Summary tab (metadata cards and column summary)
     html += _generate_metadata_cards(results, has_issues)
-    # Add column summary to summary tab
     html += _generate_column_summary_table(results)
     html += """
     </section>

@@ -14,14 +14,14 @@ class AuditConfig:
     def __init__(self, config_dict: Dict):
         """Initialize from dictionary (parsed from YAML)"""
         # Database connection
-        db_config = config_dict.get('database', {})
+        db_config = config_dict.get('database') or {}
         self.backend = db_config.get('backend')  # 'bigquery' or 'snowflake'
         self.connection_params = db_config.get('connection_params', {})
         self.schema = db_config.get('schema')
 
         # Tables to audit - normalize format
         # Support both simple list and dict format with primary keys and custom queries
-        tables_raw = config_dict.get('tables', [])
+        tables_raw = config_dict.get('tables') or []
         self.tables = []
         self.table_primary_keys = {}  # Map of table_name -> primary_key_column(s)
         self.table_queries = {}  # Map of table_name -> custom_query
@@ -48,13 +48,13 @@ class AuditConfig:
                         self.table_queries[table_name] = custom_query
 
         # Table filtering configuration
-        table_filters = config_dict.get('table_filters', {})
+        table_filters = config_dict.get('table_filters') or {}
         self.auto_discover = table_filters.get('auto_discover', False)
         self.exclude_patterns = table_filters.get('exclude_patterns', [])
         self.include_patterns = table_filters.get('include_patterns', [])
 
         # Sampling configuration
-        sampling = config_dict.get('sampling', {})
+        sampling = config_dict.get('sampling') or {}
         self.sample_size = sampling.get('sample_size', 100000)
         self.sample_threshold = sampling.get('sample_threshold', 1000000)
         self.sample_in_db = sampling.get('sample_in_db', True)
@@ -67,12 +67,12 @@ class AuditConfig:
         self.table_sampling_config = sampling.get('tables', {})
 
         # Security settings
-        security = config_dict.get('security', {})
+        security = config_dict.get('security') or {}
         self.mask_pii = security.get('mask_pii', True)
         self.custom_pii_keywords = security.get('custom_pii_keywords', [])
 
         # Audit checks configuration
-        checks = config_dict.get('checks', {})
+        checks = config_dict.get('checks') or {}
         self.check_trailing_spaces = checks.get('trailing_spaces', True)
         self.check_case_duplicates = checks.get('case_duplicates', True)
         self.check_special_chars = checks.get('special_characters', True)
@@ -84,7 +84,7 @@ class AuditConfig:
         self.special_chars_pattern = checks.get('special_chars_pattern', r'[^a-zA-Z0-9\s\.,\-_@]')
 
         # Thresholds
-        thresholds = config_dict.get('thresholds', {})
+        thresholds = config_dict.get('thresholds') or {}
         self.numeric_string_threshold = thresholds.get('numeric_string_pct', 80) / 100
         self.constant_hour_threshold = thresholds.get('constant_hour_pct', 90) / 100
         self.midnight_threshold = thresholds.get('midnight_pct', 95) / 100
@@ -95,67 +95,48 @@ class AuditConfig:
         self.outlier_threshold_pct = thresholds.get('outlier_threshold_pct', 0.0)
 
         # Output configuration
-        output = config_dict.get('output', {})
+        output = config_dict.get('output') or {}
         self.output_dir = Path(output.get('directory', 'audit_results'))
         self.export_formats = output.get('formats', ['html', 'csv'])
         self.file_prefix = output.get('file_prefix', 'audit')
         self.auto_open_html = output.get('auto_open_html', False)
 
         # Column filters (optional)
-        filters = config_dict.get('filters', {})
+        filters = config_dict.get('filters') or {}
         self.include_columns = filters.get('include_columns', [])
         self.exclude_columns = filters.get('exclude_columns', [])
 
         # Column-level check configuration matrix
-        column_checks_config = config_dict.get('column_checks', {})
+        column_checks_config = config_dict.get('column_checks')
 
-        # Global defaults per data type
-        self.column_check_defaults = column_checks_config.get('defaults', {
-            'string': {
-                'trailing_spaces': True,
-                'case_duplicates': True,
-                'special_chars': True,
-                'numeric_strings': True
-            },
-            'datetime': {
-                'timestamp_patterns': True,
-                'date_outliers': True
-            }
-        })
+        # Track if checks are explicitly enabled in config
+        self.checks_enabled = column_checks_config is not None
 
-        # Per-table, per-column overrides
-        self.column_check_overrides = column_checks_config.get('tables', {})
+        if self.checks_enabled:
+            # Global defaults per data type (only from YAML)
+            self.column_check_defaults = column_checks_config.get('defaults', {})
+            # Per-table, per-column overrides
+            self.column_check_overrides = column_checks_config.get('tables', {})
+        else:
+            # No checks config - disable checks
+            self.column_check_defaults = {}
+            self.column_check_overrides = {}
 
         # Column-level insights configuration
-        column_insights_config = config_dict.get('column_insights', {})
+        column_insights_config = config_dict.get('column_insights')
 
-        # Global defaults per data type for insights
-        self.column_insights_defaults = column_insights_config.get('defaults', {
-            'string': {
-                'top_values': 10,
-                'min_length': True,
-                'max_length': True,
-                'avg_length': True
-            },
-            'numeric': {
-                'min': True,
-                'max': True,
-                'mean': True,
-                'median': True,
-                'std': False,
-                'quantiles': [0.25, 0.5, 0.75],
-                'top_values': 5
-            },
-            'datetime': {
-                'min_date': True,
-                'max_date': True,
-                'date_range_days': True,
-                'most_common_dates': 5
-            }
-        })
+        # Track if insights are explicitly enabled in config
+        self.insights_enabled = column_insights_config is not None
 
-        # Per-table, per-column insights overrides
-        self.column_insights_overrides = column_insights_config.get('tables', {})
+        if self.insights_enabled:
+            # Global defaults per data type for insights (only from YAML)
+            self.column_insights_defaults = column_insights_config.get('defaults', {})
+            # Per-table, per-column insights overrides
+            self.column_insights_overrides = column_insights_config.get('tables', {})
+        else:
+            # No insights config - disable insights
+            self.column_insights_defaults = {}
+            self.column_insights_overrides = {}
 
     def get_column_checks(self, table_name: str, column_name: str, column_dtype: str) -> Dict:
         """

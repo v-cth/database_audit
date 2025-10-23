@@ -15,6 +15,7 @@ from ..checks.string_checks import (
 )
 from ..checks.timestamp_checks import check_timestamp_patterns, check_date_outliers, check_future_dates
 from ..checks.numeric_checks import check_numeric_range
+from ..checks.uniqueness_checks import check_uniqueness
 from ..utils.security import mask_pii_columns, sanitize_connection_string
 from ..utils.output import print_results
 from .database import DatabaseConnection
@@ -141,18 +142,19 @@ class SecureTableAuditor(AuditorExporterMixin):
             if any(t in data_type_upper for t in ['STRING', 'VARCHAR', 'TEXT', 'CHAR']):
                 # In 'checks' or 'full' mode, check if string checks are enabled
                 if audit_mode in ['checks', 'full']:
-                    if column_check_config and hasattr(column_check_config, 'get_column_checks'):
+                    if column_check_config and hasattr(column_check_config, 'get_column_checks') and column_check_config.checks_enabled:
                         col_checks = column_check_config.get_column_checks(table_name, column_name, data_type)
                         # Load if any check is enabled
                         if any(col_checks.values()):
                             should_load = True
                     else:
-                        # Default: load string columns for checks
-                        should_load = True
+                        # Default: load string columns for checks (only if checks_enabled not explicitly False)
+                        if not column_check_config or column_check_config.checks_enabled:
+                            should_load = True
 
                 # In 'insights' or 'full' mode, also check if insights are configured
                 if audit_mode in ['insights', 'full']:
-                    if column_check_config and hasattr(column_check_config, 'get_column_insights'):
+                    if column_check_config and hasattr(column_check_config, 'get_column_insights') and column_check_config.insights_enabled:
                         col_insights = column_check_config.get_column_insights(table_name, column_name, data_type)
                         if col_insights:
                             should_load = True
@@ -161,13 +163,14 @@ class SecureTableAuditor(AuditorExporterMixin):
             elif any(t in data_type_upper for t in ['DATE', 'TIME', 'TIMESTAMP']):
                 # In 'checks' or 'full' mode, check if datetime checks are enabled
                 if audit_mode in ['checks', 'full']:
-                    if column_check_config and hasattr(column_check_config, 'get_column_checks'):
+                    if column_check_config and hasattr(column_check_config, 'get_column_checks') and column_check_config.checks_enabled:
                         col_checks = column_check_config.get_column_checks(table_name, column_name, data_type)
                         if any(col_checks.values()):
                             should_load = True
                     else:
-                        # Default: load datetime columns for checks
-                        should_load = True
+                        # Default: load datetime columns for checks (only if checks_enabled not explicitly False)
+                        if not column_check_config or column_check_config.checks_enabled:
+                            should_load = True
 
                 # In 'insights' or 'full' mode, also check if insights are configured
                 if audit_mode in ['insights', 'full']:
@@ -176,18 +179,23 @@ class SecureTableAuditor(AuditorExporterMixin):
                         if col_insights:
                             should_load = True
 
-            # Numeric types - load only in insights or full mode
+            # Numeric types - load for checks (range validation) or insights
             elif any(t in data_type_upper for t in ['INT', 'FLOAT', 'DOUBLE', 'NUMERIC', 'DECIMAL', 'NUMBER']):
-                # Numeric columns don't have quality checks, only insights
-                # Skip in 'checks' mode since they have no checks
+                # In 'checks' or 'full' mode, check if numeric range validation is configured
+                if audit_mode in ['checks', 'full']:
+                    if column_check_config and hasattr(column_check_config, 'get_column_checks') and column_check_config.checks_enabled:
+                        col_checks = column_check_config.get_column_checks(table_name, column_name, data_type)
+                        # Load if any range validation is configured
+                        range_keys = ['min', 'max', 'greater_than', 'greater_than_or_equal', 'less_than', 'less_than_or_equal']
+                        if any(key in col_checks for key in range_keys):
+                            should_load = True
+
+                # In 'insights' or 'full' mode, load for insights
                 if audit_mode in ['insights', 'full']:
-                    if column_check_config and hasattr(column_check_config, 'get_column_insights'):
+                    if column_check_config and hasattr(column_check_config, 'get_column_insights') and column_check_config.insights_enabled:
                         col_insights = column_check_config.get_column_insights(table_name, column_name, data_type)
                         if col_insights:
                             should_load = True
-                    else:
-                        # Default: load numeric columns for insights
-                        should_load = True
 
             # Boolean types - load only in insights or full mode
             elif any(t in data_type_upper for t in ['BOOL', 'BOOLEAN']):
@@ -555,7 +563,7 @@ class SecureTableAuditor(AuditorExporterMixin):
             'columns': {},
             'column_summary': {},  # Summary for ALL columns
             'column_insights': {},  # Insights for columns
-            'timestamp': start_time.isoformat(),
+            'timestamp': start_time.strftime('%B %d, %Y at %I:%M %p'),
             'start_time': start_time.isoformat()
         }
 
@@ -594,11 +602,11 @@ class SecureTableAuditor(AuditorExporterMixin):
 
             # Get column-specific check configuration
             col_dtype = str(df[col].dtype)
-            if column_check_config and hasattr(column_check_config, 'get_column_checks'):
+            if column_check_config and hasattr(column_check_config, 'get_column_checks') and column_check_config.checks_enabled:
                 # Use column-specific config from the matrix
                 col_check_config = column_check_config.get_column_checks(table_name, col, col_dtype)
             else:
-                # Fallback to global check_config
+                # Fallback to global check_config (or empty dict if checks disabled)
                 col_check_config = check_config or {}
 
             col_results = self._audit_column(df, col, col_check_config, primary_key_columns, audit_mode)
@@ -612,13 +620,21 @@ class SecureTableAuditor(AuditorExporterMixin):
             elif audit_mode == 'insights':
                 # In insights mode, columns are marked as PROFILED
                 status = 'PROFILED'
-            elif dtype in [pl.Utf8, pl.String, pl.Datetime, pl.Date]:
+            elif dtype in [pl.Utf8, pl.String, pl.Datetime, pl.Date,
+                          pl.Int8, pl.Int16, pl.Int32, pl.Int64,
+                          pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
+                          pl.Float32, pl.Float64]:
                 # Columns that are checked for quality issues
                 status = 'ERROR' if col_results['issues'] else 'OK'
-                check_type = 'string_checks' if dtype in [pl.Utf8, pl.String] else 'date_checks'
+                if dtype in [pl.Utf8, pl.String]:
+                    check_type = 'string_checks'
+                elif dtype in [pl.Datetime, pl.Date]:
+                    check_type = 'date_checks'
+                else:
+                    check_type = 'numeric_checks'
                 check_durations[check_type] = check_durations.get(check_type, 0) + col_duration
             else:
-                # Columns not checked (numeric, boolean, etc.)
+                # Columns not checked (boolean, complex types, etc.)
                 status = 'NOT_CHECKED'
 
             # Store summary for ALL columns
@@ -634,12 +650,12 @@ class SecureTableAuditor(AuditorExporterMixin):
             if col_results['distinct_count'] == analyzed_rows and col_results['null_count'] == 0:
                 potential_keys.append(col)
 
-            # Store detailed results only for columns with issues
-            if col_results['issues']:
+            # Store detailed results for columns with checks performed (issues or not)
+            if col_results.get('checks_run'):
                 results['columns'][col] = col_results
 
-            # Generate column insights (skip in discover and checks modes)
-            if audit_mode not in ['discover', 'checks'] and column_check_config and hasattr(column_check_config, 'get_column_insights'):
+            # Generate column insights (skip in discover and checks modes, or if insights disabled in config)
+            if audit_mode not in ['discover', 'checks'] and column_check_config and hasattr(column_check_config, 'get_column_insights') and column_check_config.insights_enabled:
                 col_insights_config = column_check_config.get_column_insights(table_name, col, col_dtype)
                 if col_insights_config:
                     insights = generate_column_insights(df, col, col_insights_config)
@@ -786,6 +802,17 @@ class SecureTableAuditor(AuditorExporterMixin):
                     'issues_count': issues_found
                 })
 
+            if check_config.get('uniqueness', False):
+                before_count = len(col_result['issues'])
+                col_result['issues'].extend(check_uniqueness(df, col, primary_key_columns))
+                after_count = len(col_result['issues'])
+                issues_found = after_count - before_count
+                col_result['checks_run'].append({
+                    'name': 'Uniqueness',
+                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
+                    'issues_count': issues_found
+                })
+
         # Timestamp/Date checks
         elif dtype in [pl.Datetime, pl.Date]:
             if check_config.get('timestamp_patterns', True):
@@ -829,6 +856,17 @@ class SecureTableAuditor(AuditorExporterMixin):
                     'issues_count': issues_found
                 })
 
+            if check_config.get('uniqueness', False):
+                before_count = len(col_result['issues'])
+                col_result['issues'].extend(check_uniqueness(df, col, primary_key_columns))
+                after_count = len(col_result['issues'])
+                issues_found = after_count - before_count
+                col_result['checks_run'].append({
+                    'name': 'Uniqueness',
+                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
+                    'issues_count': issues_found
+                })
+
         # Numeric range checks (all numeric types)
         if dtype in [pl.Int8, pl.Int16, pl.Int32, pl.Int64,
                      pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
@@ -859,13 +897,25 @@ class SecureTableAuditor(AuditorExporterMixin):
             # Only run check if at least one range parameter is defined
             if range_params:
                 before_count = len(col_result['issues'])
-                col_result['issues'].extend(check_numeric_range(df, col, **range_params))
+                col_result['issues'].extend(check_numeric_range(df, col, primary_key_columns, **range_params))
                 after_count = len(col_result['issues'])
                 issues_found = after_count - before_count
 
                 range_desc = ', '.join(range_desc_parts)
                 col_result['checks_run'].append({
                     'name': f'Numeric Range ({range_desc})',
+                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
+                    'issues_count': issues_found
+                })
+
+            # Uniqueness check for numeric columns
+            if check_config.get('uniqueness', False):
+                before_count = len(col_result['issues'])
+                col_result['issues'].extend(check_uniqueness(df, col, primary_key_columns))
+                after_count = len(col_result['issues'])
+                issues_found = after_count - before_count
+                col_result['checks_run'].append({
+                    'name': 'Uniqueness',
                     'status': 'FAILED' if issues_found > 0 else 'PASSED',
                     'issues_count': issues_found
                 })

@@ -112,7 +112,6 @@ def _generate_metadata_cards(results: Dict, has_issues: bool) -> str:
                 <p>Status</p>
             </div>
         </div>
-    </section>
 """
 
 

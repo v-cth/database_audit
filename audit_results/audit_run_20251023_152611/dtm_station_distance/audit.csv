@@ -1,0 +1,5 @@
+table_name,total_rows,analyzed_rows,sampled,column_name,column_dtype,null_count,null_pct,distinct_count,issue_type,issue_count,issue_pct,suggestion,examples,audit_timestamp
+dtm_station_distance,2516982,10000,true,origin_station_name,String,0,0.0,1567,CASE_DUPLICATES,1,0.0,"","[('place du général de gaulle', ['Place du Général de Gaulle', 'Place Du Général De Gaulle'])]",2025-10-23T15:27:15.491900
+dtm_station_distance,2516982,10000,true,origin_station_name,String,0,0.0,1567,SPECIAL_CHARACTERS,3812,38.12,"","[""Quai de l'Aisne - Général Leclerc"", 'Constantine - Université']",2025-10-23T15:27:15.491900
+dtm_station_distance,2516982,10000,true,dest_station_name,String,0,0.0,1567,CASE_DUPLICATES,1,0.0,"","[('place du général de gaulle', ['Place du Général de Gaulle', 'Place Du Général De Gaulle'])]",2025-10-23T15:27:15.491900
+dtm_station_distance,2516982,10000,true,dest_station_name,String,0,0.0,1567,SPECIAL_CHARACTERS,3882,38.82,"","[""Longchamp - Place d'Iéna"", 'Grande Armée - Brunel']",2025-10-23T15:27:15.491900

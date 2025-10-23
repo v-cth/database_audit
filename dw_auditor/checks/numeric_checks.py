@@ -6,9 +6,22 @@ import polars as pl
 from typing import List, Dict, Optional
 
 
+def _format_example_with_pk(row_data: Dict, col: str, primary_key_columns: Optional[List[str]] = None) -> str:
+    """Format an example with primary key context"""
+    if primary_key_columns and len(primary_key_columns) > 0:
+        pk_values = []
+        for pk_col in primary_key_columns:
+            if pk_col in row_data:
+                pk_values.append(f"{pk_col}={row_data[pk_col]}")
+        if pk_values:
+            return f"{row_data[col]} [{', '.join(pk_values)}]"
+    return str(row_data[col])
+
+
 def check_numeric_range(
     df: pl.DataFrame,
     col: str,
+    primary_key_columns: Optional[List[str]] = None,
     min_val: Optional[float] = None,
     max_val: Optional[float] = None,
     greater_than: Optional[float] = None,
@@ -47,7 +60,12 @@ def check_numeric_range(
 
         if below_min_count > 0:
             pct = (below_min_count / non_null_count) * 100
-            examples = below_min[col].head(5).to_list()
+
+            # Format examples with primary key context if available
+            examples = []
+            select_cols = [col] + (primary_key_columns if primary_key_columns else [])
+            for row in below_min.select(select_cols).head(5).iter_rows(named=True):
+                examples.append(_format_example_with_pk(row, col, primary_key_columns))
 
             issues.append({
                 'type': 'VALUE_BELOW_MIN',
@@ -66,7 +84,12 @@ def check_numeric_range(
 
         if above_max_count > 0:
             pct = (above_max_count / non_null_count) * 100
-            examples = above_max[col].head(5).to_list()
+
+            # Format examples with primary key context if available
+            examples = []
+            select_cols = [col] + (primary_key_columns if primary_key_columns else [])
+            for row in above_max.select(select_cols).head(5).iter_rows(named=True):
+                examples.append(_format_example_with_pk(row, col, primary_key_columns))
 
             issues.append({
                 'type': 'VALUE_ABOVE_MAX',
@@ -85,7 +108,12 @@ def check_numeric_range(
 
         if not_greater_count > 0:
             pct = (not_greater_count / non_null_count) * 100
-            examples = not_greater[col].head(5).to_list()
+
+            # Format examples with primary key context if available
+            examples = []
+            select_cols = [col] + (primary_key_columns if primary_key_columns else [])
+            for row in not_greater.select(select_cols).head(5).iter_rows(named=True):
+                examples.append(_format_example_with_pk(row, col, primary_key_columns))
 
             issues.append({
                 'type': 'VALUE_NOT_GREATER_THAN',
@@ -104,7 +132,12 @@ def check_numeric_range(
 
         if not_gte_count > 0:
             pct = (not_gte_count / non_null_count) * 100
-            examples = not_gte[col].head(5).to_list()
+
+            # Format examples with primary key context if available
+            examples = []
+            select_cols = [col] + (primary_key_columns if primary_key_columns else [])
+            for row in not_gte.select(select_cols).head(5).iter_rows(named=True):
+                examples.append(_format_example_with_pk(row, col, primary_key_columns))
 
             issues.append({
                 'type': 'VALUE_NOT_GREATER_OR_EQUAL',
@@ -123,7 +156,12 @@ def check_numeric_range(
 
         if not_less_count > 0:
             pct = (not_less_count / non_null_count) * 100
-            examples = not_less[col].head(5).to_list()
+
+            # Format examples with primary key context if available
+            examples = []
+            select_cols = [col] + (primary_key_columns if primary_key_columns else [])
+            for row in not_less.select(select_cols).head(5).iter_rows(named=True):
+                examples.append(_format_example_with_pk(row, col, primary_key_columns))
 
             issues.append({
                 'type': 'VALUE_NOT_LESS_THAN',
@@ -142,7 +180,12 @@ def check_numeric_range(
 
         if not_lte_count > 0:
             pct = (not_lte_count / non_null_count) * 100
-            examples = not_lte[col].head(5).to_list()
+
+            # Format examples with primary key context if available
+            examples = []
+            select_cols = [col] + (primary_key_columns if primary_key_columns else [])
+            for row in not_lte.select(select_cols).head(5).iter_rows(named=True):
+                examples.append(_format_example_with_pk(row, col, primary_key_columns))
 
             issues.append({
                 'type': 'VALUE_NOT_LESS_OR_EQUAL',

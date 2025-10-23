@@ -110,10 +110,7 @@ def _generate_issues_section(results: Dict, has_issues: bool) -> str:
         </div>
 """
 
-        html += """
-"""
-
-        # Only show detailed issues if there are any
+        # Show results: either issues or success message
         if has_column_issues:
             for issue in col_data['issues']:
                 issue_type = issue['type'].replace('_', ' ').title()
@@ -161,6 +158,14 @@ def _generate_issues_section(results: Dict, has_issues: bool) -> str:
 """
 
                 html += """
+        </div>
+"""
+        else:
+            # All checks passed - show success message
+            html += """
+        <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin-top: 15px;">
+            <div style="color: #065f46; font-weight: 500;">All quality checks passed</div>
+            <div style="color: #047857; font-size: 0.9em; margin-top: 5px;">No data quality issues detected for this column</div>
         </div>
 """
 

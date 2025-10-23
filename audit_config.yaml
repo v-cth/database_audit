@@ -89,14 +89,22 @@ column_checks:
       case_duplicates: true
       special_chars: true
       numeric_strings: true
+      uniqueness: false  # Set true to flag duplicate values (e.g., for ID columns)
     datetime:
       timestamp_patterns: true
       date_outliers: true
       future_dates: true
+      uniqueness: false  # Set true to flag duplicate timestamps
+    numeric:
+      uniqueness: false  # Set true to flag duplicate numeric values (e.g., for IDs)
 
   # Per-table, per-column overrides and numeric range validation
   tables:
   #   dim_station:
+  #     # Uniqueness check - verify column values are unique
+  #     station_code:
+  #       uniqueness: true  # Flag duplicate station codes
+  #
   #     # Skip special chars check for city column (we expect French accents)
   #     city:
   #       special_chars: false
@@ -109,6 +117,7 @@ column_checks:
   #     capacity:
   #       min: 1                      # Inclusive: capacity >= 1
   #       max: 100                    # Inclusive: capacity <= 100
+  #       uniqueness: false           # Capacity can have duplicates
   #     latitude:
   #       greater_than_or_equal: -90  # Inclusive: latitude >= -90
   #       less_than_or_equal: 90      # Inclusive: latitude <= 90
@@ -116,51 +125,57 @@ column_checks:
   #       greater_than: -180          # Exclusive: longitude > -180
   #       less_than: 180              # Exclusive: longitude < 180
   #
-    fct_avaibility_part:
-      available_bikes:
-        min: 0          
+    fct_avaibility_part:         
       available_docks:
         greater_than_or_equal: 1
+      bikes_available:
+        greater_than: 0
+        uniqueness: true
+
+
+    dim_station:
+      capacity:
+        less_than: 20
 
 # Column Insights Configuration
 # ----------------------------------------------------------------------------
 # Configure data profiling insights (separate from quality checks)
 column_insights:
   # Global defaults per data type
-  defaults:
-    string:
-      # Show top N most frequent values with counts and percentages
-      top_values: 10
-      # String length statistics
-      min_length: true
-      max_length: true
-      avg_length: true
+  # defaults:
+  #   string:
+  #     # Show top N most frequent values with counts and percentages
+  #     top_values: 10
+  #     # String length statistics
+  #     min_length: true
+  #     max_length: true
+  #     avg_length: true
 
-    numeric:
-      # Basic statistics
-      min: true
-      max: true
-      mean: true
-      median: true
-      std: false  # Standard deviation (can be noisy)
-      # Percentile breakdowns
-      quantiles: [0.25, 0.5, 0.75]
-      # Show top N most frequent values
-      top_values: 5
+  #   numeric:
+  #     # Basic statistics
+  #     min: true
+  #     max: true
+  #     mean: true
+  #     median: true
+  #     std: false  # Standard deviation (can be noisy)
+  #     # Percentile breakdowns
+  #     quantiles: [0.25, 0.5, 0.75]
+  #     # Show top N most frequent values
+  #     top_values: 5
 
-    datetime:
-      # Date range information
-      min_date: true
-      max_date: true
-      date_range_days: true
-      # Timezone info (for timezone-aware columns)
-      most_common_timezones: 1
-      # Most common dates with counts
-      most_common_dates: 5
-      # Most common days of week
-      most_common_days: 7
-      # Most common hours (0-23)
-      most_common_hours: 5
+  #   datetime:
+  #     # Date range information
+  #     min_date: true
+  #     max_date: true
+  #     date_range_days: true
+  #     # Timezone info (for timezone-aware columns)
+  #     most_common_timezones: 1
+  #     # Most common dates with counts
+  #     most_common_dates: 5
+  #     # Most common days of week
+  #     most_common_days: 7
+  #     # Most common hours (0-23)
+  #     most_common_hours: 5
 
   # Per-table, per-column overrides
   # tables:
