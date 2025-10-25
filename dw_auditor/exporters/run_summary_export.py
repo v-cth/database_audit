@@ -177,7 +177,7 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
     """
     from datetime import datetime
     from .html.assets import _generate_css_styles
-    from .html.relationships import generate_relationships_summary_section, generate_standalone_relationships_report
+    from .html.relationships import generate_relationships_summary_section
 
     # Calculate run-level metrics
     total_tables = len(all_results)
@@ -190,6 +190,14 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
 
     # Count status breakdown
     status_counts = {'OK': 0, 'WARNING': 0, 'ERROR': 0}
+
+    # Prepare tables metadata for relationships
+    tables_metadata = {}
+    for result in all_results:
+        tables_metadata[result.get('table_name')] = {
+            'total_rows': result.get('total_rows', 0),
+            'column_count': len(result.get('column_summary', {}))
+        }
 
     # Prepare table rows
     table_rows_html = ""
@@ -346,7 +354,7 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
         </div>
 
         <!-- Relationships Section -->
-{generate_relationships_summary_section(relationships) if relationships else ''}
+{generate_relationships_summary_section(relationships, tables_metadata) if relationships else ''}
     </div>
 </body>
 </html>
@@ -355,26 +363,5 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
     # Write HTML file
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(html)
-
-    # Generate standalone interactive relationships report if relationships exist
-    if relationships:
-        # Prepare tables metadata for the interactive report
-        tables_metadata = {}
-        for result in all_results:
-            tables_metadata[result.get('table_name')] = {
-                'total_rows': result.get('total_rows', 0),
-                'column_count': len(result.get('column_summary', {}))
-            }
-
-        # Generate interactive report in same directory as summary
-        from pathlib import Path
-        summary_path = Path(file_path)
-        interactive_path = summary_path.parent / 'relationships_interactive.html'
-
-        generate_standalone_relationships_report(
-            relationships=relationships,
-            tables_metadata=tables_metadata,
-            output_path=str(interactive_path)
-        )
 
     return file_path

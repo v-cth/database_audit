@@ -1,0 +1,8 @@
+📁 Audit run directory: audit_results/audit_run_20251025_213814
+📝 Logs will be saved to: audit_results/audit_run_20251025_213814/audit.log
+🔍 Full audit mode: Running quality checks and profiling/insights
+
+======================================================================
+💰 Estimating BigQuery scan costs...
+======================================================================
+✅ Connected to BIGQUERY

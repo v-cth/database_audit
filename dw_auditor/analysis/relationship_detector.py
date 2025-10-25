@@ -125,15 +125,19 @@ class PolarsRelationshipDetector:
                 )
 
                 if confidence >= confidence_threshold:
+                    # Determine relationship type and direction
+                    rel_info = self._determine_relationship_type(
+                        df1.get_column(col1), df2.get_column(col2)
+                    )
+
                     relationship = {
                         'table1': table1,
                         'column1': col1,
                         'table2': table2,
                         'column2': col2,
                         'confidence': confidence,
-                        'relationship_type': self._determine_relationship_type(
-                            df1.get_column(col1), df2.get_column(col2)
-                        ),
+                        'relationship_type': rel_info['type'],
+                        'direction': rel_info['direction'],
                         'matching_values': self._get_matching_values_count(
                             df1.get_column(col1), df2.get_column(col2)
                         )
@@ -277,26 +281,30 @@ class PolarsRelationshipDetector:
         # Jaccard index
         return len(intersection) / len(union)
 
-    def _determine_relationship_type(self, series1: pl.Series, series2: pl.Series) -> str:
+    def _determine_relationship_type(self, series1: pl.Series, series2: pl.Series) -> dict:
         """
         Determine the type of relationship (one-to-one, one-to-many, etc.)
 
         Args:
-            series1: First Polars Series
-            series2: Second Polars Series
+            series1: First Polars Series (from table1)
+            series2: Second Polars Series (from table2)
 
         Returns:
-            Relationship type string
+            Dictionary with relationship type and direction info
         """
         unique_ratio1 = series1.n_unique() / len(series1) if len(series1) > 0 else 0
         unique_ratio2 = series2.n_unique() / len(series2) if len(series2) > 0 else 0
 
         if unique_ratio1 > 0.95 and unique_ratio2 > 0.95:
-            return "one-to-one"
-        elif unique_ratio1 > 0.95 or unique_ratio2 > 0.95:
-            return "one-to-many"
+            return {"type": "one-to-one", "direction": "bidirectional"}
+        elif unique_ratio1 > 0.95:
+            # table1 is unique (the "one" side), table2 is many
+            return {"type": "many-to-one", "direction": "table2_to_table1"}
+        elif unique_ratio2 > 0.95:
+            # table2 is unique (the "one" side), table1 is many
+            return {"type": "many-to-one", "direction": "table1_to_table2"}
         else:
-            return "many-to-many"
+            return {"type": "many-to-many", "direction": "bidirectional"}
 
     def _get_matching_values_count(self, series1: pl.Series, series2: pl.Series) -> int:
         """

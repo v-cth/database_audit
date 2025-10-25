@@ -1,0 +1,4 @@
+table1,column1,table2,column2,confidence,relationship_type,matching_values
+fct_avaibility_part,station_code,dim_station,station_code,0.9682419659735351,one-to-many,1461
+fct_avaibility_part,station_name,dim_station,station_name,0.9714649681528664,one-to-many,1458
+fct_avaibility_part,capacity,dim_station,capacity,0.956164383561644,many-to-many,65

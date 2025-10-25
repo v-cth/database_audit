@@ -426,7 +426,15 @@ Examples:
                 if detected_relationships:
                     print(f"\nDetected Relationships:")
                     for rel in sorted(detected_relationships, key=lambda x: x['confidence'], reverse=True):
-                        print(f"   • {rel['table1']}.{rel['column1']} ↔ {rel['table2']}.{rel['column2']}")
+                        # Format relationship with direction
+                        if rel['direction'] == 'table1_to_table2':
+                            rel_str = f"{rel['table1']}.{rel['column1']} → {rel['table2']}.{rel['column2']}"
+                        elif rel['direction'] == 'table2_to_table1':
+                            rel_str = f"{rel['table1']}.{rel['column1']} ← {rel['table2']}.{rel['column2']}"
+                        else:
+                            rel_str = f"{rel['table1']}.{rel['column1']} ↔ {rel['table2']}.{rel['column2']}"
+
+                        print(f"   • {rel_str}")
                         print(f"     Confidence: {rel['confidence']:.1%} | Type: {rel['relationship_type']} | Matching values: {rel['matching_values']}")
 
                 # Remove DataFrames from results to save memory (no longer needed)
@@ -450,12 +458,8 @@ Examples:
                 summary_html = run_dir / 'summary.html'
                 auditor.export_run_summary_to_html(all_table_results, str(summary_html), detected_relationships)
                 print(f"📄 Summary HTML saved to: {summary_html}")
-
-                # Generate standalone interactive relationships report if relationships were detected
                 if detected_relationships:
-                    relationships_html = run_dir / 'relationships_interactive.html'
-                    # This will be implemented when we create relationships.py
-                    print(f"📄 Interactive relationships report: {relationships_html}")
+                    print(f"   └─ Includes interactive relationship diagram with {len(detected_relationships)} relationship(s)")
 
             if 'json' in config.export_formats:
                 summary_json = run_dir / 'summary.json'

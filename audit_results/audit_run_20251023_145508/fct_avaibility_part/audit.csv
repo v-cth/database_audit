@@ -1,3 +1,0 @@
-table_name,total_rows,analyzed_rows,sampled,column_name,column_dtype,null_count,null_pct,distinct_count,issue_type,issue_count,issue_pct,suggestion,examples,audit_timestamp
-fct_avaibility_part,3877353,10000,true,station_name,String,0,0.0,1457,CASE_DUPLICATES,1,0.0,"","[('place du général de gaulle', ['Place du Général de Gaulle', 'Place Du Général De Gaulle'])]",2025-10-23T14:56:44.354576
-fct_avaibility_part,3877353,10000,true,station_name,String,0,0.0,1457,SPECIAL_CHARACTERS,3783,37.830000000000005,"","[""Place de l'Eglise - Pantin"", 'Laumière - Petit']",2025-10-23T14:56:44.354576
