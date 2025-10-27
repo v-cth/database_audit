@@ -32,7 +32,7 @@ ibis-framework[snowflake]>=9.0.0   # Ibis Snowflake backend
 # tqdm>=4.65.0              # Progress bars for batch operations
 
 # Data validation
-# pydantic>=2.0.0           # Data validation for config
+pydantic>=2.0.0           # Data validation for config
 
 # Logging
 # loguru>=0.7.0             # Advanced logging capabilities
