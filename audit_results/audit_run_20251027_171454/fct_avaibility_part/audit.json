@@ -1,0 +1,281 @@
+{
+  "table_name": "fct_avaibility_part",
+  "total_rows": 3877353,
+  "sampled": true,
+  "analyzed_rows": 10000,
+  "columns": {
+    "station_name": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1456,
+      "issues": [
+        {
+          "type": "CASE_DUPLICATES",
+          "count": 1,
+          "examples": [
+            [
+              "place du g\u00e9n\u00e9ral de gaulle",
+              [
+                "Place du G\u00e9n\u00e9ral de Gaulle",
+                "Place Du G\u00e9n\u00e9ral De Gaulle"
+              ]
+            ]
+          ]
+        }
+      ],
+      "checks_run": [
+        {
+          "name": "Trailing Characters",
+          "status": "PASSED",
+          "issues_count": 0
+        },
+        {
+          "name": "Case Duplicates",
+          "status": "FAILED",
+          "issues_count": 1
+        },
+        {
+          "name": "Numeric Strings",
+          "status": "PASSED",
+          "issues_count": 0
+        }
+      ]
+    },
+    "duedate": {
+      "dtype": "Datetime(time_unit='ns', time_zone='UTC')",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 9920,
+      "issues": [],
+      "checks_run": [
+        {
+          "name": "Timestamp Patterns",
+          "status": "PASSED",
+          "issues_count": 0
+        },
+        {
+          "name": "Future Dates",
+          "status": "PASSED",
+          "issues_count": 0
+        }
+      ]
+    },
+    "bikes_available": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 73,
+      "issues": [
+        {
+          "type": "VALUE_NOT_GREATER_THAN",
+          "count": 259,
+          "pct": 2.59,
+          "threshold": 0,
+          "operator": ">",
+          "suggestion": "Values should be > 0",
+          "examples": [
+            "0",
+            "0",
+            "0",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "type": "DUPLICATE_VALUES",
+          "count": 9927,
+          "pct": 99.27,
+          "distinct_duplicates": 64,
+          "suggestion": "Column should contain only unique values. Found 64 distinct value(s) with duplicates.",
+          "examples": [
+            "3 [count=715]",
+            "2 [count=677]",
+            "5 [count=668]",
+            "4 [count=660]",
+            "1 [count=515]"
+          ]
+        }
+      ],
+      "checks_run": [
+        {
+          "name": "Numeric Range (> 0)",
+          "status": "FAILED",
+          "issues_count": 1
+        },
+        {
+          "name": "Uniqueness",
+          "status": "FAILED",
+          "issues_count": 1
+        }
+      ]
+    },
+    "collected_at": {
+      "dtype": "Datetime(time_unit='ns', time_zone=None)",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2609,
+      "issues": [],
+      "checks_run": [
+        {
+          "name": "Timestamp Patterns",
+          "status": "PASSED",
+          "issues_count": 0
+        },
+        {
+          "name": "Future Dates",
+          "status": "PASSED",
+          "issues_count": 0
+        }
+      ]
+    },
+    "rounded_collected_at": {
+      "dtype": "Datetime(time_unit='ns', time_zone=None)",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2609,
+      "issues": [],
+      "checks_run": [
+        {
+          "name": "Timestamp Patterns",
+          "status": "PASSED",
+          "issues_count": 0
+        },
+        {
+          "name": "Future Dates",
+          "status": "PASSED",
+          "issues_count": 0
+        }
+      ]
+    }
+  },
+  "column_summary": {
+    "station_code": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1459,
+      "status": "OK"
+    },
+    "station_name": {
+      "dtype": "String",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1456,
+      "status": "ERROR"
+    },
+    "capacity": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 66,
+      "status": "OK"
+    },
+    "docks_available": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 72,
+      "status": "OK"
+    },
+    "mechanical": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 64,
+      "status": "OK"
+    },
+    "ebike": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 34,
+      "status": "OK"
+    },
+    "duedate": {
+      "dtype": "Datetime(time_unit='ns', time_zone='UTC')",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 9920,
+      "status": "OK"
+    },
+    "bikes_available": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 73,
+      "status": "ERROR"
+    },
+    "rate_bike_available": {
+      "dtype": "Float64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1043,
+      "status": "OK"
+    },
+    "rate_dock_available": {
+      "dtype": "Float64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 1037,
+      "status": "OK"
+    },
+    "bikes_out_of_order": {
+      "dtype": "Int64",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 49,
+      "status": "OK"
+    },
+    "collected_at": {
+      "dtype": "Datetime(time_unit='ns', time_zone=None)",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2609,
+      "status": "OK"
+    },
+    "rounded_collected_at": {
+      "dtype": "Datetime(time_unit='ns', time_zone=None)",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 2609,
+      "status": "OK"
+    }
+  },
+  "column_insights": {},
+  "timestamp": "2025-10-27 16:15:13 UTC",
+  "start_time": "2025-10-27T17:15:13.384346",
+  "check_durations": {
+    "numeric_checks": 0.010095,
+    "string_checks": 0.028374,
+    "date_checks": 0.009146
+  },
+  "end_time": "2025-10-27T17:15:13.432218",
+  "duration_seconds": 0.05,
+  "data": "shape: (10_000, 13)\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 station_c \u2506 station_n \u2506 capacity \u2506 docks_ava \u2506 \u2026 \u2506 rate_dock \u2506 bikes_out \u2506 collected \u2506 rounded_c \u2502\n\u2502 ode       \u2506 ame       \u2506 ---      \u2506 ilable    \u2506   \u2506 _availabl \u2506 _of_order \u2506 _at       \u2506 ollected_ \u2502\n\u2502 ---       \u2506 ---       \u2506 i64      \u2506 ---       \u2506   \u2506 e         \u2506 ---       \u2506 ---       \u2506 at        \u2502\n\u2502 i64       \u2506 str       \u2506          \u2506 i64       \u2506   \u2506 ---       \u2506 i64       \u2506 datetime[ \u2506 ---       \u2502\n\u2502           \u2506           \u2506          \u2506           \u2506   \u2506 f64       \u2506           \u2506 ns]       \u2506 datetime[ \u2502\n\u2502           \u2506           \u2506          \u2506           \u2506   \u2506           \u2506           \u2506           \u2506 ns]       \u2502\n\u255e\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u256a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2561\n\u2502 8203      \u2506 Matignon  \u2506 35       \u2506 31        \u2506 \u2026 \u2506 0.885714  \u2506 1         \u2506 2025-09-1 \u2506 2025-09-1 \u2502\n\u2502           \u2506 -         \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 2         \u2506 2         \u2502\n\u2502           \u2506 Faubourg  \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 23:06:22  \u2506 23:00:00  \u2502\n\u2502           \u2506 Saint-Hon \u2506          \u2506           \u2506   \u2506           \u2506           \u2506           \u2506           \u2502\n\u2502           \u2506 o\u2026        \u2506          \u2506           \u2506   \u2506           \u2506           \u2506           \u2506           \u2502\n\u2502 19113     \u2506 Pr\u00e9 Saint \u2506 28       \u2506 26        \u2506 \u2026 \u2506 0.928571  \u2506 2         \u2506 2025-07-0 \u2506 2025-07-0 \u2502\n\u2502           \u2506 -Gervais  \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 1         \u2506 1         \u2502\n\u2502           \u2506 - Lilas   \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 13:05:57  \u2506 13:00:00  \u2502\n\u2502 13123     \u2506 BNF - Bib \u2506 42       \u2506 18        \u2506 \u2026 \u2506 0.428571  \u2506 0         \u2506 2025-08-2 \u2506 2025-08-2 \u2502\n\u2502           \u2506 lioth\u00e8que \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 8         \u2506 8         \u2502\n\u2502           \u2506 Nationale \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 22:06:28  \u2506 22:00:00  \u2502\n\u2502           \u2506 d\u2026        \u2506          \u2506           \u2506   \u2506           \u2506           \u2506           \u2506           \u2502\n\u2502 32003     \u2506 Wilson -  \u2506 28       \u2506 14        \u2506 \u2026 \u2506 0.5       \u2506 1         \u2506 2025-08-0 \u2506 2025-08-0 \u2502\n\u2502           \u2506 M\u00e9tallurg \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 3         \u2506 3         \u2502\n\u2502           \u2506 ie        \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 18:06:22  \u2506 18:00:00  \u2502\n\u2502 45003     \u2506 11        \u2506 36       \u2506 24        \u2506 \u2026 \u2506 0.666667  \u2506 0         \u2506 2025-07-2 \u2506 2025-07-2 \u2502\n\u2502           \u2506 Novembre  \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 7         \u2506 7         \u2502\n\u2502           \u2506 1918 - 8  \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 14:06:21  \u2506 14:00:00  \u2502\n\u2502           \u2506 Mai 1945  \u2506          \u2506           \u2506   \u2506           \u2506           \u2506           \u2506           \u2502\n\u2502 \u2026         \u2506 \u2026         \u2506 \u2026        \u2506 \u2026         \u2506 \u2026 \u2506 \u2026         \u2506 \u2026         \u2506 \u2026         \u2506 \u2026         \u2502\n\u2502 8051      \u2506 Batignoll \u2506 15       \u2506 10        \u2506 \u2026 \u2506 0.666667  \u2506 3         \u2506 2025-07-0 \u2506 2025-07-0 \u2502\n\u2502           \u2506 es - Rome \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 3         \u2506 3         \u2502\n\u2502           \u2506           \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 21:06:15  \u2506 21:00:00  \u2502\n\u2502 10017     \u2506 Gare de   \u2506 15       \u2506 6         \u2506 \u2026 \u2506 0.4       \u2506 3         \u2506 2025-10-0 \u2506 2025-10-0 \u2502\n\u2502           \u2506 l'Est -   \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 5         \u2506 5         \u2502\n\u2502           \u2506 Fid\u00e9lit\u00e9  \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 16:06:35  \u2506 16:00:00  \u2502\n\u2502 42706     \u2506 Roger     \u2506 25       \u2506 16        \u2506 \u2026 \u2506 0.64      \u2506 2         \u2506 2025-07-0 \u2506 2025-07-0 \u2502\n\u2502           \u2506 Salengro  \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 9         \u2506 9         \u2502\n\u2502           \u2506 - Fontain \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 02:06:20  \u2506 02:00:00  \u2502\n\u2502           \u2506 ebleau    \u2506          \u2506           \u2506   \u2506           \u2506           \u2506           \u2506           \u2502\n\u2502 31021     \u2506 R\u00e9sistanc \u2506 29       \u2506 21        \u2506 \u2026 \u2506 0.724138  \u2506 2         \u2506 2025-07-2 \u2506 2025-07-2 \u2502\n\u2502           \u2506 e - Hoche \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 5         \u2506 5         \u2502\n\u2502           \u2506           \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 00:06:19  \u2506 00:00:00  \u2502\n\u2502 15008     \u2506 S\u00e8vres -  \u2506 62       \u2506 45        \u2506 \u2026 \u2506 0.725806  \u2506 1         \u2506 2025-10-1 \u2506 2025-10-1 \u2502\n\u2502           \u2506 Lecourbe  \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 1         \u2506 1         \u2502\n\u2502           \u2506           \u2506          \u2506           \u2506   \u2506           \u2506           \u2506 06:06:18  \u2506 06:00:00  \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518",
+  "table_metadata": {
+    "table_name": "fct_avaibility_part",
+    "table_type": "BASE TABLE",
+    "created_time": "2025-10-22 09:22:21.004000+00:00",
+    "table_uid": "portfolio-402.dbt_prod.fct_avaibility_part",
+    "row_count": 3877353,
+    "partition_column": "collected_at",
+    "partition_type": "TIME",
+    "clustering_columns": [
+      "station_code"
+    ]
+  },
+  "phase_timings": {
+    "connection": 2e-06,
+    "metadata": 0.010791,
+    "column_selection": 0.000383,
+    "data_loading": 3.76553,
+    "audit_checks": 0.048299
+  },
+  "config_metadata": {
+    "version": 1,
+    "project": "Bike Availability Data Quality",
+    "description": "Auditing availability fact table and station dimension for data quality issues",
+    "last_modified": "2025-10-24"
+  }
+}

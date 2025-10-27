@@ -19,7 +19,7 @@ from ..checks.numeric_checks import check_numeric_range
 from ..checks.uniqueness_checks import check_uniqueness
 from ..utils.security import mask_pii_columns, sanitize_connection_string
 from ..utils.output import print_results
-from .database import DatabaseConnection
+from .db_connection import DatabaseConnection
 from ..insights import generate_column_insights
 from .exporter_mixin import AuditorExporterMixin
 
@@ -231,7 +231,8 @@ class SecureTableAuditor(AuditorExporterMixin):
         sampling_method: str = 'random',
         sampling_key_column: Optional[str] = None,
         audit_mode: str = 'full',
-        store_dataframe: bool = False
+        store_dataframe: bool = False,
+        db_conn: Optional['DatabaseConnection'] = None
     ) -> Dict:
         """
         Audit table directly from database using Ibis (RECOMMENDED)
@@ -281,9 +282,12 @@ class SecureTableAuditor(AuditorExporterMixin):
         phase_timings = {}
         phase_start = datetime.now()
 
-        # Create database connection
-        db_conn = DatabaseConnection(backend, **connection_params)
-        db_conn.connect()
+        # Create or reuse database connection
+        should_close_conn = False
+        if db_conn is None:
+            db_conn = DatabaseConnection(backend, **connection_params)
+            db_conn.connect()
+            should_close_conn = True
         phase_timings['connection'] = (datetime.now() - phase_start).total_seconds()
 
         try:
@@ -469,8 +473,9 @@ class SecureTableAuditor(AuditorExporterMixin):
             return results
 
         finally:
-            # Always close the connection
-            db_conn.close()
+            # Close connection only if we created it (not if it was passed in)
+            if should_close_conn:
+                db_conn.close()
 
     def audit_from_file(
         self,

@@ -135,7 +135,7 @@ Examples:
         print(f"\n🔍 Auto-discovering tables in schema...")
 
         # Create temporary database connection for discovery
-        from dw_auditor.core.database import DatabaseConnection
+        from dw_auditor.core.db_connection import DatabaseConnection
         db_conn = DatabaseConnection(config.backend, **config.connection_params)
         db_conn.connect()
 
@@ -170,10 +170,18 @@ Examples:
         print(f"💰 Estimating BigQuery scan costs...")
         print(f"{'='*70}")
 
-        # Create temporary connection for estimation
-        from dw_auditor.core.database import DatabaseConnection
-        db_conn = DatabaseConnection(config.backend, **config.connection_params)
-        db_conn.connect()
+        # Create shared connection for estimation (will be reused for audit)
+        from dw_auditor.core.db_connection import DatabaseConnection
+        shared_db_conn = DatabaseConnection(config.backend, **config.connection_params)
+        shared_db_conn.connect()
+
+        # Pre-fetch metadata once for all tables being audited
+        if tables_to_audit:
+            print(f"\n🔍 Pre-fetching metadata for {len(tables_to_audit)} table(s)...")
+            shared_db_conn.prefetch_metadata(config.schema, tables_to_audit)
+            print(f"✅ Metadata cached for all tables")
+
+        db_conn = shared_db_conn  # Alias for the estimation code
 
         total_bytes = 0
         table_estimates = []
@@ -223,12 +231,23 @@ Examples:
                             table_name=table,
                             column_check_config=config,
                             primary_key_columns=user_defined_primary_key,
-                            include_columns=getattr(config, 'include_columns', None),
-                            exclude_columns=getattr(config, 'exclude_columns', None),
-                            audit_mode=audit_mode
+                            include_columns=config.include_columns if config.include_columns else None,
+                            exclude_columns=config.exclude_columns if config.exclude_columns else None,
+                            audit_mode=audit_mode,
+                            store_dataframe=config.relationship_detection_enabled  # Load all columns if relationships enabled
                         )
+
+                        # If empty list returned, it means "load all columns"
+                        if columns_to_load is not None and len(columns_to_load) == 0:
+                            print(f"   📊 {table}: Estimating ALL columns (relationship detection or no filters)")
+                            columns_to_load = None
+                        elif columns_to_load:
+                            print(f"   📊 {table}: Estimating {len(columns_to_load)} columns: {', '.join(columns_to_load[:5])}{'...' if len(columns_to_load) > 5 else ''}")
+                        else:
+                            print(f"   📊 {table}: Estimating ALL columns")
                 except Exception as e:
                     # If column determination fails, estimate will use all columns
+                    print(f"   ⚠️  Could not determine columns for {table}, estimating all columns: {e}")
                     pass
 
                 # Estimate bytes for this table
@@ -251,7 +270,7 @@ Examples:
                     })
 
         finally:
-            db_conn.close()
+            pass  # Don't close - will reuse connection for audit
 
         # Display estimates
         if table_estimates:
@@ -297,6 +316,17 @@ Examples:
             print(f"\n✅ Proceeding with audit...")
         else:
             print(f"⚠️  Could not estimate bytes (will proceed without confirmation)")
+    else:
+        # Create shared database connection if estimation didn't create one
+        from dw_auditor.core.db_connection import DatabaseConnection
+        shared_db_conn = DatabaseConnection(config.backend, **config.connection_params)
+        shared_db_conn.connect()
+
+        # Pre-fetch metadata for all tables being audited
+        if tables_to_audit:
+            print(f"\n🔍 Pre-fetching metadata for {len(tables_to_audit)} table(s)...")
+            shared_db_conn.prefetch_metadata(config.schema, tables_to_audit)
+            print(f"✅ Metadata cached for all tables")
 
     # Audit tables
     all_table_results = []
@@ -332,7 +362,8 @@ Examples:
                     sampling_key_column=sampling_config['key_column'],
                     custom_query=custom_query,
                     audit_mode=audit_mode,
-                    store_dataframe=config.relationship_detection_enabled  # Store DataFrame for relationship detection
+                    store_dataframe=config.relationship_detection_enabled,  # Store DataFrame for relationship detection
+                    db_conn=shared_db_conn  # Reuse connection to share metadata cache
                 )
 
                 # Add config metadata to results (for display in reports)
@@ -503,6 +534,10 @@ Examples:
         print(f"{'='*70}")
 
     finally:
+        # Close shared database connection
+        if 'shared_db_conn' in locals():
+            shared_db_conn.close()
+
         # Restore stdout/stderr and close log file
         sys.stdout = logger.terminal
         sys.stderr = logger.terminal_err
