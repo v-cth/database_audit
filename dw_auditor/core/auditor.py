@@ -14,7 +14,7 @@ from ..checks.string_checks import (
     check_regex_patterns,
     check_numeric_strings
 )
-from ..checks.timestamp_checks import check_timestamp_patterns, check_date_outliers, check_future_dates
+from ..checks.timestamp_checks import check_timestamp_patterns, check_date_range, check_date_outliers, check_future_dates
 from ..checks.numeric_checks import check_numeric_range
 from ..checks.uniqueness_checks import check_uniqueness
 from ..utils.security import mask_pii_columns, sanitize_connection_string
@@ -68,20 +68,14 @@ class SecureTableAuditor(AuditorExporterMixin):
     def __init__(
         self,
         sample_size: int = 100000,
-        min_year: int = 1950,
-        max_year: int = 2100,
         outlier_threshold_pct: float = 0.0
     ):
         """
         Args:
             sample_size: Number of rows to sample (samples when table has more rows than this)
-            min_year: Minimum reasonable year for date outlier detection (default: 1950)
-            max_year: Maximum reasonable year for date outlier detection (default: 2100)
             outlier_threshold_pct: Minimum percentage to report outliers (default: 0.0 = report all)
         """
         self.sample_size = sample_size
-        self.min_year = min_year
-        self.max_year = max_year
         self.outlier_threshold_pct = outlier_threshold_pct
         self.audit_log = []
 
@@ -586,8 +580,8 @@ class SecureTableAuditor(AuditorExporterMixin):
                 'case_duplicates': True,
                 'regex_patterns': False,  # No default - must be explicitly configured
                 'numeric_strings': True,
-                'timestamp_patterns': True,
-                'date_outliers': True
+                'timestamp_patterns': True
+                # Date range checks: after, after_or_equal, before, before_or_equal (no defaults)
             }
 
         # Analyze each column and track check durations
@@ -884,18 +878,33 @@ class SecureTableAuditor(AuditorExporterMixin):
                     'issues_count': issues_found
                 })
 
-            if check_config.get('date_outliers', True):
+            # Date range checks (similar to numeric range)
+            range_params = {}
+            range_desc_parts = []
+
+            if 'after' in check_config:
+                range_params['after'] = check_config['after']
+                range_desc_parts.append(f"> {check_config['after']}")
+            if 'after_or_equal' in check_config:
+                range_params['after_or_equal'] = check_config['after_or_equal']
+                range_desc_parts.append(f">= {check_config['after_or_equal']}")
+            if 'before' in check_config:
+                range_params['before'] = check_config['before']
+                range_desc_parts.append(f"< {check_config['before']}")
+            if 'before_or_equal' in check_config:
+                range_params['before_or_equal'] = check_config['before_or_equal']
+                range_desc_parts.append(f"<= {check_config['before_or_equal']}")
+
+            # Only run check if at least one range parameter is defined
+            if range_params:
                 before_count = len(col_result['issues'])
-                col_result['issues'].extend(check_date_outliers(
-                    df, col,
-                    min_year=getattr(self, 'min_year', 1950),
-                    max_year=getattr(self, 'max_year', 2100),
-                    outlier_threshold_pct=getattr(self, 'outlier_threshold_pct', 0.0)
-                ))
+                col_result['issues'].extend(check_date_range(df, col, primary_key_columns, **range_params))
                 after_count = len(col_result['issues'])
                 issues_found = after_count - before_count
+
+                range_desc = ', '.join(range_desc_parts)
                 col_result['checks_run'].append({
-                    'name': 'Date Outliers',
+                    'name': f'Date Range ({range_desc})',
                     'status': 'FAILED' if issues_found > 0 else 'PASSED',
                     'issues_count': issues_found
                 })

@@ -210,6 +210,31 @@ def print_results(results: Dict):
                 print(f"      💡 {issue['suggestion']}")
                 print(f"      Examples: {issue['examples'][:3]}")
 
+            # Date range violations
+            elif issue_type == 'DATE_NOT_AFTER':
+                print(f"   ⚠️  DATES NOT AFTER: {issue['count']:,} rows ({issue['pct']:.1f}%)")
+                print(f"      Expected: date {issue['operator']} {issue['threshold']}")
+                print(f"      💡 {issue['suggestion']}")
+                print(f"      Examples: {issue['examples'][:5]}")
+
+            elif issue_type == 'DATE_NOT_AFTER_OR_EQUAL':
+                print(f"   ⚠️  DATES NOT AFTER OR EQUAL: {issue['count']:,} rows ({issue['pct']:.1f}%)")
+                print(f"      Expected: date {issue['operator']} {issue['threshold']}")
+                print(f"      💡 {issue['suggestion']}")
+                print(f"      Examples: {issue['examples'][:5]}")
+
+            elif issue_type == 'DATE_NOT_BEFORE':
+                print(f"   ⚠️  DATES NOT BEFORE: {issue['count']:,} rows ({issue['pct']:.1f}%)")
+                print(f"      Expected: date {issue['operator']} {issue['threshold']}")
+                print(f"      💡 {issue['suggestion']}")
+                print(f"      Examples: {issue['examples'][:5]}")
+
+            elif issue_type == 'DATE_NOT_BEFORE_OR_EQUAL':
+                print(f"   ⚠️  DATES NOT BEFORE OR EQUAL: {issue['count']:,} rows ({issue['pct']:.1f}%)")
+                print(f"      Expected: date {issue['operator']} {issue['threshold']}")
+                print(f"      💡 {issue['suggestion']}")
+                print(f"      Examples: {issue['examples'][:5]}")
+
             # Numeric range violations
             elif issue_type == 'VALUE_BELOW_MIN':
                 print(f"   ⚠️  VALUES BELOW MIN: {issue['count']:,} rows ({issue['pct']:.1f}%)")

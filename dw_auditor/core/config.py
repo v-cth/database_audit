@@ -95,16 +95,7 @@ class ThresholdsConfig(BaseModel):
     numeric_string_pct: float = Field(80.0, ge=0.0, le=100.0, description="Percentage threshold for numeric strings")
     constant_hour_pct: float = Field(90.0, ge=0.0, le=100.0, description="Percentage threshold for constant hour")
     midnight_pct: float = Field(95.0, ge=0.0, le=100.0, description="Percentage threshold for midnight timestamps")
-    min_year: int = Field(1950, ge=1000, le=9999, description="Minimum reasonable year")
-    max_year: int = Field(2100, ge=1000, le=9999, description="Maximum reasonable year")
     outlier_threshold_pct: float = Field(0.0, ge=0.0, le=100.0, description="Minimum percentage to report outliers")
-
-    @model_validator(mode='after')
-    def validate_year_range(self):
-        """Ensure min_year < max_year"""
-        if self.min_year >= self.max_year:
-            raise ValueError(f"min_year ({self.min_year}) must be less than max_year ({self.max_year})")
-        return self
 
 
 class NumberFormat(BaseModel):
@@ -278,8 +269,6 @@ class AuditConfig:
         self.numeric_string_threshold = self._model.thresholds.numeric_string_pct / 100
         self.constant_hour_threshold = self._model.thresholds.constant_hour_pct / 100
         self.midnight_threshold = self._model.thresholds.midnight_pct / 100
-        self.min_year = self._model.thresholds.min_year
-        self.max_year = self._model.thresholds.max_year
         self.outlier_threshold_pct = self._model.thresholds.outlier_threshold_pct
 
         # Output
@@ -481,8 +470,6 @@ class AuditConfig:
                 'numeric_string_pct': self.numeric_string_threshold * 100,
                 'constant_hour_pct': self.constant_hour_threshold * 100,
                 'midnight_pct': self.midnight_threshold * 100,
-                'min_year': self.min_year,
-                'max_year': self.max_year,
                 'outlier_threshold_pct': self.outlier_threshold_pct
             },
             'output': {

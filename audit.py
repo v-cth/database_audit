@@ -124,8 +124,6 @@ Examples:
     # Create auditor
     auditor = SecureTableAuditor(
         sample_size=config.sample_size,
-        min_year=config.min_year,
-        max_year=config.max_year,
         outlier_threshold_pct=config.outlier_threshold_pct
     )
 
@@ -459,6 +457,14 @@ Examples:
                 print(f"📄 Summary HTML saved to: {summary_html}")
                 if detected_relationships:
                     print(f"   └─ Includes interactive relationship diagram with {len(detected_relationships)} relationship(s)")
+
+                # Auto-open summary HTML in browser if configured
+                if config.auto_open_html:
+                    try:
+                        webbrowser.open(f'file://{summary_html.absolute()}')
+                        print(f"🌐 Opened summary report in browser")
+                    except Exception as e:
+                        print(f"⚠️  Could not open browser: {e}")
 
             if 'json' in config.export_formats:
                 summary_json = run_dir / 'summary.json'

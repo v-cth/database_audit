@@ -119,9 +119,13 @@ column_checks:
       uniqueness: false  # Set true to flag duplicate values (e.g., for ID columns)
     datetime:
       timestamp_patterns: true
-      date_outliers: true
       future_dates: true
       uniqueness: false  # Set true to flag duplicate timestamps
+      # Date range validation (similar to numeric ranges):
+      #   after: "2020-01-01"           # Dates must be > 2020-01-01
+      #   after_or_equal: "2020-01-01"  # Dates must be >= 2020-01-01
+      #   before: "2025-12-31"          # Dates must be < 2025-12-31
+      #   before_or_equal: "2025-12-31" # Dates must be <= 2025-12-31
     numeric:
       uniqueness: false  # Set true to flag duplicate numeric values (e.g., for IDs)
 
@@ -166,6 +170,14 @@ column_checks:
   #     longitude:
   #       greater_than: -180          # Exclusive: longitude > -180
   #       less_than: 180              # Exclusive: longitude < 180
+  #
+  #     # Date range validation (supports 4 boundary operators, same as numeric)
+  #     collected_at:
+  #       after_or_equal: "2020-01-01"   # Inclusive: date >= 2020-01-01
+  #       before: "2026-01-01"           # Exclusive: date < 2026-01-01
+  #     registration_date:
+  #       after: "2019-12-31"            # Exclusive: date > 2019-12-31
+  #       before_or_equal: "2025-12-31" # Inclusive: date <= 2025-12-31
   #
     fct_avaibility_part:         
       available_docks:
@@ -313,13 +325,6 @@ thresholds:
   # Percentage threshold for midnight timestamps
   # Example: If 96% of timestamps are at midnight, suggest DATE type
   midnight_pct: 95
-
-  # Date outlier detection thresholds
-  # Minimum reasonable year (dates before this are flagged)
-  min_year: 2020
-
-  # Maximum reasonable year (dates after this are flagged)
-  max_year: 2100
 
   # Minimum percentage to report as outlier (default: 0.0 = report all)
   # Only report if at least this % of rows have outliers

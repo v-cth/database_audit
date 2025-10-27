@@ -3,7 +3,7 @@ Timestamp/datetime data quality checks
 """
 
 import polars as pl
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import datetime, date, timezone
 
 
@@ -68,6 +68,152 @@ def check_timestamp_patterns(
             'suggestion': 'All timestamps at midnight - use DATE type instead',
             'examples': examples
         })
+
+    return issues
+
+
+def check_date_range(
+    df: pl.DataFrame,
+    col: str,
+    primary_key_columns: Optional[List[str]] = None,
+    after: Optional[str] = None,
+    after_or_equal: Optional[str] = None,
+    before: Optional[str] = None,
+    before_or_equal: Optional[str] = None
+) -> List[Dict]:
+    """
+    Check if dates/datetimes are within specified range or boundaries
+
+    Args:
+        df: DataFrame to check
+        col: Column name
+        primary_key_columns: Optional list of primary key column names for context
+        after: Exclusive lower bound (date > after) - ISO format string "YYYY-MM-DD"
+        after_or_equal: Inclusive lower bound (date >= after_or_equal) - ISO format string "YYYY-MM-DD"
+        before: Exclusive upper bound (date < before) - ISO format string "YYYY-MM-DD"
+        before_or_equal: Inclusive upper bound (date <= before_or_equal) - ISO format string "YYYY-MM-DD"
+
+    Returns:
+        List of issues found
+    """
+    issues = []
+
+    non_null_df = df.filter(pl.col(col).is_not_null())
+    non_null_count = len(non_null_df)
+
+    if non_null_count == 0:
+        return issues
+
+    def _format_example_with_pk(row_data: Dict, col: str, primary_key_columns: Optional[List[str]] = None) -> str:
+        """Format an example with primary key context"""
+        if primary_key_columns and len(primary_key_columns) > 0:
+            pk_values = []
+            for pk_col in primary_key_columns:
+                if pk_col in row_data:
+                    pk_values.append(f"{pk_col}={row_data[pk_col]}")
+            if pk_values:
+                return f"{row_data[col]} [{', '.join(pk_values)}]"
+        return str(row_data[col])
+
+    # Check after (exclusive: >)
+    if after is not None:
+        after_date = pl.lit(after).str.to_date()
+        not_after = non_null_df.filter(pl.col(col).cast(pl.Date) <= after_date)
+        not_after_count = len(not_after)
+
+        if not_after_count > 0:
+            pct = (not_after_count / non_null_count) * 100
+
+            # Format examples with primary key context if available
+            examples = []
+            select_cols = [col] + (primary_key_columns if primary_key_columns else [])
+            for row in not_after.select(select_cols).head(5).iter_rows(named=True):
+                examples.append(_format_example_with_pk(row, col, primary_key_columns))
+
+            issues.append({
+                'type': 'DATE_NOT_AFTER',
+                'count': not_after_count,
+                'pct': pct,
+                'threshold': after,
+                'operator': '>',
+                'suggestion': f'Dates should be after {after}',
+                'examples': examples
+            })
+
+    # Check after_or_equal (inclusive: >=)
+    if after_or_equal is not None:
+        after_eq_date = pl.lit(after_or_equal).str.to_date()
+        not_after_eq = non_null_df.filter(pl.col(col).cast(pl.Date) < after_eq_date)
+        not_after_eq_count = len(not_after_eq)
+
+        if not_after_eq_count > 0:
+            pct = (not_after_eq_count / non_null_count) * 100
+
+            # Format examples with primary key context if available
+            examples = []
+            select_cols = [col] + (primary_key_columns if primary_key_columns else [])
+            for row in not_after_eq.select(select_cols).head(5).iter_rows(named=True):
+                examples.append(_format_example_with_pk(row, col, primary_key_columns))
+
+            issues.append({
+                'type': 'DATE_NOT_AFTER_OR_EQUAL',
+                'count': not_after_eq_count,
+                'pct': pct,
+                'threshold': after_or_equal,
+                'operator': '>=',
+                'suggestion': f'Dates should be on or after {after_or_equal}',
+                'examples': examples
+            })
+
+    # Check before (exclusive: <)
+    if before is not None:
+        before_date = pl.lit(before).str.to_date()
+        not_before = non_null_df.filter(pl.col(col).cast(pl.Date) >= before_date)
+        not_before_count = len(not_before)
+
+        if not_before_count > 0:
+            pct = (not_before_count / non_null_count) * 100
+
+            # Format examples with primary key context if available
+            examples = []
+            select_cols = [col] + (primary_key_columns if primary_key_columns else [])
+            for row in not_before.select(select_cols).head(5).iter_rows(named=True):
+                examples.append(_format_example_with_pk(row, col, primary_key_columns))
+
+            issues.append({
+                'type': 'DATE_NOT_BEFORE',
+                'count': not_before_count,
+                'pct': pct,
+                'threshold': before,
+                'operator': '<',
+                'suggestion': f'Dates should be before {before}',
+                'examples': examples
+            })
+
+    # Check before_or_equal (inclusive: <=)
+    if before_or_equal is not None:
+        before_eq_date = pl.lit(before_or_equal).str.to_date()
+        not_before_eq = non_null_df.filter(pl.col(col).cast(pl.Date) > before_eq_date)
+        not_before_eq_count = len(not_before_eq)
+
+        if not_before_eq_count > 0:
+            pct = (not_before_eq_count / non_null_count) * 100
+
+            # Format examples with primary key context if available
+            examples = []
+            select_cols = [col] + (primary_key_columns if primary_key_columns else [])
+            for row in not_before_eq.select(select_cols).head(5).iter_rows(named=True):
+                examples.append(_format_example_with_pk(row, col, primary_key_columns))
+
+            issues.append({
+                'type': 'DATE_NOT_BEFORE_OR_EQUAL',
+                'count': not_before_eq_count,
+                'pct': pct,
+                'threshold': before_or_equal,
+                'operator': '<=',
+                'suggestion': f'Dates should be on or before {before_or_equal}',
+                'examples': examples
+            })
 
     return issues
 
