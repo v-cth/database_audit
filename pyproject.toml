@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dw-auditor"
+version = "0.1.0"
+description = "Data Warehouse Table Auditor"
+readme = "README.md"
+authors = [{name = "Valentin Cathelain"}]
+requires-python = ">=3.9"
+
+# Dependencies
+dependencies = [
+    "ibis-framework[bigquery,snowflake]",
+    "polars",
+    "pyyaml",
+]
+
+[project.scripts]
+audit_runner = "dw_auditor.cli:main"
