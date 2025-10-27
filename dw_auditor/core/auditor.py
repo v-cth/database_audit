@@ -7,7 +7,8 @@ from typing import Dict, List, Optional, Union
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ..core.runner import run_check_sync
+# Import from checks package to trigger check registration
+from ..checks import run_check_sync
 from ..utils.security import mask_pii_columns, sanitize_connection_string
 from ..utils.output import print_results
 from .db_connection import DatabaseConnection
