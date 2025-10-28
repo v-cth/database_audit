@@ -31,7 +31,7 @@ def status_badge(status: str) -> str:
     Generate a status badge
 
     Args:
-        status: Status string (OK, ERROR, SKIPPED_COMPLEX_TYPE, NOT_LOADED, etc.)
+        status: Status string (OK, ERROR, NO_CHECKS, NOT_CHECKED, SKIPPED_COMPLEX_TYPE, NOT_LOADED, etc.)
 
     Returns:
         HTML string with badge
@@ -39,6 +39,8 @@ def status_badge(status: str) -> str:
     badge_map = {
         'OK': ('badge-ok', 'OK'),
         'ERROR': ('badge-error', 'Error'),
+        'NO_CHECKS': ('badge-no-checks', 'No Checks'),
+        'NOT_CHECKED': ('badge-not-checked', 'Not Checked'),
         'SKIPPED_COMPLEX_TYPE': ('badge-skipped', 'Skipped'),
         'NOT_LOADED': ('badge-not-loaded', 'Not Loaded'),
     }

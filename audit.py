@@ -382,7 +382,8 @@ Examples:
                     print(f"\n⏱️  Table Audit Phase Breakdown:")
                     for phase, duration in results['phase_timings'].items():
                         print(f"   • {phase.replace('_', ' ').title()}: {duration:.3f}s")
-                    total_table_duration = results.get('duration_seconds', 0)
+                    # Calculate total from phase timings
+                    total_table_duration = sum(results['phase_timings'].values())
                     print(f"   • Total Table Audit: {total_table_duration:.2f}s")
 
                 # Create table-specific directory
@@ -475,6 +476,10 @@ Examples:
                 import traceback
                 traceback.print_exc()
 
+        # Calculate total duration before generating summary
+        total_end_time = datetime.now()
+        total_duration = (total_end_time - total_start_time).total_seconds()
+
         # Generate run-level summary reports
         if all_table_results:
             print(f"\n{'='*70}")
@@ -484,7 +489,7 @@ Examples:
             # Export summary in all configured formats
             if 'html' in config.export_formats:
                 summary_html = run_dir / 'summary.html'
-                auditor.export_run_summary_to_html(all_table_results, str(summary_html), detected_relationships)
+                auditor.export_run_summary_to_html(all_table_results, str(summary_html), detected_relationships, total_duration)
                 print(f"📄 Summary HTML saved to: {summary_html}")
                 if detected_relationships:
                     print(f"   └─ Includes interactive relationship diagram with {len(detected_relationships)} relationship(s)")
@@ -522,10 +527,6 @@ Examples:
                     relationships_df = pl.DataFrame(detected_relationships)
                     relationships_df.write_csv(str(relationships_csv))
                     print(f"📄 Relationships CSV saved to: {relationships_csv}")
-
-        # Calculate total duration
-        total_end_time = datetime.now()
-        total_duration = (total_end_time - total_start_time).total_seconds()
 
         print(f"\n{'='*70}")
         print(f"✅ Audit completed! Results saved to: {run_dir}")

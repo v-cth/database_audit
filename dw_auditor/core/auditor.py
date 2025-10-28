@@ -628,7 +628,14 @@ class SecureTableAuditor(AuditorExporterMixin):
                           pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
                           pl.Float32, pl.Float64]:
                 # Columns that are checked for quality issues
-                status = 'ERROR' if col_results['issues'] else 'OK'
+                # Distinguish between "checks run and passed" vs "no checks configured"
+                if col_results['issues']:
+                    status = 'ERROR'
+                elif col_results.get('checks_run'):
+                    status = 'OK'  # Checks were run and passed
+                else:
+                    status = 'NO_CHECKS'  # No checks configured for this column
+
                 if dtype in [pl.Utf8, pl.String]:
                     check_type = 'string_checks'
                 elif dtype in [pl.Datetime, pl.Date]:

@@ -71,6 +71,8 @@ def _generate_css_styles() -> str:
         .meta-block {
             display: flex;
             flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
         }
 
         .meta-label {
@@ -78,12 +80,14 @@ def _generate_css_styles() -> str:
             text-transform: uppercase;
             color: var(--text-muted);
             letter-spacing: 0.5px;
+            text-align: left;
         }
 
         .meta-value {
             font-size: 0.95rem;
             font-weight: 500;
             color: var(--accent);
+            text-align: left;
         }
 
         /* Summary cards */
@@ -454,6 +458,16 @@ def _generate_css_styles() -> str:
             color: #555;
         }
 
+        .badge-no-checks {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .badge-not-checked {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
         /* Info boxes */
         .info-box {
             padding: 12px 15px;
@@ -513,6 +527,12 @@ def _generate_css_styles() -> str:
         .data-table td {
             padding: 12px 16px;
             color: #222;
+            text-align: left;
+        }
+
+        .data-table td:first-child {
+            font-weight: 600;
+            color: #64748B;
         }
 
         .td-bold {

@@ -70,15 +70,27 @@ def _generate_issues_section(results: Dict, has_issues: bool) -> str:
         <div class="collapsible-content" id="{issue_id}">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; padding: 15px; background: #f9fafb; border-radius: 6px;">
             <div>
-                <div style="color: #666; font-size: 0.9em;">Null Values</div>
-                <div style="font-size: 1.2em; font-weight: bold; color: {'#ef4444' if col_data['null_pct'] > 10 else '#6b7280'};">
-                    {col_data['null_count']:,} ({col_data['null_pct']:.1f}%)
+                <div style="color: #666; font-size: 0.9em;">Null Values</div>"""
+
+        null_pct = col_data.get('null_pct')
+        null_count = col_data.get('null_count')
+        null_color = '#ef4444' if (null_pct is not None and null_pct > 10) else '#6b7280'
+        null_display = f"{null_count:,} ({null_pct:.1f}%)" if (null_count is not None and null_pct is not None) else "N/A"
+
+        html += f"""
+                <div style="font-size: 1.2em; font-weight: bold; color: {null_color};">
+                    {null_display}
                 </div>
             </div>
             <div>
-                <div style="color: #666; font-size: 0.9em;">Distinct Values</div>
+                <div style="color: #666; font-size: 0.9em;">Distinct Values</div>"""
+
+        distinct_count = col_data.get('distinct_count')
+        distinct_display = f"{distinct_count:,}" if distinct_count is not None and isinstance(distinct_count, int) else distinct_count if distinct_count else "N/A"
+
+        html += f"""
                 <div style="font-size: 1.2em; font-weight: bold; color: #6b7280;">
-                    {col_data.get('distinct_count', 'N/A'):,}
+                    {distinct_display}
                 </div>
             </div>
         </div>
@@ -121,9 +133,11 @@ def _generate_issues_section(results: Dict, has_issues: bool) -> str:
 
                 if 'count' in issue:
                     pattern_info = f" (pattern: '{issue['pattern']}')" if 'pattern' in issue else ""
+                    pct = issue.get('pct')
+                    pct_str = f"{pct:.1f}%" if pct is not None else "N/A"
                     html += f"""
             <div class="issue-stats">
-                Affected rows: <strong>{issue['count']:,}</strong> ({issue.get('pct', 0):.1f}%){pattern_info}
+                Affected rows: <strong>{issue['count']:,}</strong> ({pct_str}){pattern_info}
             </div>
 """
 

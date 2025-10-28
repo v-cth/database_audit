@@ -163,7 +163,7 @@ def export_run_summary_to_json(all_results: List[Dict], file_path: str = None, r
     return summary
 
 
-def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summary.html", relationships: List[Dict] = None) -> str:
+def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summary.html", relationships: List[Dict] = None, total_duration: float = None) -> str:
     """
     Export run-level summary to HTML dashboard
 
@@ -171,6 +171,7 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
         all_results: List of audit results dictionaries (one per table)
         file_path: Path to save HTML file
         relationships: Optional list of detected relationships
+        total_duration: Optional total audit duration in seconds (if not provided, sum of table durations)
 
     Returns:
         Path to saved HTML file
@@ -181,7 +182,9 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
 
     # Calculate run-level metrics
     total_tables = len(all_results)
-    total_duration = sum(r.get('duration_seconds', 0) for r in all_results)
+    # Use provided total_duration if available, otherwise sum individual table durations
+    if total_duration is None:
+        total_duration = sum(r.get('duration_seconds', 0) for r in all_results)
     total_rows_analyzed = sum(r.get('analyzed_rows', 0) for r in all_results)
     total_issues = sum(
         sum(len(col_data.get('issues', [])) for col_data in r.get('columns', {}).values())
@@ -246,10 +249,9 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
         # Build row HTML
         table_rows_html += f"""
                     <tr style="border-bottom: 1px solid #f2f2f2;">
-                        <td style="padding: 12px 16px; color: #222;"><a href="{table_name}/audit.html" style="color: var(--accent); text-decoration: none; font-weight: 500;">{table_name}</a></td>
+                        <td style="padding: 12px 16px; text-align: left; color: #222; font-weight: 600;">{table_name}</a></td>
                         <td style="padding: 12px 16px; text-align: left; color: #222;">{total_rows:,}</td>
                         <td style="padding: 12px 16px; text-align: left; color: #222;">{analyzed_rows:,}</td>
-                        <td style="padding: 12px 16px; color: #222;">{'Yes' if sampled else 'No'}</td>
                         <td style="padding: 12px 16px; text-align: left; color: #222;">{column_count}</td>
                         <td style="padding: 12px 16px; text-align: left; color: #222;">{table_issues}</td>
                         <td style="padding: 12px 16px; text-align: left; color: #222;">{columns_with_issues}</td>
@@ -339,7 +341,6 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Table Name</th>
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Total Rows</th>
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Analyzed</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Sampled</th>
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Columns</th>
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Issues</th>
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Cols w/ Issues</th>

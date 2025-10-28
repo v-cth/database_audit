@@ -198,40 +198,40 @@ column_checks:
 # Configure data profiling insights (separate from quality checks)
 column_insights:
   # Global defaults per data type
-  # defaults:
-  #   string:
-  #     # Show top N most frequent values with counts and percentages
-  #     top_values: 10
-  #     # String length statistics
-  #     min_length: true
-  #     max_length: true
-  #     avg_length: true
+  defaults:
+    string:
+      # Show top N most frequent values with counts and percentages
+      top_values: 10
+      # String length statistics
+      min_length: true
+      max_length: true
+      avg_length: true
 
-  #   numeric:
-  #     # Basic statistics
-  #     min: true
-  #     max: true
-  #     mean: true
-  #     median: true
-  #     std: false  # Standard deviation (can be noisy)
-  #     # Percentile breakdowns
-  #     quantiles: [0.25, 0.5, 0.75]
-  #     # Show top N most frequent values
-  #     top_values: 5
+    numeric:
+      # Basic statistics
+      min: true
+      max: true
+      mean: true
+      median: true
+      std: true  # Standard deviation (can be noisy)
+      # Percentile breakdowns
+      quantiles: [0.25, 0.5, 0.75, 0.9]
+      # Show top N most frequent values
+      top_values: 5
 
-  #   datetime:
-  #     # Date range information
-  #     min_date: true
-  #     max_date: true
-  #     date_range_days: true
-  #     # Timezone info (for timezone-aware columns)
-  #     most_common_timezones: 1
-  #     # Most common dates with counts
-  #     most_common_dates: 5
-  #     # Most common days of week
-  #     most_common_days: 7
-  #     # Most common hours (0-23)
-  #     most_common_hours: 5
+    datetime:
+      # Date range information
+      min_date: true
+      max_date: true
+      date_range_days: true
+      # Timezone info (for timezone-aware columns)
+      most_common_timezones: 1
+      # Most common dates with counts
+      most_common_dates: 5
+      # Most common days of week
+      most_common_days: 7
+      # Most common hours (0-23)
+      most_common_hours: 5
 
   # Per-table, per-column overrides
   # tables:
