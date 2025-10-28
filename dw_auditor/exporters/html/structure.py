@@ -52,7 +52,7 @@ def _generate_header(results: Dict) -> str:
     html += f"""
             <div class="meta-block">
                 <div class="meta-label">Generated</div>
-                <div class="meta-value">{results.get('timestamp', 'N/A')}</div>
+                <div class="summary-meta-value">{results.get('timestamp', 'N/A')}</div>
             </div>"""
 
     # Add partition information
@@ -63,7 +63,7 @@ def _generate_header(results: Dict) -> str:
             html += f"""
             <div class="meta-block">
                 <div class="meta-label">Partitioned By</div>
-                <div class="meta-value">{partition_col} ({partition_type})</div>
+                <div class="summary-meta-value">{partition_col} ({partition_type})</div>
             </div>"""
 
         # Add clustering information (BigQuery style)
@@ -72,7 +72,7 @@ def _generate_header(results: Dict) -> str:
             html += f"""
             <div class="meta-block">
                 <div class="meta-label">Clustered By</div>
-                <div class="meta-value">{cluster_cols}</div>
+                <div class="summary-meta-value">{cluster_cols}</div>
             </div>"""
 
         # Add clustering information (Snowflake style)
@@ -80,7 +80,7 @@ def _generate_header(results: Dict) -> str:
             html += f"""
             <div class="meta-block">
                 <div class="meta-label">Clustering Key</div>
-                <div class="meta-value">{results['table_metadata']['clustering_key']}</div>
+                <div class="summary-meta-value">{results['table_metadata']['clustering_key']}</div>
             </div>"""
 
     html += """
@@ -209,7 +209,7 @@ def _generate_metadata_section(results: Dict) -> str:
 
     # Audit metadata
     html += '            <div class="divider"></div>\n'
-    html += '                <h3 style="color: #1f2937; font-size: 1.1rem; margin-bottom: 12px;">Audit Information</h3>\n'
+    html += '                <h3 class="subsection-title">Audit Information</h3>\n'
     html += meta_item("Generated", results.get('timestamp', 'N/A'))
     html += meta_item("Duration", f"{results.get('duration_seconds', 0):.2f}s")
     html += meta_item("Sampled", 'Yes' if results.get('sampled', False) else 'No')

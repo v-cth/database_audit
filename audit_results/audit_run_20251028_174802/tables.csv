@@ -1,0 +1,4 @@
+table_name,total_rows,sampled,analyzed_rows,column_count,issues_found,columns_with_issues,status,duration_seconds,audit_timestamp,table_type,created_time,partition_column,partition_type,clustering_columns
+test_datetime_checks,5,false,5,2,0,0,OK,2.259543,2025-10-28 16:49:32 UTC,BASE TABLE,2025-10-28 15:52:47.790000+00:00,"","",""
+test_numeric_checks,3,false,3,4,0,0,OK,2.35761,2025-10-28 16:49:35 UTC,BASE TABLE,2025-10-28 15:51:05.666000+00:00,"","",""
+test_string_checks,5,false,5,6,0,0,OK,2.2742309999999994,2025-10-28 16:49:37 UTC,BASE TABLE,2025-10-28 15:52:25.591000+00:00,"","",""

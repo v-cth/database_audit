@@ -49,10 +49,10 @@ database:
 # Tables to Audit
 # ----------------------------------------------------------------------------
 # Option 1: Explicit list of tables (recommended for small number of tables)
-tables:
-  - name: fct_avaibility_part
-  - name: dim_station
-    primary_key: station_code  # Optional: specify primary key column(s)
+# tables:
+#   - name: fct_avaibility_part
+#   - name: dim_station
+#     primary_key: station_code  # Optional: specify primary key column(s)
   # - name: dtm_station_distance
   # - name: transactions
   #   primary_key: transaction_id
@@ -75,17 +75,17 @@ tables:
 # Option 2: Auto-discover tables and apply filters
 # ----------------------------------------------------------------------------
 # Uncomment to enable auto-discovery (will discover all tables if tables list is empty)
-# table_filters:
-#   # Enable auto-discovery of all tables in schema
-#   auto_discover: true
-#
+table_filters:
+  # Enable auto-discovery of all tables in schema
+  auto_discover: true
+
 #   # Exclude tables matching these patterns (applied first)
 #   exclude_patterns:
 #     - "stg_*"          # Exclude staging tables with stg_ prefix
 #
-#   # Include only tables matching these patterns (applied second, optional)
-#   include_patterns:
-#     - "fct_*"          # Only fact tables
+  # Include only tables matching these patterns (applied second, optional)
+  include_patterns:
+    - "test_*"          # Only fact tables
 
 
 

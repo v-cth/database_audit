@@ -235,6 +235,48 @@ results = run_check_sync('my_check', df, col, pk_cols, threshold=0.9)
 - ✅ **Async-ready**: Infrastructure supports future concurrency
 - ✅ **Modular**: One check per file, single responsibility
 
+## Primary Key Detection
+
+The auditor automatically detects potential primary key columns during the audit process.
+
+### Detection Logic
+**Location**: `dw_auditor/core/auditor.py:660`
+
+A column is identified as a potential primary key if:
+1. **All values are unique** - `distinct_count == analyzed_rows`
+2. **No null values** - `null_count == 0`
+
+```python
+# Check if this column could be a primary key (unique + no nulls)
+if col_results['distinct_count'] == analyzed_rows and col_results['null_count'] == 0:
+    potential_keys.append(col)
+```
+
+### Where It's Used
+1. **Console output** - Displayed during audit with 🔑 emoji
+   ```
+   🔑 Potential primary key column(s): station_code, lat
+   ```
+
+2. **HTML reports** (`dw_auditor/exporters/html/structure.py:235-239`)
+   - Shows in Summary tab with green info box
+   - First checks for config-defined `primary_key_columns` from table metadata
+   - Falls back to auto-detected `potential_primary_keys` if no explicit PK defined
+   - Display format: **"Primary Key Column(s): station_code, lat"**
+
+3. **JSON exports** - Available under `potential_primary_keys` field in results
+
+### Priority
+- **Config-defined primary keys** (from `tables[].primary_key` in YAML) take precedence
+- **Auto-detection** only displays if no explicit primary key is configured
+- Useful for discovering keys in tables without formal PK constraints (common in data warehouses)
+
+### Example
+For a table with 1,587 rows where `station_code` has 1,587 distinct non-null values:
+- ✅ Detected as potential primary key
+- Displayed in console and HTML report
+- Can be overridden by setting `primary_key: station_code` in config for explicit context in error messages
+
 ## Configuration (`audit_config.yaml`)
 
 ### Most Important Sections

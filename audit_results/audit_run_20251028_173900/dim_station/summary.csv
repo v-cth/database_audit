@@ -1,0 +1,10 @@
+table_name,column_name,data_type,status,null_count,null_pct,distinct_count
+dim_station,station_code,Int64,DISCOVERED,0,0.0,1587
+dim_station,station_name,String,DISCOVERED,0,0.0,1570
+dim_station,capacity,Int64,DISCOVERED,0,0.0,72
+dim_station,lon,Float64,DISCOVERED,0,0.0,1586
+dim_station,lat,Float64,DISCOVERED,0,0.0,1587
+dim_station,city,String,DISCOVERED,0,0.0,68
+dim_station,is_renting,Boolean,DISCOVERED,0,0.0,2
+dim_station,is_returning,Boolean,DISCOVERED,0,0.0,2
+dim_station,station_plus,Boolean,DISCOVERED,0,0.0,2

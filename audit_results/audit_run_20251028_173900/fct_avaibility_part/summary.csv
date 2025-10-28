@@ -1,0 +1,14 @@
+table_name,column_name,data_type,status,null_count,null_pct,distinct_count
+fct_avaibility_part,station_code,Int64,DISCOVERED,0,0.0,1462
+fct_avaibility_part,station_name,String,DISCOVERED,0,0.0,1459
+fct_avaibility_part,capacity,Int64,DISCOVERED,0,0.0,66
+fct_avaibility_part,docks_available,Int64,DISCOVERED,0,0.0,72
+fct_avaibility_part,mechanical,Int64,DISCOVERED,0,0.0,59
+fct_avaibility_part,ebike,Int64,DISCOVERED,0,0.0,33
+fct_avaibility_part,duedate,"Datetime(time_unit='ns', time_zone='UTC')",DISCOVERED,0,0.0,9941
+fct_avaibility_part,bikes_available,Int64,DISCOVERED,0,0.0,65
+fct_avaibility_part,rate_bike_available,Float64,DISCOVERED,0,0.0,1040
+fct_avaibility_part,rate_dock_available,Float64,DISCOVERED,0,0.0,1047
+fct_avaibility_part,bikes_out_of_order,Int64,DISCOVERED,0,0.0,41
+fct_avaibility_part,collected_at,"Datetime(time_unit='ns', time_zone=None)",DISCOVERED,0,0.0,2615
+fct_avaibility_part,rounded_collected_at,"Datetime(time_unit='ns', time_zone=None)",DISCOVERED,0,0.0,2615

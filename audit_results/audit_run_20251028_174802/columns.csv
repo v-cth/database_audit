@@ -1,0 +1,13 @@
+table_name,column_name,data_type,status,null_count,null_pct,distinct_count
+test_datetime_checks,event_date,Date,DISCOVERED,0,0.0,4
+test_datetime_checks,delivery_date,Date,DISCOVERED,0,0.0,4
+test_numeric_checks,id,Int64,DISCOVERED,0,0.0,3
+test_numeric_checks,value_ok,Int64,DISCOVERED,0,0.0,2
+test_numeric_checks,value_too_low,Int64,DISCOVERED,0,0.0,3
+test_numeric_checks,value_too_high,Int64,DISCOVERED,0,0.0,3
+test_string_checks,city_name,String,DISCOVERED,0,0.0,5
+test_string_checks,city_with_space,String,DISCOVERED,0,0.0,5
+test_string_checks,city_with_suffix,String,DISCOVERED,0,0.0,5
+test_string_checks,city_with_endchar,String,DISCOVERED,0,0.0,4
+test_string_checks,station_code,String,DISCOVERED,0,0.0,5
+test_string_checks,generic_string,String,DISCOVERED,0,0.0,5

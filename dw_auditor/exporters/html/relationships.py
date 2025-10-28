@@ -130,20 +130,20 @@ def generate_relationships_summary_section(relationships: List[Dict], tables_met
     html = f"""
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
-    <section class="relationships-section" style="margin-top: 40px;">
-        <h2 style="font-size: 24px; font-weight: 600; color: #1f2937; margin-bottom: 20px;">
+    <section class="relationships-section">
+        <h2 class="relationships-title">
             Table Relationships
         </h2>
-        <p style="color: #6b7280; margin-bottom: 20px;">
+        <p class="relationships-description">
             Automatically detected relationships between tables based on column names, data types, and value overlaps.
         </p>
 
         <!-- Interactive Network Diagram -->
-        <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; color: #0c4a6e; font-size: 14px;">
+        <div class="alert-info mb-20">
             <strong>💡 Tip:</strong> Hover over edges (lines) to see relationship details. Drag nodes to rearrange the diagram.
         </div>
 
-        <div id="relationship-network" style="width: 100%; height: 400px; border: 1px solid #e5e7eb; background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 30px;"></div>
+        <div id="relationship-network" class="relationships-network"></div>
 
         <script type="text/javascript">
             (function() {{
@@ -219,19 +219,19 @@ def generate_relationships_summary_section(relationships: List[Dict], tables_met
         </script>
 
         <!-- Detailed Table View -->
-        <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 16px; margin-top: 30px;">
+        <h3 class="relationships-table-title">
             Relationship Details
         </h3>
 
-        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <thead style="background-color: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+        <table class="relationship-table">
+            <thead>
                 <tr>
-                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4b5563; font-size: 13px;">SOURCE</th>
-                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #4b5563; font-size: 13px; width: 40px;"></th>
-                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4b5563; font-size: 13px;">TARGET</th>
-                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #4b5563; font-size: 13px; width: 200px;">CONFIDENCE</th>
-                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #4b5563; font-size: 13px; width: 120px;">TYPE</th>
-                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #4b5563; font-size: 13px; width: 100px;">MATCHING</th>
+                    <th>SOURCE</th>
+                    <th class="center col-arrow"></th>
+                    <th>TARGET</th>
+                    <th class="col-confidence">CONFIDENCE</th>
+                    <th class="center col-type">TYPE</th>
+                    <th class="center col-matching">MATCHING</th>
                 </tr>
             </thead>
             <tbody>
@@ -265,32 +265,32 @@ def generate_relationships_summary_section(relationships: List[Dict], tables_met
         type_style = type_styles.get(rel['relationship_type'], "background: #f3f4f6; color: #4b5563;")
 
         html += f"""
-                <tr style="border-bottom: 1px solid #f3f4f6;">
-                    <td style="padding: 12px;">
-                        <div style="font-weight: 500; color: #1f2937;">{rel['table1']}</div>
-                        <div style="font-size: 12px; color: #6b7280; font-family: 'Courier New', monospace;">{rel['column1']}</div>
+                <tr>
+                    <td>
+                        <div class="relationship-cell-table">{rel['table1']}</div>
+                        <div class="relationship-cell-column">{rel['column1']}</div>
                     </td>
-                    <td style="padding: 12px; text-align: center; color: #6606dc; font-size: 18px;">
+                    <td class="center arrow">
                         {arrow}
                     </td>
-                    <td style="padding: 12px;">
-                        <div style="font-weight: 500; color: #1f2937;">{rel['table2']}</div>
-                        <div style="font-size: 12px; color: #6b7280; font-family: 'Courier New', monospace;">{rel['column2']}</div>
+                    <td>
+                        <div class="relationship-cell-table">{rel['table2']}</div>
+                        <div class="relationship-cell-column">{rel['column2']}</div>
                     </td>
-                    <td style="padding: 12px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="flex: 1; height: 8px; background: #f3f4f6; border-radius: 4px; overflow: hidden;">
-                                <div style="height: 100%; width: {confidence_pct:.1f}%; background: {confidence_color};"></div>
+                    <td>
+                        <div class="confidence-bar-container">
+                            <div class="confidence-bar-bg">
+                                <div class="confidence-bar-fill" style="width: {confidence_pct:.1f}%; background: {confidence_color};"></div>
                             </div>
-                            <span style="font-size: 13px; font-weight: 600; color: {confidence_color}; min-width: 42px;">{confidence_pct:.0f}%</span>
+                            <span class="confidence-pct" style="color: {confidence_color};">{confidence_pct:.0f}%</span>
                         </div>
                     </td>
-                    <td style="padding: 12px; text-align: center;">
-                        <span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; {type_style}">
+                    <td class="center">
+                        <span class="relationship-type-badge" style="{type_style}">
                             {rel['relationship_type']}
                         </span>
                     </td>
-                    <td style="padding: 12px; text-align: center; font-weight: 500; color: #4b5563;">
+                    <td class="center relationship-matching">
                         {rel['matching_values']:,}
                     </td>
                 </tr>

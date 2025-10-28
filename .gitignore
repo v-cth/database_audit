@@ -18,6 +18,8 @@
 #   commonly ignored for libraries.
 #uv.lock
 
+audit_config.yaml
+
 
 # Environments
 audit_env

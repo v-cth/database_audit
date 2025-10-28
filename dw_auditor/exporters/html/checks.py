@@ -14,9 +14,9 @@ def _generate_issues_section(results: Dict, has_issues: bool) -> str:
     html = ""
     if skipped_complex_types:
         html += f"""
-    <div class="summary" style="background: #fffbeb; border-left: 4px solid #f59e0b;">
-        <h3 style="color: #92400e; margin: 0 0 10px 0;">Skipped Complex Types</h3>
-        <p style="margin: 0; color: #78350f;">
+    <div class="summary alert-warning">
+        <h3 class="alert-title">Skipped Complex Types</h3>
+        <p class="alert-text">
             {len(skipped_complex_types)} column(s) with complex data types (Struct, List, Array, Binary) were skipped from quality checks:
             <strong>{', '.join(skipped_complex_types)}</strong>
         </p>
@@ -41,7 +41,7 @@ def _generate_issues_section(results: Dict, has_issues: bool) -> str:
         html += f"""
     <div class="summary warning">
         <h2>Quality Check Results</h2>
-        <p><strong>{total_checks}</strong> check(s) performed: <strong style="color: #10b981;">{passed_checks} passed</strong>, <strong style="color: #ef4444;">{total_checks - passed_checks} failed</strong> ({issue_count} total issues)</p>
+        <p><strong>{total_checks}</strong> check(s) performed: <strong class="status-ok">{passed_checks} passed</strong>, <strong class="status-error">{total_checks - passed_checks} failed</strong> ({issue_count} total issues)</p>
     </div>
 """
 
@@ -60,36 +60,36 @@ def _generate_issues_section(results: Dict, has_issues: bool) -> str:
 
         html += f"""
     <div class="column-card">
-        <div class="collapsible-header" onclick="toggleCollapse('{issue_id}')" style="margin-bottom: 15px;">
+        <div class="collapsible-header collapsible-section" onclick="toggleCollapse('{issue_id}')">
             <span class="collapse-icon" id="{issue_id}-icon">▼</span>
-            <div style="display: flex; justify-content: space-between; align-items: center; flex: 1;">
+            <div class="flex flex-between flex-center flex-1">
                 <div class="column-name">{col_name}</div>
                 <div class="column-type">{col_data['dtype']}</div>
             </div>
         </div>
         <div class="collapsible-content" id="{issue_id}">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; padding: 15px; background: #f9fafb; border-radius: 6px;">
+        <div class="checks-grid">
             <div>
-                <div style="color: #666; font-size: 0.9em;">Null Values</div>"""
+                <div class="check-metric">Null Values</div>"""
 
         null_pct = col_data.get('null_pct')
         null_count = col_data.get('null_count')
-        null_color = '#ef4444' if (null_pct is not None and null_pct > 10) else '#6b7280'
+        null_color_class = 'check-value-error' if (null_pct is not None and null_pct > 10) else 'check-value-neutral'
         null_display = f"{null_count:,} ({null_pct:.1f}%)" if (null_count is not None and null_pct is not None) else "N/A"
 
         html += f"""
-                <div style="font-size: 1.2em; font-weight: bold; color: {null_color};">
+                <div class="check-value {null_color_class}">
                     {null_display}
                 </div>
             </div>
             <div>
-                <div style="color: #666; font-size: 0.9em;">Distinct Values</div>"""
+                <div class="check-metric">Distinct Values</div>"""
 
         distinct_count = col_data.get('distinct_count')
         distinct_display = f"{distinct_count:,}" if distinct_count is not None and isinstance(distinct_count, int) else distinct_count if distinct_count else "N/A"
 
         html += f"""
-                <div style="font-size: 1.2em; font-weight: bold; color: #6b7280;">
+                <div class="check-value check-value-neutral">
                     {distinct_display}
                 </div>
             </div>
@@ -99,20 +99,15 @@ def _generate_issues_section(results: Dict, has_issues: bool) -> str:
         # Add checks performed section if available
         if 'checks_run' in col_data and col_data['checks_run']:
             html += """
-        <div style="margin-bottom: 20px;">
-            <h4 style="color: #4b5563; margin: 0 0 10px 0; font-size: 0.95em;">Checks Performed:</h4>
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <div class="checks-performed-section">
+            <h4 class="checks-performed-title">Checks Performed:</h4>
+            <div class="checks-badges-container">
 """
             for check in col_data['checks_run']:
-                if check['status'] == 'PASSED':
-                    badge_color = '#dcfce7'
-                    text_color = '#166534'
-                else:
-                    badge_color = '#fee2e2'
-                    text_color = '#991b1b'
+                badge_class = 'check-badge-pass' if check['status'] == 'PASSED' else 'check-badge-fail'
 
                 html += f"""
-                <span style="display: inline-block; background: {badge_color}; color: {text_color}; padding: 6px 12px; border-radius: 16px; font-size: 0.85em; font-weight: 500;">
+                <span class="check-badge {badge_class}">
                     {check['name']} ({check['issues_count']} issues)
                 </span>
 """
@@ -187,9 +182,9 @@ def _generate_issues_section(results: Dict, has_issues: bool) -> str:
         else:
             # All checks passed - show success message
             html += """
-        <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin-top: 15px;">
-            <div style="color: #065f46; font-weight: 500;">All quality checks passed</div>
-            <div style="color: #047857; font-size: 0.9em; margin-top: 5px;">No data quality issues detected for this column</div>
+        <div class="alert-success">
+            <div class="alert-success-title">All quality checks passed</div>
+            <div class="alert-success-text">No data quality issues detected for this column</div>
         </div>
 """
 

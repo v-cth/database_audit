@@ -1,0 +1,7 @@
+table_name,column_name,data_type,status,null_count,null_pct,distinct_count
+test_string_checks,city_name,String,DISCOVERED,0,0.0,5
+test_string_checks,city_with_space,String,DISCOVERED,0,0.0,5
+test_string_checks,city_with_suffix,String,DISCOVERED,0,0.0,5
+test_string_checks,city_with_endchar,String,DISCOVERED,0,0.0,4
+test_string_checks,station_code,String,DISCOVERED,0,0.0,5
+test_string_checks,generic_string,String,DISCOVERED,0,0.0,5

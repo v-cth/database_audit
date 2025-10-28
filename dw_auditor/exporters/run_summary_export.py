@@ -55,7 +55,7 @@ def export_run_summary_to_dataframe(all_results: List[Dict]) -> pl.DataFrame:
             'issues_found': total_issues,
             'columns_with_issues': columns_with_issues,
             'status': status,
-            'duration_seconds': results.get('duration_seconds', 0.0),
+            'duration_seconds': sum(results.get('phase_timings', {}).values()),
             'audit_timestamp': results.get('timestamp', ''),
             'table_type': table_metadata.get('table_type', ''),
             'created_time': str(table_metadata.get('created_time', '')),
@@ -84,7 +84,7 @@ def export_run_summary_to_json(all_results: List[Dict], file_path: str = None, r
 
     # Calculate run-level metrics
     total_tables = len(all_results)
-    total_duration = sum(r.get('duration_seconds', 0) for r in all_results)
+    total_duration = sum(sum(r.get('phase_timings', {}).values()) for r in all_results)
     total_rows_analyzed = sum(r.get('analyzed_rows', 0) for r in all_results)
     total_issues = sum(
         sum(len(col_data.get('issues', [])) for col_data in r.get('columns', {}).values())
@@ -128,7 +128,7 @@ def export_run_summary_to_json(all_results: List[Dict], file_path: str = None, r
             'issues_found': table_issues,
             'columns_with_issues': columns_with_issues,
             'status': status,
-            'duration_seconds': results.get('duration_seconds', 0.0),
+            'duration_seconds': sum(results.get('phase_timings', {}).values()),
             'audit_timestamp': results.get('timestamp', ''),
             'table_metadata': table_metadata
         })
@@ -184,7 +184,7 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
     total_tables = len(all_results)
     # Use provided total_duration if available, otherwise sum individual table durations
     if total_duration is None:
-        total_duration = sum(r.get('duration_seconds', 0) for r in all_results)
+        total_duration = sum(sum(r.get('phase_timings', {}).values()) for r in all_results)
     total_rows_analyzed = sum(r.get('analyzed_rows', 0) for r in all_results)
     total_issues = sum(
         sum(len(col_data.get('issues', [])) for col_data in r.get('columns', {}).values())
@@ -210,7 +210,7 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
         analyzed_rows = results.get('analyzed_rows', 0)
         sampled = results.get('sampled', False)
         column_count = len(results.get('column_summary', {}))
-        duration = results.get('duration_seconds', 0.0)
+        duration = sum(results.get('phase_timings', {}).values())
 
         # Count issues for this table
         table_issues = 0
@@ -240,23 +240,23 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
 
         # Status badge
         if status == 'OK':
-            status_badge = '<span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #dcfce7; color: #166534;">OK</span>'
+            status_badge = '<span class="status-badge-ok">OK</span>'
         elif status == 'WARNING':
-            status_badge = '<span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #fef3c7; color: #92400e;">Warning</span>'
+            status_badge = '<span class="status-badge-warning">Warning</span>'
         else:
-            status_badge = '<span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #fee2e2; color: #b91c1c;">Error</span>'
+            status_badge = '<span class="status-badge-error">Error</span>'
 
         # Build row HTML
         table_rows_html += f"""
-                    <tr style="border-bottom: 1px solid #f2f2f2;">
-                        <td style="padding: 12px 16px; text-align: left; color: #222; font-weight: 600;">{table_name}</a></td>
-                        <td style="padding: 12px 16px; text-align: left; color: #222;">{total_rows:,}</td>
-                        <td style="padding: 12px 16px; text-align: left; color: #222;">{analyzed_rows:,}</td>
-                        <td style="padding: 12px 16px; text-align: left; color: #222;">{column_count}</td>
-                        <td style="padding: 12px 16px; text-align: left; color: #222;">{table_issues}</td>
-                        <td style="padding: 12px 16px; text-align: left; color: #222;">{columns_with_issues}</td>
-                        <td style="padding: 12px 16px;">{status_badge}</td>
-                        <td style="padding: 12px 16px; text-align: left; color: #222;">{duration:.2f}s</td>
+                    <tr>
+                        <td>{table_name}</td>
+                        <td>{total_rows:,}</td>
+                        <td>{analyzed_rows:,}</td>
+                        <td>{column_count}</td>
+                        <td>{table_issues}</td>
+                        <td>{columns_with_issues}</td>
+                        <td>{status_badge}</td>
+                        <td>{duration:.2f}s</td>
                     </tr>
 """
 
@@ -295,15 +295,15 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
     <div class="container">
         <!-- Header -->
         <header>
-            <h1 style="font-size: 2rem; font-weight: 700; margin: 0 0 0.5rem 0;">Audit Run Summary</h1>
-            <div style="display: flex; gap: 24px; flex-wrap: wrap; font-size: 0.9rem; color: var(--text-muted);">
+            <h1 class="page-title">Audit Run Summary</h1>
+            <div class="header-meta">
                 <span>Generated: {run_timestamp}</span>
                 <span>Duration: {total_duration:.2f}s</span>
             </div>
         </header>
 
         <!-- Summary Cards -->
-        <div class="summary-cards" style="border-top: 1px solid var(--border-light); padding-top: 24px; border-bottom: 1px solid var(--border-light); padding-bottom: 24px;">
+        <div class="summary-cards summary-cards-bordered">
             <div class="card">
                 <h2>{total_tables}</h2>
                 <p>Tables Audited</p>
@@ -331,21 +331,21 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
         </div>
 
         <!-- Tables List -->
-        <h3 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.25rem; color: #000;">Audited Tables</h3>
-        <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Detailed results for each table</p>
+        <h3 class="section-title">Audited Tables</h3>
+        <p class="section-subtitle">Detailed results for each table</p>
 
-        <div style="background: #fff; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); overflow: hidden;">
+        <div class="data-table">
             <table>
                 <thead>
-                    <tr style="background: #fafafa; border-bottom: 1px solid #eee;">
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Table Name</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Total Rows</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Analyzed</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Columns</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Issues</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Cols w/ Issues</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Status</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #666; text-transform: uppercase;">Duration</th>
+                    <tr>
+                        <th>Table Name</th>
+                        <th>Total Rows</th>
+                        <th>Analyzed</th>
+                        <th>Columns</th>
+                        <th>Issues</th>
+                        <th>Cols w/ Issues</th>
+                        <th>Status</th>
+                        <th>Duration</th>
                     </tr>
                 </thead>
                 <tbody>

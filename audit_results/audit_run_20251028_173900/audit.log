@@ -1,0 +1,154 @@
+📁 Audit run directory: audit_results/audit_run_20251028_173900
+📝 Logs will be saved to: audit_results/audit_run_20251028_173900/audit.log
+🔍 Discovery mode: Collecting metadata only (skipping quality checks and insights)
+✅ Connected to BIGQUERY
+
+🔍 Pre-fetching metadata for 2 table(s)...
+✅ Metadata cached for all tables
+
+======================================================================
+🔍 Auditing table: fct_avaibility_part
+======================================================================
+🔐 Secure audit mode: Direct database query via Ibis (no file export)
+🔖 Table UID: portfolio-402.dbt_prod.fct_avaibility_part
+📑 Table type: BASE TABLE
+📊 Table has 3,877,353 rows
+🔹 Partitioned by: collected_at (TIME)
+🔸 Clustered by: station_code
+📊 Loading all 13 columns
+🔍 Sampling 10,000 rows from table using 'random' method
+✅ Loaded 10,000 rows into memory
+
+============================================================
+Auditing: fct_avaibility_part
+Total rows in table: 3,877,353
+Analyzing sample: 10,000 rows
+============================================================
+
+
+📋 Column Summary (All Columns):
+====================================================================================================
+Column Name                    Type            Status       Nulls           Distinct       
+----------------------------------------------------------------------------------------------------
+station_code                   Int64           - DISCOVERED 0 (0.0%)        1,462          
+station_name                   String          - DISCOVERED 0 (0.0%)        1,459          
+capacity                       Int64           - DISCOVERED 0 (0.0%)        66             
+docks_available                Int64           - DISCOVERED 0 (0.0%)        72             
+mechanical                     Int64           - DISCOVERED 0 (0.0%)        59             
+ebike                          Int64           - DISCOVERED 0 (0.0%)        33             
+duedate                        Datetime(time_unit='ns', time_zone='UTC') - DISCOVERED 0 (0.0%)        9,941          
+bikes_available                Int64           - DISCOVERED 0 (0.0%)        65             
+rate_bike_available            Float64         - DISCOVERED 0 (0.0%)        1,040          
+rate_dock_available            Float64         - DISCOVERED 0 (0.0%)        1,047          
+bikes_out_of_order             Int64           - DISCOVERED 0 (0.0%)        41             
+collected_at                   Datetime(time_unit='ns', time_zone=None) - DISCOVERED 0 (0.0%)        2,615          
+rounded_collected_at           Datetime(time_unit='ns', time_zone=None) - DISCOVERED 0 (0.0%)        2,615          
+====================================================================================================
+
+✅ No issues found!
+
+
+⏱️  Audit Duration Breakdown:
+   • Total: 0.01s
+
+
+⏱️  Table Audit Phase Breakdown:
+   • Connection: 0.000s
+   • Metadata: 0.019s
+   • Column Selection: 0.001s
+   • Data Loading: 3.305s
+   • Audit Checks: 0.006s
+   • Total Table Audit: 3.33s
+📄 HTML report saved to: audit_results/audit_run_20251028_173900/fct_avaibility_part/audit.html
+🌐 Opened report in browser
+📄 Results saved to: audit_results/audit_run_20251028_173900/fct_avaibility_part/audit.json
+📄 CSV saved to: audit_results/audit_run_20251028_173900/fct_avaibility_part/audit.csv
+📄 Column summary CSV saved to: audit_results/audit_run_20251028_173900/fct_avaibility_part/summary.csv
+
+======================================================================
+🔍 Auditing table: dim_station
+======================================================================
+🔐 Secure audit mode: Direct database query via Ibis (no file export)
+🔖 Table UID: portfolio-402.dbt_prod.dim_station
+📑 Table type: BASE TABLE
+📊 Table has 1,587 rows
+🔑 Primary key from config: station_code
+📊 Loading all 9 columns
+✅ Loaded 1,587 rows into memory
+
+============================================================
+Auditing: dim_station
+Total rows in table: 1,587
+============================================================
+
+
+🔑 Potential primary key column(s): station_code, lat
+
+📋 Column Summary (All Columns):
+====================================================================================================
+Column Name                    Type            Status       Nulls           Distinct       
+----------------------------------------------------------------------------------------------------
+station_code                   Int64           - DISCOVERED 0 (0.0%)        1,587          
+station_name                   String          - DISCOVERED 0 (0.0%)        1,570          
+capacity                       Int64           - DISCOVERED 0 (0.0%)        72             
+lon                            Float64         - DISCOVERED 0 (0.0%)        1,586          
+lat                            Float64         - DISCOVERED 0 (0.0%)        1,587          
+city                           String          - DISCOVERED 0 (0.0%)        68             
+is_renting                     Boolean         - DISCOVERED 0 (0.0%)        2              
+is_returning                   Boolean         - DISCOVERED 0 (0.0%)        2              
+station_plus                   Boolean         - DISCOVERED 0 (0.0%)        2              
+====================================================================================================
+
+✅ No issues found!
+
+
+⏱️  Audit Duration Breakdown:
+   • Total: 0.00s
+
+
+⏱️  Table Audit Phase Breakdown:
+   • Connection: 0.000s
+   • Metadata: 0.001s
+   • Column Selection: 0.000s
+   • Data Loading: 2.340s
+   • Audit Checks: 0.001s
+   • Total Table Audit: 2.34s
+📄 HTML report saved to: audit_results/audit_run_20251028_173900/dim_station/audit.html
+🌐 Opened report in browser
+📄 Results saved to: audit_results/audit_run_20251028_173900/dim_station/audit.json
+📄 CSV saved to: audit_results/audit_run_20251028_173900/dim_station/audit.csv
+📄 Column summary CSV saved to: audit_results/audit_run_20251028_173900/dim_station/summary.csv
+
+======================================================================
+🔗 Detecting table relationships...
+======================================================================
+   Added table: fct_avaibility_part
+   Added table: dim_station
+
+✅ Found 3 relationships (confidence >= 70%)
+
+Detected Relationships:
+   • fct_avaibility_part.station_name → dim_station.station_name
+     Confidence: 97.1% | Type: many-to-one | Matching values: 1458
+   • fct_avaibility_part.station_code → dim_station.station_code
+     Confidence: 96.8% | Type: many-to-one | Matching values: 1462
+   • fct_avaibility_part.capacity ↔ dim_station.capacity
+     Confidence: 95.6% | Type: many-to-many | Matching values: 65
+
+======================================================================
+📊 Generating run summary reports...
+======================================================================
+📄 Summary HTML saved to: audit_results/audit_run_20251028_173900/summary.html
+   └─ Includes interactive relationship diagram with 3 relationship(s)
+🌐 Opened summary report in browser
+📄 Summary JSON saved to: audit_results/audit_run_20251028_173900/summary.json
+📄 Detailed column summary CSV saved to: audit_results/audit_run_20251028_173900/columns.csv
+📄 Table summary CSV saved to: audit_results/audit_run_20251028_173900/tables.csv
+📄 Relationships CSV saved to: audit_results/audit_run_20251028_173900/relationships.csv
+
+======================================================================
+✅ Audit completed! Results saved to: audit_results/audit_run_20251028_173900
+⏱️  Total duration: 19.41 seconds
+📝 Logs saved to: audit_results/audit_run_20251028_173900/audit.log
+======================================================================
+🔒 Closed BIGQUERY connection

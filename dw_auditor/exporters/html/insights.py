@@ -12,9 +12,9 @@ def _render_string_insights(insights: Dict) -> str:
     # Top values with visual bar chart
     if 'top_values' in insights and insights['top_values']:
         html += """
-            <div style="margin-bottom: 15px;">
-                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Top Values:</h4>
-                <div style="background: white; padding: 10px; border-radius: 6px; border: 1px solid #e5e7eb;">
+            <div class="insight-section">
+                <h4 class="insight-header">Top Values:</h4>
+                <div class="insight-content">
 """
         for item in insights['top_values']:
             value_str = str(item['value'])
@@ -33,13 +33,12 @@ def _render_string_insights(insights: Dict) -> str:
                 bar_color = '#93c5fd'
 
             html += f"""
-                    <div style="background: linear-gradient(to right, {bar_color} 0%, {bar_color} {bar_width}%, #f3f4f6 {bar_width}%, #f3f4f6 100%);
-                                border-radius: 4px; padding: 6px 10px; margin: 3px 0;
-                                font-size: 0.9em; position: relative; overflow: hidden;"
-                         title="{full_value}">
-                        <span style="font-weight: 500; color: #1f2937;"><code>{value_str}</code></span>
-                        <span style="float: right; font-weight: bold; color: #1f2937; margin-left: 8px;">{item['percentage']:.1f}%</span>
-                        <span style="float: right; color: #6b7280;">({item['count']:,})</span>
+                    <div class="top-value-item" style="background: linear-gradient(to right, {bar_color} 0%, {bar_color} {bar_width}%, #f3f4f6 {bar_width}%, #f3f4f6 100%);" title="{full_value}">
+                        <span class="top-value-label"><code>{value_str}</code></span>
+                        <div class="top-value-stats">
+                            <span class="top-value-count">({item['count']:,})</span>
+                            <span class="top-value-pct">{item['percentage']:.1f}%</span>
+                        </div>
                     </div>
 """
         html += """
@@ -51,11 +50,11 @@ def _render_string_insights(insights: Dict) -> str:
     if 'length_stats' in insights:
         stats = insights['length_stats']
         html += """
-            <div style="margin-bottom: 10px;">
-                <span style="color: #6b7280; font-size: 0.9em; margin-right: 8px;">Length:</span>
+            <div class="mb-10">
+                <span class="text-muted text-sm" style="margin-right: 8px;">Length:</span>
 """
         for stat_name, stat_value in stats.items():
-            html += f"""<span style="display: inline-block; background: #f3f4f6; color: #4b5563; padding: 4px 12px; border-radius: 16px; font-size: 0.85em; margin-right: 6px;"><span style="color: #9ca3af; text-transform: uppercase; font-size: 0.8em;">{stat_name}:</span> <span style="font-weight: 600; color: #667eea;">{stat_value}</span></span>"""
+            html += f"""<span class="stat-pill"><span class="stat-pill-label">{stat_name}:</span> <span class="stat-pill-value">{stat_value}</span></span>"""
         html += """
             </div>
 """
@@ -109,12 +108,12 @@ def _render_numeric_insights(insights: Dict, thousand_separator: str = ",", deci
         mean = insights.get('mean')
 
         html += """
-            <div style="margin-bottom: 15px;">
-                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Distribution Range:</h4>
-                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e5e7eb;">
-                    <div style="position: relative; height: 70px; margin: 10px 0; overflow: hidden;">
+            <div class="insight-section">
+                <h4 class="insight-header">Distribution Range:</h4>
+                <div class="insight-content p-12">
+                    <div class="distribution-container">
                         <!-- Range bar -->
-                        <div style="position: absolute; top: 30px; left: 0; right: 0; height: 8px; background: linear-gradient(to right, #e0e7ff 0%, #c7d2fe 25%, #a5b4fc 50%, #818cf8 75%, #6366f1 100%); border-radius: 4px;"></div>
+                        <div class="distribution-gradient"></div>
 """
 
         # Calculate positions for all stats
@@ -160,15 +159,15 @@ def _render_numeric_insights(insights: Dict, thousand_separator: str = ",", deci
         for stat in stats_data:
             if stat['marker'] == 'line':
                 html += f"""
-                        <div style="position: absolute; top: 25px; left: {stat['pos']}%; width: 2px; height: 18px; background: #4f46e5; opacity: 0.7;"></div>
+                        <div class="distribution-marker" style="left: {stat['pos']}%;"></div>
 """
             elif stat['marker'] == 'thick_line':
                 html += f"""
-                        <div style="position: absolute; top: 25px; left: {stat['pos']}%; width: 3px; height: 18px; background: #4338ca; font-weight: bold;"></div>
+                        <div class="distribution-marker-bold" style="left: {stat['pos']}%;"></div>
 """
             elif stat['marker'] == 'dot':
                 html += f"""
-                        <div style="position: absolute; top: 28px; left: {stat['pos']}%; width: 8px; height: 8px; background: #f59e0b; border: 2px solid white; border-radius: 50%; transform: translateX(-50%);"></div>
+                        <div class="distribution-marker-mean" style="left: {stat['pos']}%;"></div>
 """
 
         # Detect horizontal overlaps and assign vertical positions
@@ -264,17 +263,17 @@ def _render_numeric_insights(insights: Dict, thousand_separator: str = ",", deci
                 if label['pos'] == 0:
                     # Min label - left aligned
                     html += f"""
-                        <div style="position: absolute; top: {y_pos}; left: 0%; font-size: 0.7em; color: {label['color']}; font-weight: 600; white-space: nowrap;">{label['label']}</div>
+                        <div class="distribution-label distribution-label-left" style="top: {y_pos}; color: {label['color']};">{label['label']}</div>
 """
                 else:
                     # Max label - right aligned
                     html += f"""
-                        <div style="position: absolute; top: {y_pos}; right: 0%; font-size: 0.7em; color: {label['color']}; font-weight: 600; white-space: nowrap;">{label['label']}</div>
+                        <div class="distribution-label distribution-label-right" style="top: {y_pos}; color: {label['color']};">{label['label']}</div>
 """
             else:
                 # Regular labels - center aligned
                 html += f"""
-                        <div style="position: absolute; top: {y_pos}; left: {label['pos']}%; transform: translateX(-50%); font-size: 0.7em; color: {label['color']}; font-weight: 600; white-space: nowrap;">{label['label']}</div>
+                        <div class="distribution-label" style="top: {y_pos}; left: {label['pos']}%; transform: translateX(-50%); color: {label['color']};">{label['label']}</div>
 """
 
         html += """
@@ -284,8 +283,8 @@ def _render_numeric_insights(insights: Dict, thousand_separator: str = ",", deci
         # Additional stats row (std dev)
         if 'std' in insights:
             html += f"""
-                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #f3f4f6; font-size: 0.8em; color: #6b7280; display: flex; gap: 15px;">
-                        <span><span style="font-weight: 600;">σ (Std Dev):</span> {insights['std']:.2f}</span>
+                    <div class="std-footer">
+                        <span><span class="text-bold">σ (Std Dev):</span> {insights['std']:.2f}</span>
                     </div>
 """
 
@@ -297,43 +296,43 @@ def _render_numeric_insights(insights: Dict, thousand_separator: str = ",", deci
     # Fallback for incomplete data
     elif 'min' in insights or 'max' in insights or 'mean' in insights:
         html += """
-            <div style="margin-bottom: 15px;">
-                <h4 style="margin: 10px 0 8px 0; color: #6b7280; font-size: 0.95em;">Numeric Statistics:</h4>
-                <div style="background: white; padding: 8px 10px; border-radius: 6px; border: 1px solid #e5e7eb; display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+            <div class="insight-section">
+                <h4 class="insight-header">Numeric Statistics:</h4>
+                <div class="numeric-stats-container">
 """
         if 'min' in insights:
             html += f"""
-                    <div style="display: inline-flex; align-items: baseline; gap: 5px;">
-                        <span style="color: #9ca3af; font-size: 0.75em; text-transform: uppercase; font-weight: 600;">Min:</span>
-                        <span style="font-size: 0.95em; font-weight: bold; color: #667eea;">{insights['min']:.2f}</span>
+                    <div class="numeric-stat-item">
+                        <span class="numeric-stat-label">Min:</span>
+                        <span class="numeric-stat-value">{insights['min']:.2f}</span>
                     </div>
 """
         if 'max' in insights:
             html += f"""
-                    <div style="display: inline-flex; align-items: baseline; gap: 5px;">
-                        <span style="color: #9ca3af; font-size: 0.75em; text-transform: uppercase; font-weight: 600;">Max:</span>
-                        <span style="font-size: 0.95em; font-weight: bold; color: #667eea;">{insights['max']:.2f}</span>
+                    <div class="numeric-stat-item">
+                        <span class="numeric-stat-label">Max:</span>
+                        <span class="numeric-stat-value">{insights['max']:.2f}</span>
                     </div>
 """
         if 'mean' in insights:
             html += f"""
-                    <div style="display: inline-flex; align-items: baseline; gap: 5px;">
-                        <span style="color: #9ca3af; font-size: 0.75em; text-transform: uppercase; font-weight: 600;">Mean:</span>
-                        <span style="font-size: 0.95em; font-weight: bold; color: #667eea;">{insights['mean']:.2f}</span>
+                    <div class="numeric-stat-item">
+                        <span class="numeric-stat-label">Mean:</span>
+                        <span class="numeric-stat-value">{insights['mean']:.2f}</span>
                     </div>
 """
         if 'median' in insights:
             html += f"""
-                    <div style="display: inline-flex; align-items: baseline; gap: 5px;">
-                        <span style="color: #9ca3af; font-size: 0.75em; text-transform: uppercase; font-weight: 600;">Median:</span>
-                        <span style="font-size: 0.95em; font-weight: bold; color: #667eea;">{insights['median']:.2f}</span>
+                    <div class="numeric-stat-item">
+                        <span class="numeric-stat-label">Median:</span>
+                        <span class="numeric-stat-value">{insights['median']:.2f}</span>
                     </div>
 """
         if 'std' in insights:
             html += f"""
-                    <div style="display: inline-flex; align-items: baseline; gap: 5px;">
-                        <span style="color: #9ca3af; font-size: 0.75em; text-transform: uppercase; font-weight: 600;">Std Dev:</span>
-                        <span style="font-size: 0.95em; font-weight: bold; color: #667eea;">{insights['std']:.2f}</span>
+                    <div class="numeric-stat-item">
+                        <span class="numeric-stat-label">Std Dev:</span>
+                        <span class="numeric-stat-value">{insights['std']:.2f}</span>
                     </div>
 """
         html += """
