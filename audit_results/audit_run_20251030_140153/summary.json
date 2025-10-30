@@ -1,0 +1,36 @@
+{
+  "run_metadata": {
+    "total_tables_audited": 1,
+    "run_start_time": "2025-10-30 13:02:21 UTC",
+    "run_end_time": "2025-10-30 13:02:21 UTC",
+    "total_duration_seconds": 0.35,
+    "total_rows_analyzed": 0,
+    "total_issues_found": 0,
+    "status_breakdown": {
+      "OK": 1,
+      "WARNING": 0,
+      "ERROR": 0
+    }
+  },
+  "tables": [
+    {
+      "table_name": "TEST_JSON",
+      "total_rows": 0,
+      "sampled": false,
+      "analyzed_rows": 0,
+      "column_count": 2,
+      "issues_found": 0,
+      "columns_with_issues": 0,
+      "status": "OK",
+      "duration_seconds": 0.352209,
+      "audit_timestamp": "2025-10-30 13:02:21 UTC",
+      "table_metadata": {
+        "table_name": "TEST_JSON",
+        "table_type": "BASE TABLE",
+        "created_time": "2024-03-08 19:57:31.832000+00:00",
+        "table_uid": "SF_TRIAL.PUBLIC.TEST_JSON",
+        "row_count": 0
+      }
+    }
+  ]
+}

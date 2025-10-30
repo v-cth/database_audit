@@ -1,0 +1,249 @@
+📁 Audit run directory: audit_results/audit_run_20251030_140153
+📝 Logs will be saved to: audit_results/audit_run_20251030_140153/audit.log
+🔍 Full audit mode: Running quality checks and profiling/insights
+
+🔍 Auto-discovering tables in schema...
+✅ Connected to SNOWFLAKE (username/password)
+⚠️  Could not fetch primary keys: 002003 (42S02): SQL compilation error:
+Object 'SF_TRIAL.INFORMATION_SCHEMA.KEY_COLUMN_USAGE' does not exist or not authorized.
+📋 Found 7 tables in schema
+🔽 Filtered out 5 tables based on patterns
+✅ Will audit 2 tables
+   Excluded: CAR_SALES, JSON_CONTENT, TABLE_CONFIG, XML_CONTENT, XML_CONTENT_2
+🔒 Closed SNOWFLAKE connection
+✅ Connected to SNOWFLAKE (username/password)
+
+🔍 Pre-fetching metadata for 2 table(s)...
+⚠️  Could not fetch primary keys: 002003 (42S02): SQL compilation error:
+Object 'SF_TRIAL.INFORMATION_SCHEMA.KEY_COLUMN_USAGE' does not exist or not authorized.
+✅ Metadata cached for all tables
+
+======================================================================
+🔍 Auditing table: TEST_COLUMN_CHECKS
+======================================================================
+🔐 Secure audit mode: Direct database query via Ibis (no file export)
+🔖 Table UID: SF_TRIAL.PUBLIC.TEST_COLUMN_CHECKS
+📑 Table type: BASE TABLE
+📊 Table has 5 rows
+📊 Optimized column loading: selecting 11/11 columns
+✅ Loaded 5 rows into memory
+
+============================================================
+Auditing: TEST_COLUMN_CHECKS
+Total rows in table: 5
+============================================================
+
+
+🔑 Potential primary key column(s): CITY_NAME, CITY_WITH_SPACE, CITY_WITH_SUFFIX, STATION_CODE, GENERIC_STRING, VALUE_OK, VALUE_MIN
+
+📋 Column Summary (All Columns):
+====================================================================================================
+Column Name                    Type            Status       Nulls           Distinct       
+----------------------------------------------------------------------------------------------------
+CITY_NAME                      string          ✗ ERROR      0 (0.0%)        5              
+CITY_WITH_SPACE                string          ✗ ERROR      0 (0.0%)        5              
+CITY_WITH_SUFFIX               string          ✓ OK         0 (0.0%)        5              
+CITY_WITH_ENDCHAR              string          ✓ OK         0 (0.0%)        4              
+STATION_CODE                   string          ✓ OK         0 (0.0%)        5              
+GENERIC_STRING                 string          ✗ ERROR      0 (0.0%)        5              
+VALUE_OK                       int64           - NO_CHECKS  0 (0.0%)        5              
+VALUE_MID                      int64           - NO_CHECKS  0 (0.0%)        4              
+VALUE_MIN                      int64           - NO_CHECKS  0 (0.0%)        5              
+EVENT_DATE                     date            ✗ ERROR      0 (0.0%)        4              
+DELIVERY_DATE                  date            ✗ ERROR      0 (0.0%)        4              
+====================================================================================================
+
+
+💡 Column Insights:
+
+📊 CITY_NAME:
+   Top 5 Values:
+      • 'Paris' (1x, 20.0%)
+      • 'Tokyo!' (1x, 20.0%)
+      • 'paris' (1x, 20.0%)
+      • 'London_tmp' (1x, 20.0%)
+      • 'Rome ' (1x, 20.0%)
+   Length: min=5, max=10, avg=6.2
+
+📊 CITY_WITH_SPACE:
+   Top 5 Values:
+      • 'Tokyo' (1x, 20.0%)
+      • 'London' (1x, 20.0%)
+      • 'paris' (1x, 20.0%)
+      • 'Rome ' (1x, 20.0%)
+      • 'Paris' (1x, 20.0%)
+   Length: min=5, max=6, avg=5.2
+
+📊 CITY_WITH_SUFFIX:
+   Top 5 Values:
+      • 'Paris' (1x, 20.0%)
+      • 'Osaka' (1x, 20.0%)
+      • 'London' (1x, 20.0%)
+      • 'Madrid' (1x, 20.0%)
+      • 'London_tmp' (1x, 20.0%)
+   Length: min=5, max=10, avg=6.4
+
+📊 CITY_WITH_ENDCHAR:
+   Top 4 Values:
+      • 'Paris' (2x, 40.0%)
+      • 'Madrid' (1x, 20.0%)
+      • 'Berlin' (1x, 20.0%)
+      • 'Osaka.' (1x, 20.0%)
+   Length: min=5, max=6, avg=5.6
+
+📊 STATION_CODE:
+   Top 5 Values:
+      • 'AB1234' (1x, 20.0%)
+      • 'CD5678' (1x, 20.0%)
+      • 'GH3456' (1x, 20.0%)
+      • 'EF9012' (1x, 20.0%)
+      • 'ZZ9999' (1x, 20.0%)
+   Length: min=6, max=6, avg=6.0
+
+📊 GENERIC_STRING:
+   Top 5 Values:
+      • '12345' (1x, 20.0%)
+      • 'hello' (1x, 20.0%)
+      • 'abc' (1x, 20.0%)
+      • 'paris' (1x, 20.0%)
+      • 'PARIS' (1x, 20.0%)
+   Length: min=3, max=5, avg=4.6
+
+📊 VALUE_OK:
+   Top 5 Values:
+      • '10.0' (1x, 20.0%)
+      • '0.0' (1x, 20.0%)
+      • '-5.0' (1x, 20.0%)
+      • '101.0' (1x, 20.0%)
+      • '50.0' (1x, 20.0%)
+   Stats: min=-5.00, max=101.00, mean=31.20, median=10.00
+   Quantiles: p25=0.00, p50=10.00, p75=50.00, p90=101.00
+
+📊 VALUE_MID:
+   Top 4 Values:
+      • '10.0' (2x, 40.0%)
+      • '50.0' (1x, 20.0%)
+      • '25.0' (1x, 20.0%)
+      • '99.0' (1x, 20.0%)
+   Stats: min=10.00, max=99.00, mean=38.80, median=25.00
+   Quantiles: p25=10.00, p50=25.00, p75=50.00, p90=99.00
+
+📊 VALUE_MIN:
+   Top 5 Values:
+      • '0.0' (1x, 20.0%)
+      • '3.0' (1x, 20.0%)
+      • '2.0' (1x, 20.0%)
+      • '5.0' (1x, 20.0%)
+      • '1.0' (1x, 20.0%)
+   Stats: min=0.00, max=5.00, mean=2.20, median=2.00
+   Quantiles: p25=1.00, p50=2.00, p75=3.00, p90=5.00
+
+📊 EVENT_DATE:
+   Date Range: from 2019-12-31 to 2025-11-07 (2138 days)
+   Timezone: None (timezone-naive)
+   Most Common Dates:
+      • 2021-01-01 (2x, 40.0%)
+      • 2025-11-07 (1x, 20.0%)
+      • 2024-06-01 (1x, 20.0%)
+      • 2019-12-31 (1x, 20.0%)
+   Most Common Days of Week:
+      • Friday (3x, 60.0%)
+      • Saturday (1x, 20.0%)
+      • Tuesday (1x, 20.0%)
+
+📊 DELIVERY_DATE:
+   Date Range: from 2025-06-01 to 2026-01-02 (215 days)
+   Timezone: None (timezone-naive)
+   Most Common Dates:
+      • 2025-12-30 (2x, 40.0%)
+      • 2025-06-01 (1x, 20.0%)
+      • 2026-01-02 (1x, 20.0%)
+      • 2025-11-12 (1x, 20.0%)
+   Most Common Days of Week:
+      • Tuesday (2x, 40.0%)
+      • Friday (1x, 20.0%)
+      • Wednesday (1x, 20.0%)
+      • Sunday (1x, 20.0%)
+
+🔍 Issues Found:
+
+📊 Column: CITY_NAME (string)
+   Nulls: 0 (0.0%)
+   Distinct values: 5
+   ⚠️  TRAILING CHARACTERS (' '): 1 rows (20.0%)
+      Examples: ["'Rome '"]
+   ⚠️  CASE DUPLICATES: 1 unique values with case variations
+❌ Error auditing table 'TEST_COLUMN_CHECKS': too many values to unpack (expected 2)
+Traceback (most recent call last):
+  File "/Users/v/Documents/GitHub/database_audit/audit.py", line 352, in main
+    results = auditor.audit_from_database(
+  File "/Users/v/Documents/GitHub/database_audit/dw_auditor/core/auditor.py", line 464, in audit_from_database
+    results = self.audit_table(
+  File "/Users/v/Documents/GitHub/database_audit/dw_auditor/core/auditor.py", line 708, in audit_table
+    print_results(results)
+  File "/Users/v/Documents/GitHub/database_audit/dw_auditor/utils/output.py", line 172, in print_results
+    for lower_val, variations in issue['examples']:
+ValueError: too many values to unpack (expected 2)
+
+======================================================================
+🔍 Auditing table: TEST_JSON
+======================================================================
+🔐 Secure audit mode: Direct database query via Ibis (no file export)
+🔖 Table UID: SF_TRIAL.PUBLIC.TEST_JSON
+📑 Table type: BASE TABLE
+📊 Table has 0 rows
+📊 Optimized column loading: selecting 1/2 columns
+✅ Loaded 0 rows into memory
+
+============================================================
+Auditing: TEST_JSON
+Total rows in table: 0
+============================================================
+
+
+🔑 Potential primary key column(s): NAME
+
+📋 Column Summary (All Columns):
+====================================================================================================
+Column Name                    Type            Status       Nulls           Distinct       
+----------------------------------------------------------------------------------------------------
+NAME                           string          - NO_CHECKS  0 (0.0%)        0              
+JSON_CONTENT                   variant         - NOT_LOADED N/A             N/A            
+====================================================================================================
+
+✅ No issues found!
+
+
+⏱️  Audit Duration Breakdown:
+   • string_checks: 0.000s
+   • Total: 0.00s
+
+
+⏱️  Table Audit Phase Breakdown:
+   • Connection: 0.000s
+   • Metadata: 0.001s
+   • Column Selection: 0.000s
+   • Data Loading: 0.351s
+   • Audit Checks: 0.000s
+   • Total Table Audit: 0.35s
+📄 HTML report saved to: audit_results/audit_run_20251030_140153/TEST_JSON/audit.html
+🌐 Opened report in browser
+📄 Results saved to: audit_results/audit_run_20251030_140153/TEST_JSON/audit.json
+📄 CSV saved to: audit_results/audit_run_20251030_140153/TEST_JSON/audit.csv
+📄 Column summary CSV saved to: audit_results/audit_run_20251030_140153/TEST_JSON/summary.csv
+
+======================================================================
+📊 Generating run summary reports...
+======================================================================
+📄 Summary HTML saved to: audit_results/audit_run_20251030_140153/summary.html
+🌐 Opened summary report in browser
+📄 Summary JSON saved to: audit_results/audit_run_20251030_140153/summary.json
+📄 Detailed column summary CSV saved to: audit_results/audit_run_20251030_140153/columns.csv
+📄 Table summary CSV saved to: audit_results/audit_run_20251030_140153/tables.csv
+
+======================================================================
+✅ Audit completed! Results saved to: audit_results/audit_run_20251030_140153
+⏱️  Total duration: 28.56 seconds
+📝 Logs saved to: audit_results/audit_run_20251030_140153/audit.log
+======================================================================
+🔒 Closed SNOWFLAKE connection

@@ -162,15 +162,10 @@ def print_results(results: Dict):
                 print(f"   ⚠️  LEADING CHARACTERS ('{pattern}'): {issue['count']:,} rows ({issue['pct']:.1f}%)")
                 print(f"      Examples: {issue['examples'][:3]}")
 
-            elif issue_type == 'ENDING_CHARACTERS':
-                pattern = issue.get('pattern', 'N/A')
-                print(f"   ⚠️  ENDING CHARACTERS ('{pattern}'): {issue['count']:,} rows ({issue['pct']:.1f}%)")
-                print(f"      Examples: {issue['examples'][:3]}")
-
             elif issue_type == 'CASE_DUPLICATES':
                 print(f"   ⚠️  CASE DUPLICATES: {issue['count']} unique values with case variations")
-                for lower_val, variations in issue['examples']:
-                    print(f"      '{lower_val}' → {variations}")
+                for example in issue['examples']:
+                    print(f"      {example}")
 
             elif issue_type == 'REGEX_PATTERN':
                 mode_label = "MATCH" if issue.get('mode') == 'match' else "CONTAINS"

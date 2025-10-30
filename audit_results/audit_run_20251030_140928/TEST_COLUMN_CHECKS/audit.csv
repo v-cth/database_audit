@@ -1,0 +1,8 @@
+table_name,total_rows,analyzed_rows,sampled,column_name,column_dtype,null_count,null_pct,distinct_count,issue_type,issue_count,issue_pct,suggestion,examples,audit_timestamp
+TEST_COLUMN_CHECKS,5,5,false,CITY_NAME,string,0,0.0,5,TRAILING_CHARACTERS,1,20.0,,"[""'Rome '""]",2025-10-30 13:09:54 UTC
+TEST_COLUMN_CHECKS,5,5,false,CITY_NAME,string,0,0.0,5,CASE_DUPLICATES,1,,,"[""'paris' → ['Paris', 'paris']""]",2025-10-30 13:09:54 UTC
+TEST_COLUMN_CHECKS,5,5,false,CITY_WITH_SPACE,string,0,0.0,5,TRAILING_CHARACTERS,1,20.0,,"[""'Rome '""]",2025-10-30 13:09:54 UTC
+TEST_COLUMN_CHECKS,5,5,false,CITY_WITH_SPACE,string,0,0.0,5,CASE_DUPLICATES,1,,,"[""'paris' → ['Paris', 'paris']""]",2025-10-30 13:09:54 UTC
+TEST_COLUMN_CHECKS,5,5,false,GENERIC_STRING,string,0,0.0,5,CASE_DUPLICATES,1,,,"[""'paris' → ['paris', 'PARIS']""]",2025-10-30 13:09:54 UTC
+TEST_COLUMN_CHECKS,5,5,false,EVENT_DATE,date,0,0.0,4,FUTURE_DATES,1,20.0,Found 1 dates in the future - check if these are valid or data entry errors,['2025-11-07'],2025-10-30 13:09:54 UTC
+TEST_COLUMN_CHECKS,5,5,false,DELIVERY_DATE,date,0,0.0,4,FUTURE_DATES,4,80.0,Found 4 dates in the future - check if these are valid or data entry errors,"['2025-12-30', '2026-01-02', '2025-11-12']",2025-10-30 13:09:54 UTC
