@@ -16,9 +16,9 @@ def print_column_summary(results: Dict):
         print(f"\n📑 Table Type: {table_type}")
 
     print("\n📋 Column Summary (All Columns):")
-    print("=" * 100)
-    print(f"{'Column Name':<30} {'Type':<15} {'Status':<12} {'Nulls':<15} {'Distinct':<15}")
-    print("-" * 100)
+    print("=" * 115)
+    print(f"{'Column Name':<30} {'Type':<30} {'Status':<12} {'Nulls':<15} {'Distinct':<15}")
+    print("-" * 115)
 
     for col_name, col_data in results['column_summary'].items():
         # Handle N/A values for unloaded columns
@@ -48,9 +48,17 @@ def print_column_summary(results: Dict):
         else:
             status_display = f"- {status}"
 
-        print(f"{col_name:<30} {col_data['dtype']:<15} {status_display:<12} {null_display:<15} {distinct_display:<15}")
+        # Show type conversion if it happened
+        dtype_display = col_data['dtype']
+        if 'source_dtype' in col_data:
+            # Show as "source → converted"
+            source = col_data['source_dtype'].lower()
+            converted = col_data['dtype'].lower()
+            dtype_display = f"{source} → {converted}"
 
-    print("=" * 100)
+        print(f"{col_name:<30} {dtype_display:<30} {status_display:<12} {null_display:<15} {distinct_display:<15}")
+
+    print("=" * 115)
     print()
 
 

@@ -1,0 +1,16 @@
+📁 Audit run directory: audit_results/audit_run_20251030_180917
+📝 Logs will be saved to: audit_results/audit_run_20251030_180917/audit.log
+🔍 Full audit mode: Running quality checks and profiling/insights
+
+======================================================================
+💰 Estimating BigQuery scan costs...
+======================================================================
+✅ Connected to BIGQUERY
+⚠️  Could not estimate bytes (will proceed without confirmation)
+
+======================================================================
+✅ Audit completed! Results saved to: audit_results/audit_run_20251030_180917
+⏱️  Total duration: 0.93 seconds
+📝 Logs saved to: audit_results/audit_run_20251030_180917/audit.log
+======================================================================
+🔒 Closed BIGQUERY connection

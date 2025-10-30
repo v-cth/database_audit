@@ -3,7 +3,7 @@ Main auditor class that coordinates all auditing functionality
 """
 
 import polars as pl
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Tuple
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -576,6 +576,16 @@ class SecureTableAuditor(AuditorExporterMixin):
             analyzed_rows = len(df)
             print(f"⚠️  Sampling {analyzed_rows:,} rows from loaded data\n")
 
+        # Store original schema before type conversion
+        original_schema = {col: str(df[col].dtype) for col in df.columns}
+
+        # Attempt automatic type conversions on string columns before auditing
+        df, conversion_log = self._attempt_type_conversions(df)
+
+        # Create a mapping of converted types for easy lookup
+        converted_types = {conv['column']: {'from': conv['from_type'], 'to': conv['to_type']}
+                          for conv in conversion_log}
+
         results = {
             'table_name': table_name,
             'total_rows': actual_total_rows,
@@ -585,7 +595,8 @@ class SecureTableAuditor(AuditorExporterMixin):
             'column_summary': {},  # Summary for ALL columns
             'column_insights': {},  # Insights for columns
             'timestamp': start_time_utc.strftime('%Y-%m-%d %H:%M:%S UTC'),
-            'start_time': start_time.isoformat()
+            'start_time': start_time.isoformat(),
+            'type_conversions': conversion_log  # Track conversions
         }
 
         # Default check config
@@ -667,13 +678,19 @@ class SecureTableAuditor(AuditorExporterMixin):
                 status = 'NOT_CHECKED'
 
             # Store summary for ALL columns
-            results['column_summary'][col] = {
+            column_summary = {
                 'dtype': col_results['dtype'],
                 'null_count': col_results['null_count'],
                 'null_pct': col_results['null_pct'],
                 'distinct_count': col_results['distinct_count'],
                 'status': status
             }
+
+            # Add source type if this column was converted
+            if col in converted_types:
+                column_summary['source_dtype'] = original_schema.get(col, 'unknown')
+
+            results['column_summary'][col] = column_summary
 
             # Check if this column could be a primary key (unique + no nulls)
             if col_results['distinct_count'] == analyzed_rows and col_results['null_count'] == 0:
@@ -719,6 +736,129 @@ class SecureTableAuditor(AuditorExporterMixin):
             results['data'] = df
 
         return results
+
+    def _attempt_type_conversions(self, df: pl.DataFrame, conversion_threshold: float = 0.95) -> Tuple[pl.DataFrame, List[Dict]]:
+        """
+        Attempt to convert string columns to more specific types (date, datetime, numeric)
+
+        Args:
+            df: Polars DataFrame
+            conversion_threshold: Minimum proportion of successful conversions to apply type change (default: 0.95)
+
+        Returns:
+            Tuple of (modified DataFrame, list of conversion info dicts)
+        """
+        conversion_log = []
+
+        # Identify string columns
+        string_columns = [col for col in df.columns if df[col].dtype in [pl.Utf8, pl.String]]
+
+        if not string_columns:
+            return df, conversion_log
+
+        print(f"\n🔄 Attempting type conversions on {len(string_columns)} string column(s)...")
+
+        for col in string_columns:
+            # Get non-null values for conversion testing
+            non_null_values = df[col].drop_nulls()
+            if len(non_null_values) == 0:
+                continue
+
+            total_non_null = len(non_null_values)
+
+            # Try conversions in order: int → float → datetime → date
+            # If a conversion is successful, skip remaining types
+
+            # 1. Try INTEGER conversion
+            try:
+                # Attempt to cast to integer
+                converted = df[col].cast(pl.Int64, strict=False)
+                successful_conversions = converted.drop_nulls().len()
+                success_rate = successful_conversions / total_non_null if total_non_null > 0 else 0
+
+                if success_rate >= conversion_threshold:
+                    df = df.with_columns(converted.alias(col))
+                    conversion_log.append({
+                        'column': col,
+                        'from_type': 'string',
+                        'to_type': 'int64',
+                        'success_rate': success_rate,
+                        'converted_values': successful_conversions
+                    })
+                    print(f"   ✓ {col}: string → int64 ({success_rate:.1%} success)")
+                    continue
+            except Exception:
+                pass  # Integer conversion failed, try next type
+
+            # 2. Try FLOAT conversion
+            try:
+                # Attempt to cast to float
+                converted = df[col].cast(pl.Float64, strict=False)
+                successful_conversions = converted.drop_nulls().len()
+                success_rate = successful_conversions / total_non_null if total_non_null > 0 else 0
+
+                if success_rate >= conversion_threshold:
+                    df = df.with_columns(converted.alias(col))
+                    conversion_log.append({
+                        'column': col,
+                        'from_type': 'string',
+                        'to_type': 'float64',
+                        'success_rate': success_rate,
+                        'converted_values': successful_conversions
+                    })
+                    print(f"   ✓ {col}: string → float64 ({success_rate:.1%} success)")
+                    continue
+            except Exception:
+                pass  # Float conversion failed, try next type
+
+            # 3. Try DATETIME conversion
+            try:
+                # Attempt to parse as datetime
+                converted = df[col].str.to_datetime(strict=False)
+                successful_conversions = converted.drop_nulls().len()
+                success_rate = successful_conversions / total_non_null if total_non_null > 0 else 0
+
+                if success_rate >= conversion_threshold:
+                    df = df.with_columns(converted.alias(col))
+                    conversion_log.append({
+                        'column': col,
+                        'from_type': 'string',
+                        'to_type': 'datetime',
+                        'success_rate': success_rate,
+                        'converted_values': successful_conversions
+                    })
+                    print(f"   ✓ {col}: string → datetime ({success_rate:.1%} success)")
+                    continue
+            except Exception:
+                pass  # Datetime conversion failed, try next type
+
+            # 4. Try DATE conversion
+            try:
+                # Attempt to parse as date
+                converted = df[col].str.to_date(strict=False)
+                successful_conversions = converted.drop_nulls().len()
+                success_rate = successful_conversions / total_non_null if total_non_null > 0 else 0
+
+                if success_rate >= conversion_threshold:
+                    df = df.with_columns(converted.alias(col))
+                    conversion_log.append({
+                        'column': col,
+                        'from_type': 'string',
+                        'to_type': 'date',
+                        'success_rate': success_rate,
+                        'converted_values': successful_conversions
+                    })
+                    print(f"   ✓ {col}: string → date ({success_rate:.1%} success)")
+                    continue
+            except Exception:
+                pass  # Date conversion failed, keep as string
+
+        if conversion_log:
+            print(f"✅ Successfully converted {len(conversion_log)} column(s) to more specific types\n")
+        else:
+            print(f"ℹ️  No string columns could be converted (threshold: {conversion_threshold:.0%})\n")
+
+        return df, conversion_log
 
     def _audit_complex_column(self, df: pl.DataFrame, col: str) -> Dict:
         """

@@ -1,0 +1,15 @@
+table_name,column_name,data_type,status,null_count,null_pct,distinct_count
+fct_avaibility_part,station_code,int64,NO_CHECKS,0,0.0,1457
+fct_avaibility_part,station_name,string,ERROR,0,0.0,1454
+fct_avaibility_part,capacity,int64,NO_CHECKS,0,0.0,66
+fct_avaibility_part,docks_available,int64,NO_CHECKS,0,0.0,71
+fct_avaibility_part,mechanical,int64,NO_CHECKS,0,0.0,60
+fct_avaibility_part,ebike,int64,NO_CHECKS,0,0.0,32
+fct_avaibility_part,duedate,"datetime(time_unit='ns', time_zone='utc')",OK,0,0.0,9937
+fct_avaibility_part,bikes_available,int64,ERROR,0,0.0,69
+fct_avaibility_part,rate_bike_available,float64,NO_CHECKS,0,0.0,1058
+fct_avaibility_part,rate_dock_available,float64,NO_CHECKS,0,0.0,1038
+fct_avaibility_part,bikes_out_of_order,int64,NO_CHECKS,0,0.0,44
+fct_avaibility_part,collected_at,"datetime(time_unit='ns', time_zone=none)",OK,0,0.0,2620
+fct_avaibility_part,rounded_collected_at,"datetime(time_unit='ns', time_zone=none)",OK,0,0.0,2620
+fct_avaibility_part,test_convert,int64,NO_CHECKS,0,0.0,66

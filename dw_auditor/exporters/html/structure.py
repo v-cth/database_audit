@@ -283,13 +283,21 @@ def _generate_column_summary_table(results: Dict) -> str:
 
         col_name_display = col_name if not is_primary_key else f"{col_name} (PK)"
 
+        # Show type conversion if it happened
+        dtype_display = col_data['dtype']
+        if 'source_dtype' in col_data:
+            # Show as "source → converted"
+            source = col_data['source_dtype'].lower()
+            converted = col_data['dtype'].lower()
+            dtype_display = f"{source} → {converted}"
+
         # Build cells
         bold_class = ' class="td-bold"' if is_primary_key else ''
         error_class = ' class="td-error"' if null_pct_numeric > 10 else ''
 
         html += f"""                <tr>
                     <td{bold_class}>{col_name_display}</td>
-                    <td>{col_data['dtype']}</td>
+                    <td>{dtype_display}</td>
                     <td>{badge_html}</td>
                     <td>{null_display}</td>
                     <td{error_class}>{null_pct_display}</td>
