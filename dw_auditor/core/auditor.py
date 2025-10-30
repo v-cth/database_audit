@@ -592,7 +592,7 @@ class SecureTableAuditor(AuditorExporterMixin):
         if check_config is None:
             check_config = {
                 'trailing_characters': True,
-                'ending_characters': False,
+                'leading_characters': False,
                 'case_duplicates': True,
                 'regex_patterns': False,  # No default - must be explicitly configured
                 'numeric_strings': True,
@@ -614,7 +614,7 @@ class SecureTableAuditor(AuditorExporterMixin):
             if col not in df.columns:
                 # Column exists in schema but wasn't loaded (optimization)
                 results['column_summary'][col] = {
-                    'dtype': table_schema[col] if table_schema else 'Unknown',
+                    'dtype': table_schema[col].lower() if table_schema else 'unknown',
                     'null_count': 'N/A',
                     'null_pct': 'N/A',
                     'distinct_count': 'N/A',
@@ -737,7 +737,7 @@ class SecureTableAuditor(AuditorExporterMixin):
         null_count = df[col].null_count()
 
         return {
-            'dtype': str(dtype),
+            'dtype': str(dtype).lower(),
             'null_count': null_count,
             'null_pct': (null_count / total_rows * 100) if total_rows > 0 else 0,
             'distinct_count': None,  # Not applicable for complex types
@@ -768,7 +768,7 @@ class SecureTableAuditor(AuditorExporterMixin):
         distinct_count = df[col].n_unique()
 
         col_result = {
-            'dtype': str(dtype),
+            'dtype': str(dtype).lower(),
             'null_count': null_count,
             'null_pct': (null_count / total_rows * 100) if total_rows > 0 else 0,
             'distinct_count': distinct_count,
@@ -808,19 +808,19 @@ class SecureTableAuditor(AuditorExporterMixin):
                     'issues_count': issues_found
                 })
 
-            ending_config = check_config.get('ending_characters', False)
-            if ending_config:
+            leading_config = check_config.get('leading_characters', False)
+            if leading_config:
                 before_count = len(col_result['issues'])
                 # Pass patterns parameter if it's not just True
-                if ending_config is True:
-                    results = run_check_sync('ending_characters', df, col, primary_key_columns)
+                if leading_config is True:
+                    results = run_check_sync('leading_characters', df, col, primary_key_columns)
                 else:
-                    results = run_check_sync('ending_characters', df, col, primary_key_columns, patterns=ending_config)
+                    results = run_check_sync('leading_characters', df, col, primary_key_columns, patterns=leading_config)
                 col_result['issues'].extend([r.model_dump() for r in results])
                 after_count = len(col_result['issues'])
                 issues_found = after_count - before_count
                 col_result['checks_run'].append({
-                    'name': 'Ending Characters',
+                    'name': 'Leading Characters',
                     'status': 'FAILED' if issues_found > 0 else 'PASSED',
                     'issues_count': issues_found
                 })

@@ -55,12 +55,14 @@ class CaseDuplicatesCheck(BaseCheck):
         )
 
         if len(case_analysis) > 0:
-            # Format examples as (lowercase, [variations])
+            # Format examples as readable strings: 'lowercase' → ['Variation1', 'Variation2']
             examples = []
             for row in case_analysis.head(3).iter_rows(named=True):
                 lowercase_val = row['lower']
                 variations = row['variations']
-                examples.append((lowercase_val, variations))
+                # Format as: 'paris' → ['Paris', 'paris']
+                formatted_example = f"'{lowercase_val}' → {variations}"
+                examples.append(formatted_example)
 
             results.append(CheckResult(
                 type='CASE_DUPLICATES',

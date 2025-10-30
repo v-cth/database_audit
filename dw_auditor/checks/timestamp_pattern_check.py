@@ -78,7 +78,8 @@ class TimestampPatternCheck(BaseCheck):
             pct_same_hour = most_common['count'] / non_null_count
 
             if pct_same_hour > self.config.constant_hour_threshold:
-                examples = non_null_df[self.col].head(3).to_list()
+                # Convert datetimes to formatted strings
+                examples = [str(val) if val else None for val in non_null_df[self.col].head(3).to_list()]
                 results.append(CheckResult(
                     type='CONSTANT_HOUR',
                     hour=most_common['hour'],
@@ -98,7 +99,8 @@ class TimestampPatternCheck(BaseCheck):
         midnight_pct = midnight_count / non_null_count
 
         if midnight_pct > self.config.midnight_threshold:
-            examples = non_null_df[self.col].head(3).to_list()
+            # Convert datetimes to formatted strings
+            examples = [str(val) if val else None for val in non_null_df[self.col].head(3).to_list()]
             results.append(CheckResult(
                 type='ALWAYS_MIDNIGHT',
                 count=midnight_count,

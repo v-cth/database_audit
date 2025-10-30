@@ -4,7 +4,7 @@
 from . import (
     numeric_range_check,
     string_trailing_check,
-    string_ending_check,
+    string_leading_check,
     string_case_check,
     string_regex_check,
     string_numeric_check,

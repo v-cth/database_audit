@@ -82,7 +82,8 @@ class FutureDateCheck(BaseCheck):
 
             # Only report if above threshold
             if pct_future >= self.config.threshold_pct:
-                examples = future_rows[self.col].head(5).to_list()
+                # Convert dates/datetimes to formatted strings
+                examples = [str(val) if val else None for val in future_rows[self.col].head(5).to_list()]
 
                 # Calculate how far into the future
                 if col_dtype == pl.Date:

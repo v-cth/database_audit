@@ -71,7 +71,8 @@ class DateOutlierCheck(BaseCheck):
 
             # Only report if above threshold
             if pct_old >= self.config.outlier_threshold_pct:
-                examples = too_old[self.col].head(5).to_list()
+                # Convert dates/datetimes to formatted strings
+                examples = [str(val) if val else None for val in too_old[self.col].head(5).to_list()]
                 min_year_found = year_col['year'].min()
 
                 results.append(CheckResult(
@@ -91,7 +92,8 @@ class DateOutlierCheck(BaseCheck):
 
             # Only report if above threshold
             if pct_future >= self.config.outlier_threshold_pct:
-                examples = too_future[self.col].head(5).to_list()
+                # Convert dates/datetimes to formatted strings
+                examples = [str(val) if val else None for val in too_future[self.col].head(5).to_list()]
                 max_year_found = year_col['year'].max()
 
                 results.append(CheckResult(
@@ -116,9 +118,10 @@ class DateOutlierCheck(BaseCheck):
 
                 # Only report if above threshold
                 if pct >= self.config.outlier_threshold_pct:
-                    examples = non_null_df.filter(
+                    # Convert dates/datetimes to formatted strings
+                    examples = [str(val) if val else None for val in non_null_df.filter(
                         pl.col(self.col).dt.year() == problem_year
-                    )[self.col].head(5).to_list()
+                    )[self.col].head(5).to_list()]
 
                     results.append(CheckResult(
                         type='SUSPICIOUS_YEAR',
