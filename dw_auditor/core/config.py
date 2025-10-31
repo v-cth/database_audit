@@ -360,6 +360,8 @@ class AuditConfig:
             base_config = self.column_insights_defaults.get('string', {}).copy()
         elif 'datetime' in dtype_key or 'date' in dtype_key:
             base_config = self.column_insights_defaults.get('datetime', {}).copy()
+        elif 'bool' in dtype_key:
+            base_config = self.column_insights_defaults.get('boolean', {}).copy()
         elif 'int' in dtype_key or 'float' in dtype_key:
             base_config = self.column_insights_defaults.get('numeric', {}).copy()
         else:

@@ -514,6 +514,56 @@ def _render_datetime_insights(insights: Dict) -> str:
     return html
 
 
+def _render_boolean_insights(insights: Dict) -> str:
+    """Render boolean column insights"""
+    html = ""
+
+    # Boolean value distribution with visual bar chart (true/false/null)
+    if 'boolean_distribution' in insights and insights['boolean_distribution']:
+        html += """
+            <div class="insight-section">
+                <h4 class="insight-header">Value Distribution:</h4>
+                <div class="insight-content">
+"""
+        for item in insights['boolean_distribution']:
+            # Format value display
+            value = item['value']
+            if value is None:
+                value_str = 'null'
+                full_value = 'null'
+                bar_color = '#9ca3af'  # Gray for null
+            elif value is True:
+                value_str = 'true'
+                full_value = 'true'
+                bar_color = '#10b981'  # Green for true
+            elif value is False:
+                value_str = 'false'
+                full_value = 'false'
+                bar_color = '#ef4444'  # Red for false
+            else:
+                value_str = str(value)
+                full_value = str(value)
+                bar_color = '#3b82f6'  # Blue for other
+
+            bar_width = item['percentage']
+
+            html += f"""
+                    <div class="top-value-item" style="background: linear-gradient(to right, {bar_color} 0%, {bar_color} {bar_width}%, #f3f4f6 {bar_width}%, #f3f4f6 100%);" title="{full_value}">
+                        <span class="top-value-label"><code>{value_str}</code></span>
+                        <div class="top-value-stats">
+                            <span class="top-value-count">({item['count']:,})</span>
+                            <span class="top-value-pct">{item['percentage']:.1f}%</span>
+                        </div>
+                    </div>
+"""
+        html += """
+                </div>
+            </div>
+"""
+
+    return html
+
+
 def _generate_column_insights(results: Dict, thousand_separator: str = ",", decimal_places: int = 1) -> str:
     """Generate the column insights section
 
@@ -549,6 +599,7 @@ def _generate_column_insights(results: Dict, thousand_separator: str = ",", deci
         html += _render_string_insights(insights)
         html += _render_numeric_insights(insights, thousand_separator, decimal_places)
         html += _render_datetime_insights(insights)
+        html += _render_boolean_insights(insights)
 
         html += """
             </div>

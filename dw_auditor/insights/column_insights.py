@@ -7,6 +7,7 @@ from typing import Dict, Optional
 from .string_insights import generate_string_insights
 from .numeric_insights import generate_numeric_insights
 from .datetime_insights import generate_datetime_insights
+from .boolean_insights import generate_boolean_insights
 
 
 # Complex types that don't support insights
@@ -55,5 +56,7 @@ def generate_column_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict:
         return generate_numeric_insights(df, col, config)
     elif dtype in [pl.Datetime, pl.Date]:
         return generate_datetime_insights(df, col, config)
+    elif dtype == pl.Boolean:
+        return generate_boolean_insights(df, col, config)
     else:
         return {}

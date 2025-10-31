@@ -79,6 +79,13 @@ def print_insights(results: Dict):
                 value_str = str(item['value'])[:50]  # Truncate long values
                 print(f"      • '{value_str}' ({item['count']:,}x, {item['percentage']:.1f}%)")
 
+        # Boolean insights
+        if 'boolean_distribution' in insights:
+            print(f"   Top {len(insights['boolean_distribution'])} Values:")
+            for item in insights['boolean_distribution']:
+                value_str = str(item['value'])
+                print(f"      • '{value_str}' ({item['count']:,}x, {item['percentage']:.1f}%)")
+
         if 'length_stats' in insights:
             stats = insights['length_stats']
             stats_str = ", ".join([f"{k}={v}" for k, v in stats.items()])
