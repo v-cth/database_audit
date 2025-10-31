@@ -1,0 +1,2 @@
+table_name,total_rows,analyzed_rows,sampled,column_name,column_dtype,null_count,null_pct,distinct_count,issue_type,issue_count,issue_pct,suggestion,examples,audit_timestamp
+dim_station,1587,1587,false,station_name,string,0,0.0,1570,CASE_DUPLICATES,1,,,"[""'place du général de gaulle' → ['Place du Général de Gaulle', 'Place Du Général De Gaulle']""]",2025-10-31 14:07:11 UTC

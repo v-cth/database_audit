@@ -50,6 +50,7 @@ class DateRangeCheck(BaseCheck):
     """
 
     display_name = "Date Range Validation"
+    supported_dtypes = [pl.Datetime, pl.Date]
 
     def _validate_params(self) -> None:
         """Validate date range parameters"""

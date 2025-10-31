@@ -1,0 +1,10 @@
+table_name,column_name,data_type,status,null_count,null_pct,distinct_count,source_dtype
+dim_station,station_code,int64,OK,0,0.0,1587,
+dim_station,station_name,string,ERROR,0,0.0,1570,
+dim_station,capacity,int64,ERROR,0,0.0,72,
+dim_station,lon,float64,NO_CHECKS,0,0.0,1586,
+dim_station,lat,float64,NO_CHECKS,0,0.0,1587,
+dim_station,city,string,OK,0,0.0,68,
+dim_station,is_renting,boolean,NOT_CHECKED,0,0.0,2,
+dim_station,is_returning,boolean,NOT_CHECKED,0,0.0,2,
+dim_station,station_plus,boolean,NOT_CHECKED,0,0.0,2,

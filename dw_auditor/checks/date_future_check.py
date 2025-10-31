@@ -39,6 +39,7 @@ class FutureDateCheck(BaseCheck):
     """
 
     display_name = "Future Date Detection"
+    supported_dtypes = [pl.Datetime, pl.Date]
 
     def _validate_params(self) -> None:
         """Validate future date parameters"""

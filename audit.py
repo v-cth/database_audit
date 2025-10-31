@@ -5,30 +5,46 @@ Usage: python audit.py [config_file] [--discover]
 """
 
 import sys
+import logging
 import argparse
 import webbrowser
 from pathlib import Path
 from dw_auditor import AuditConfig, SecureTableAuditor
 
 
-class TeeLogger:
-    """Write output to both console and file"""
-    def __init__(self, log_file):
-        self.terminal = sys.stdout
-        self.terminal_err = sys.stderr
-        self.log = open(log_file, 'w', encoding='utf-8')
+def setup_logging(log_file: Path, log_level: str = 'INFO') -> None:
+    """
+    Configure logging to output to both console and file
 
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)
-        self.log.flush()
+    Args:
+        log_file: Path to log file
+        log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
+    """
+    # Create formatter
+    formatter = logging.Formatter(
+        '%(message)s'  # Simple format for audit output
+    )
 
-    def flush(self):
-        self.terminal.flush()
-        self.log.flush()
+    # Create file handler
+    file_handler = logging.FileHandler(log_file, mode='w', encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
 
-    def close(self):
-        self.log.close()
+    # Create console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(getattr(logging, log_level.upper()))
+    console_handler.setFormatter(formatter)
+
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+
+    # Also configure specific loggers for the auditor modules
+    for logger_name in ['dw_auditor.core.auditor', 'dw_auditor']:
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(logging.DEBUG)
 
 
 def main():
@@ -104,9 +120,10 @@ Examples:
 
     # Set up logging to file
     log_file = run_dir / "audit.log"
-    logger = TeeLogger(log_file)
-    sys.stdout = logger
-    sys.stderr = logger  # Also redirect stderr to capture tracebacks
+    setup_logging(log_file, log_level='INFO')
+
+    # Get logger for main script
+    logger = logging.getLogger(__name__)
 
     print(f"📁 Audit run directory: {run_dir}")
     print(f"📝 Logs will be saved to: {log_file}")
@@ -539,10 +556,8 @@ Examples:
         if 'shared_db_conn' in locals():
             shared_db_conn.close()
 
-        # Restore stdout/stderr and close log file
-        sys.stdout = logger.terminal
-        sys.stderr = logger.terminal_err
-        logger.close()
+        # Shutdown logging
+        logging.shutdown()
 
 
 if __name__ == "__main__":

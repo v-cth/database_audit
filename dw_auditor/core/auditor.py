@@ -3,9 +3,15 @@ Main auditor class that coordinates all auditing functionality
 """
 
 import polars as pl
-from typing import Dict, List, Optional, Union, Tuple
+import logging
+from enum import Enum
+from typing import Dict, List, Optional, Union, Tuple, TYPE_CHECKING, Any, Type
 from datetime import datetime, timezone
 from pathlib import Path
+from contextlib import contextmanager
+
+if TYPE_CHECKING:
+    from .config import AuditConfig
 
 # Import from checks package to trigger check registration
 from ..checks import run_check_sync
@@ -14,6 +20,46 @@ from ..utils.output import print_results
 from .db_connection import DatabaseConnection
 from ..insights import generate_column_insights
 from .exporter_mixin import AuditorExporterMixin
+
+# Setup module logger
+logger = logging.getLogger(__name__)
+
+
+class AuditMode(Enum):
+    """Enumeration of audit modes"""
+    FULL = 'full'
+    CHECKS = 'checks'
+    INSIGHTS = 'insights'
+    DISCOVER = 'discover'
+
+    @classmethod
+    def from_string(cls, mode: str) -> 'AuditMode':
+        """Convert string to AuditMode enum"""
+        mode_map = {e.value: e for e in cls}
+        if mode not in mode_map:
+            raise ValueError(f"Invalid audit mode: {mode}. Must be one of: {', '.join(mode_map.keys())}")
+        return mode_map[mode]
+
+
+@contextmanager
+def timing_phase(phase_name: str, phase_timings: Dict[str, float]):
+    """
+    Context manager for timing audit phases
+
+    Args:
+        phase_name: Name of the phase being timed
+        phase_timings: Dictionary to store timing results
+
+    Yields:
+        None
+    """
+    start_time = datetime.now()
+    try:
+        yield
+    finally:
+        duration = (datetime.now() - start_time).total_seconds()
+        phase_timings[phase_name] = duration
+        logger.debug(f"Phase '{phase_name}' completed in {duration:.3f}s")
 
 
 # Complex types that don't support standard quality checks
@@ -71,15 +117,323 @@ class SecureTableAuditor(AuditorExporterMixin):
         self.outlier_threshold_pct = outlier_threshold_pct
         self.audit_log = []
 
+    def _get_table_metadata(
+        self,
+        db_conn: 'DatabaseConnection',
+        table_name: str,
+        schema: Optional[str],
+        user_primary_key: Optional[List[str]],
+        custom_query: Optional[str],
+        backend: str
+    ) -> Tuple[Dict, Optional[int], List[str]]:
+        """
+        Get table metadata including row count and primary key columns
+
+        Args:
+            db_conn: Database connection
+            table_name: Name of table
+            schema: Schema name
+            user_primary_key: User-defined primary key columns
+            custom_query: Custom query if any
+            backend: Database backend
+
+        Returns:
+            Tuple of (metadata dict, row count, primary key columns)
+        """
+        table_metadata = {}
+        row_count = None
+        primary_key_columns = []
+
+        # Get table metadata (including UID and row count)
+        try:
+            table_metadata = db_conn.get_table_metadata(table_name, schema)
+            if table_metadata:
+                if 'table_uid' in table_metadata:
+                    logger.info(f"Table UID: {table_metadata['table_uid']}")
+                if 'table_type' in table_metadata and table_metadata['table_type']:
+                    table_type = table_metadata['table_type']
+                    logger.info(f"Table type: {table_type}")
+                if 'row_count' in table_metadata and table_metadata['row_count'] is not None:
+                    row_count = table_metadata['row_count']
+                    logger.info(f"Table has {row_count:,} rows")
+
+                # Display partition information
+                if 'partition_column' in table_metadata and table_metadata['partition_column']:
+                    partition_type = table_metadata.get('partition_type', 'UNKNOWN')
+                    logger.info(f"Partitioned by: {table_metadata['partition_column']} ({partition_type})")
+
+                # Display clustering information
+                if 'clustering_columns' in table_metadata and table_metadata['clustering_columns']:
+                    cluster_cols = ', '.join(table_metadata['clustering_columns'])
+                    logger.info(f"Clustered by: {cluster_cols}")
+                elif 'clustering_key' in table_metadata and table_metadata['clustering_key']:
+                    logger.info(f"Clustering key: {table_metadata['clustering_key']}")
+
+        except Exception as e:
+            logger.warning(f"Could not get table metadata: {e}")
+
+        # Get primary key columns
+        if user_primary_key:
+            primary_key_columns = user_primary_key
+            logger.info(f"Primary key from config: {', '.join(primary_key_columns)}")
+            table_metadata['primary_key_columns'] = primary_key_columns
+            table_metadata['primary_key_source'] = 'user_config'
+        else:
+            try:
+                primary_key_columns = db_conn.get_primary_key_columns(table_name, schema)
+                if primary_key_columns:
+                    logger.info(f"Primary key from schema: {', '.join(primary_key_columns)}")
+                    table_metadata['primary_key_columns'] = primary_key_columns
+                    table_metadata['primary_key_source'] = 'information_schema'
+            except Exception as e:
+                logger.warning(f"Could not get primary key info: {e}")
+
+        # Handle row count for different scenarios
+        is_cross_project = backend == 'bigquery' and hasattr(db_conn, 'source_project_id') and db_conn.source_project_id
+
+        if custom_query:
+            logger.info("Using custom query - will count rows from query result")
+            row_count = None
+        elif row_count is None and not is_cross_project:
+            try:
+                row_count = db_conn.get_row_count(table_name, schema)
+                if row_count is not None:
+                    logger.info(f"Table has {row_count:,} rows")
+                else:
+                    logger.warning("Could not determine row count, will load full table")
+            except Exception as e:
+                logger.warning(f"Could not get row count: {e}")
+                logger.info("Will load full table")
+        elif is_cross_project:
+            logger.warning("Cross-project query detected - skipping row count (too expensive)")
+            logger.info(f"Will sample {self.sample_size:,} rows")
+
+        return table_metadata, row_count, primary_key_columns
+
+    def _load_data(
+        self,
+        db_conn: 'DatabaseConnection',
+        table_name: str,
+        schema: Optional[str],
+        custom_query: Optional[str],
+        columns_to_load: Optional[List[str]],
+        should_sample: bool,
+        sampling_method: str,
+        sampling_key_column: Optional[str]
+    ) -> pl.DataFrame:
+        """
+        Load data from database
+
+        Args:
+            db_conn: Database connection
+            table_name: Name of table
+            schema: Schema name
+            custom_query: Custom query if any
+            columns_to_load: List of columns to load
+            should_sample: Whether to sample
+            sampling_method: Sampling method
+            sampling_key_column: Key column for sampling
+
+        Returns:
+            Polars DataFrame with loaded data
+        """
+        if should_sample:
+            method_display = sampling_method
+            if sampling_key_column:
+                method_display = f"{sampling_method} (key: {sampling_key_column})"
+            logger.info(f"Sampling {self.sample_size:,} rows from table using '{method_display}' method")
+
+        df = db_conn.execute_query(
+            table_name=table_name,
+            schema=schema,
+            custom_query=custom_query,
+            sample_size=self.sample_size if should_sample else None,
+            sampling_method=sampling_method,
+            sampling_key_column=sampling_key_column,
+            columns=columns_to_load if columns_to_load else None
+        )
+
+        logger.info(f"Loaded {len(df):,} rows into memory")
+        return df
+
+    def _run_check_and_track(
+        self,
+        check_name: str,
+        df: pl.DataFrame,
+        col: str,
+        primary_key_columns: List[str],
+        col_result: Dict,
+        **check_params
+    ) -> None:
+        """
+        Run a check and update col_result in place
+
+        Args:
+            check_name: Name of the check to run (registry key)
+            df: DataFrame to check
+            col: Column name
+            primary_key_columns: Primary key columns for context
+            col_result: Dictionary to update with results
+            **check_params: Additional parameters for the check
+
+        Updates col_result['issues'] and col_result['checks_run'] in place
+        """
+        try:
+            before_count = len(col_result['issues'])
+
+            # Run the check
+            results = run_check_sync(check_name, df, col, primary_key_columns, **check_params)
+
+            # Add issues
+            col_result['issues'].extend([r.model_dump() for r in results])
+
+            # Track check execution
+            after_count = len(col_result['issues'])
+            issues_found = after_count - before_count
+
+            # Get display name from registry
+            from ..checks import CHECK_REGISTRY
+            check_class = CHECK_REGISTRY.get(check_name)
+            display_name = check_class.display_name if check_class else check_name
+
+            col_result['checks_run'].append({
+                'name': display_name,
+                'status': 'FAILED' if issues_found > 0 else 'PASSED',
+                'issues_count': issues_found
+            })
+
+        except Exception as e:
+            logger.warning(f"Check '{check_name}' failed for column '{col}': {e}")
+            # Track failed check
+            col_result['checks_run'].append({
+                'name': check_name,
+                'status': 'ERROR',
+                'issues_count': 0,
+                'error': str(e)
+            })
+
+    def _map_check_config_to_params(
+        self,
+        check_name: str,
+        config_value: Any,
+        check_config: Optional[Dict] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Convert config values to check parameters
+
+        Args:
+            check_name: Name of the check
+            config_value: Configuration value from YAML
+                - True/False: run with defaults or skip
+                - str: pattern parameter
+                - dict: unpack as kwargs
+                - list: patterns parameter
+            check_config: Full check config (for range parameter extraction)
+
+        Returns:
+            Dictionary of parameters for the check, or None to skip
+        """
+        # False or None → skip check
+        if config_value is False or config_value is None:
+            return None
+
+        # Special handling for range checks (extract from full config)
+        if check_name == 'numeric_range' and check_config:
+            # Extract range parameters: greater_than, greater_than_or_equal, less_than, less_than_or_equal
+            range_params = {}
+            for key in ['greater_than', 'greater_than_or_equal', 'less_than', 'less_than_or_equal']:
+                if key in check_config:
+                    range_params[key] = check_config[key]
+            return range_params if range_params else None
+
+        if check_name == 'date_range' and check_config:
+            # Extract date range parameters: after, after_or_equal, before, before_or_equal
+            range_params = {}
+            for key in ['after', 'after_or_equal', 'before', 'before_or_equal']:
+                if key in check_config:
+                    range_params[key] = check_config[key]
+            return range_params if range_params else None
+
+        # True → run with defaults
+        if config_value is True:
+            return {}
+
+        # String → pattern parameter (for regex checks)
+        if isinstance(config_value, str):
+            return {'pattern': config_value}
+
+        # List → patterns parameter (for trailing/leading checks)
+        if isinstance(config_value, list):
+            return {'patterns': config_value}
+
+        # Dict → use as-is
+        if isinstance(config_value, dict):
+            return config_value
+
+        # Unknown type → run with defaults
+        logger.warning(f"Unexpected config type for '{check_name}': {type(config_value)}, using defaults")
+        return {}
+
+    def _get_applicable_checks(
+        self,
+        dtype: Type[pl.DataType],
+        check_config: Dict
+    ) -> List[Tuple[str, Dict]]:
+        """
+        Discover which checks apply to this dtype based on config and check metadata
+
+        Args:
+            dtype: Polars data type of the column
+            check_config: Configuration dict with check settings
+
+        Returns:
+            List of (check_name, params) tuples for checks that should run
+        """
+        from ..checks import CHECK_REGISTRY
+
+        applicable = []
+
+        for check_name, check_class in CHECK_REGISTRY.items():
+            # Check if this check is in the config
+            config_value = check_config.get(check_name)
+
+            # Skip if not configured or explicitly disabled
+            if config_value is False or config_value is None:
+                continue
+
+            # Check if dtype is supported
+            supported_dtypes = check_class.supported_dtypes
+
+            # Empty list means universal (works on all types)
+            if not supported_dtypes:
+                params = self._map_check_config_to_params(check_name, config_value, check_config)
+                if params is not None:
+                    applicable.append((check_name, params))
+                continue
+
+            # Check if column dtype matches any supported dtype
+            dtype_matches = False
+            for supported_dtype in supported_dtypes:
+                if isinstance(dtype, type(supported_dtype)) or dtype == supported_dtype:
+                    dtype_matches = True
+                    break
+
+            if dtype_matches:
+                params = self._map_check_config_to_params(check_name, config_value, check_config)
+                if params is not None:
+                    applicable.append((check_name, params))
+
+        return applicable
+
     @staticmethod
     def determine_columns_to_load(
         table_schema: Dict[str, str],
         table_name: str,
-        column_check_config: Optional[any] = None,
+        column_check_config: Optional['AuditConfig'] = None,
         primary_key_columns: Optional[List[str]] = None,
         include_columns: Optional[List[str]] = None,
         exclude_columns: Optional[List[str]] = None,
-        audit_mode: str = 'full',
+        audit_mode: Union[str, AuditMode] = 'full',
         store_dataframe: bool = False
     ) -> List[str]:
         """
@@ -236,12 +590,12 @@ class SecureTableAuditor(AuditorExporterMixin):
         mask_pii: bool = True,
         sample_in_db: bool = True,
         custom_query: Optional[str] = None,
-        custom_pii_keywords: List[str] = None,
+        custom_pii_keywords: Optional[List[str]] = None,
         user_primary_key: Optional[List[str]] = None,
-        column_check_config: Optional[any] = None,
+        column_check_config: Optional['AuditConfig'] = None,
         sampling_method: str = 'random',
         sampling_key_column: Optional[str] = None,
-        audit_mode: str = 'full',
+        audit_mode: Union[str, AuditMode] = 'full',
         store_dataframe: bool = False,
         db_conn: Optional['DatabaseConnection'] = None
     ) -> Dict:
@@ -287,169 +641,83 @@ class SecureTableAuditor(AuditorExporterMixin):
         # Log the audit
         self._log_audit(table_name, f"{backend}://{connection_params.get('project_id') or connection_params.get('account')}")
 
-        print(f"🔐 Secure audit mode: Direct database query via Ibis (no file export)")
+        logger.info("Secure audit mode: Direct database query via Ibis (no file export)")
 
         # Track timing for different phases
         phase_timings = {}
-        phase_start = datetime.now()
 
         # Create or reuse database connection
         should_close_conn = False
-        if db_conn is None:
-            db_conn = DatabaseConnection(backend, **connection_params)
-            db_conn.connect()
-            should_close_conn = True
-        phase_timings['connection'] = (datetime.now() - phase_start).total_seconds()
+        with timing_phase('connection', phase_timings):
+            if db_conn is None:
+                db_conn = DatabaseConnection(backend, **connection_params)
+                db_conn.connect()
+                should_close_conn = True
 
         try:
-            # Get table metadata (including UID and row count)
-            phase_start = datetime.now()
-            table_metadata = {}
-            row_count = None
-            primary_key_columns = []
-
-            try:
-                table_metadata = db_conn.get_table_metadata(table_name, schema)
-                if table_metadata:
-                    if 'table_uid' in table_metadata:
-                        print(f"🔖 Table UID: {table_metadata['table_uid']}")
-                    if 'table_type' in table_metadata and table_metadata['table_type']:
-                        table_type = table_metadata['table_type']
-                        # INFORMATION_SCHEMA.TABLES returns readable types like "BASE TABLE", "VIEW", etc.
-                        print(f"📑 Table type: {table_type}")
-                    if 'row_count' in table_metadata and table_metadata['row_count'] is not None:
-                        row_count = table_metadata['row_count']
-                        print(f"📊 Table has {row_count:,} rows")
-
-                    # Display partition information
-                    if 'partition_column' in table_metadata and table_metadata['partition_column']:
-                        partition_type = table_metadata.get('partition_type', 'UNKNOWN')
-                        print(f"🔹 Partitioned by: {table_metadata['partition_column']} ({partition_type})")
-
-                    # Display clustering information
-                    if 'clustering_columns' in table_metadata and table_metadata['clustering_columns']:
-                        cluster_cols = ', '.join(table_metadata['clustering_columns'])
-                        print(f"🔸 Clustered by: {cluster_cols}")
-                    elif 'clustering_key' in table_metadata and table_metadata['clustering_key']:
-                        # Snowflake clustering key
-                        print(f"🔸 Clustering key: {table_metadata['clustering_key']}")
-
-            except Exception as e:
-                print(f"⚠️  Could not get table metadata: {e}")
-
-            # Get primary key columns - prioritize user-defined, then INFORMATION_SCHEMA
-            if user_primary_key:
-                primary_key_columns = user_primary_key
-                print(f"🔑 Primary key from config: {', '.join(primary_key_columns)}")
-                table_metadata['primary_key_columns'] = primary_key_columns
-                table_metadata['primary_key_source'] = 'user_config'
-            else:
-                try:
-                    primary_key_columns = db_conn.get_primary_key_columns(table_name, schema)
-                    if primary_key_columns:
-                        print(f"🔑 Primary key from schema: {', '.join(primary_key_columns)}")
-                        table_metadata['primary_key_columns'] = primary_key_columns
-                        table_metadata['primary_key_source'] = 'information_schema'
-                except Exception as e:
-                    print(f"⚠️  Could not get primary key info: {e}")
-
-            # Fallback to row count query if not in metadata
-            # For cross-project queries (e.g., BigQuery public datasets), skip COUNT(*) as it's too expensive
-            is_cross_project = backend == 'bigquery' and hasattr(db_conn, 'source_project_id') and db_conn.source_project_id
-
-            # If using a custom query, we need to count the result of that query, not the base table
-            if custom_query:
-                print(f"📝 Using custom query - will count rows from query result")
-                # We'll count after executing the query
-                row_count = None
-            elif row_count is None and sample_in_db and not is_cross_project:
-                try:
-                    row_count = db_conn.get_row_count(table_name, schema)
-                    if row_count is not None:
-                        print(f"📊 Table has {row_count:,} rows")
-                    else:
-                        print(f"⚠️  Could not determine row count, will load full table")
-                except Exception as e:
-                    print(f"⚠️  Could not get row count: {e}")
-                    print(f"   Will load full table")
-            elif is_cross_project:
-                print(f"⚠️  Cross-project query detected - skipping row count (too expensive)")
-                print(f"   Will sample {self.sample_size:,} rows")
-
-            phase_timings['metadata'] = (datetime.now() - phase_start).total_seconds()
+            # Get table metadata
+            with timing_phase('metadata', phase_timings):
+                table_metadata, row_count, primary_key_columns = self._get_table_metadata(
+                    db_conn, table_name, schema, user_primary_key, custom_query, backend
+                )
 
             # Get table schema and determine which columns to load (optimization)
-            phase_start = datetime.now()
-            columns_to_load = None
-            try:
-                # Get table schema (column names and types)
-                table_schema = db_conn.get_table_schema(table_name, schema)
-
-                if table_schema:
-                    # Get filter configuration
-                    include_columns = getattr(column_check_config, 'include_columns', None) if column_check_config else None
-                    exclude_columns = getattr(column_check_config, 'exclude_columns', None) if column_check_config else None
-
-                    # Determine which columns to load
-                    columns_to_load = self.determine_columns_to_load(
-                        table_schema=table_schema,
-                        table_name=table_name,
-                        column_check_config=column_check_config,
-                        primary_key_columns=primary_key_columns,
-                        include_columns=include_columns,
-                        exclude_columns=exclude_columns,
-                        audit_mode=audit_mode,
-                        store_dataframe=store_dataframe  # Load all columns if relationship detection is enabled
-                    )
-
-                    if columns_to_load:
-                        print(f"📊 Optimized column loading: selecting {len(columns_to_load)}/{len(table_schema)} columns")
-                    else:
-                        print(f"📊 Loading all {len(table_schema)} columns")
-                else:
-                    print(f"⚠️  Could not get table schema, will load all columns")
-            except Exception as e:
-                print(f"⚠️  Column optimization failed ({e}), will load all columns")
+            with timing_phase('column_selection', phase_timings):
                 columns_to_load = None
+                table_schema = None
+                try:
+                    # Get table schema (column names and types)
+                    table_schema = db_conn.get_table_schema(table_name, schema)
 
-            phase_timings['column_selection'] = (datetime.now() - phase_start).total_seconds()
+                    if table_schema:
+                        # Get filter configuration
+                        include_columns = getattr(column_check_config, 'include_columns', None) if column_check_config else None
+                        exclude_columns = getattr(column_check_config, 'exclude_columns', None) if column_check_config else None
+
+                        # Determine which columns to load
+                        columns_to_load = self.determine_columns_to_load(
+                            table_schema=table_schema,
+                            table_name=table_name,
+                            column_check_config=column_check_config,
+                            primary_key_columns=primary_key_columns,
+                            include_columns=include_columns,
+                            exclude_columns=exclude_columns,
+                            audit_mode=audit_mode,
+                            store_dataframe=store_dataframe  # Load all columns if relationship detection is enabled
+                        )
+
+                        if columns_to_load:
+                            logger.info(f"Optimized column loading: selecting {len(columns_to_load)}/{len(table_schema)} columns")
+                        else:
+                            logger.info(f"Loading all {len(table_schema)} columns")
+                    else:
+                        logger.warning("Could not get table schema, will load all columns")
+                except Exception as e:
+                    logger.warning(f"Column optimization failed ({e}), will load all columns")
+                    columns_to_load = None
 
             # Determine if we should sample
-            # For custom queries, don't sample - use the query as-is (user controls the data with their query)
-            # For cross-project, always sample since we don't know the row count
+            is_cross_project = backend == 'bigquery' and hasattr(db_conn, 'source_project_id') and db_conn.source_project_id
+
             if custom_query:
                 should_sample = False
-                print(f"ℹ️  Custom query provided - using query as-is (no additional sampling)")
+                logger.info("Custom query provided - using query as-is (no additional sampling)")
             elif is_cross_project:
                 should_sample = sample_in_db and (row_count is None or row_count > self.sample_size)
             else:
                 should_sample = sample_in_db and row_count and row_count > self.sample_size
 
-            if should_sample:
-                method_display = sampling_method
-                if sampling_key_column:
-                    method_display = f"{sampling_method} (key: {sampling_key_column})"
-                print(f"🔍 Sampling {self.sample_size:,} rows from table using '{method_display}' method")
-
-            # Execute query
-            phase_start = datetime.now()
-            df = db_conn.execute_query(
-                table_name=table_name,
-                schema=schema,
-                custom_query=custom_query,
-                sample_size=self.sample_size if should_sample else None,
-                sampling_method=sampling_method,
-                sampling_key_column=sampling_key_column,
-                columns=columns_to_load if columns_to_load else None
-            )
-            phase_timings['data_loading'] = (datetime.now() - phase_start).total_seconds()
-
-            print(f"✅ Loaded {len(df):,} rows into memory")
+            # Load data
+            with timing_phase('data_loading', phase_timings):
+                df = self._load_data(
+                    db_conn, table_name, schema, custom_query, columns_to_load,
+                    should_sample, sampling_method, sampling_key_column
+                )
 
             # For custom queries, the row count is the result set size
             if custom_query and row_count is None:
                 row_count = len(df)
-                print(f"📊 Custom query returned {row_count:,} rows")
+                logger.info(f"Custom query returned {row_count:,} rows")
                 # Update metadata with query result count
                 if table_metadata:
                     table_metadata['row_count'] = row_count
@@ -460,18 +728,17 @@ class SecureTableAuditor(AuditorExporterMixin):
                 df = mask_pii_columns(df, custom_pii_keywords)
 
             # Run audit - pass the actual row count, metadata, primary key columns, check config, and schema
-            phase_start = datetime.now()
-            results = self.audit_table(
-                df,
-                table_name,
-                total_row_count=row_count,
-                primary_key_columns=primary_key_columns,
-                column_check_config=column_check_config,
-                audit_mode=audit_mode,
-                table_schema=table_schema,
-                store_dataframe=store_dataframe
-            )
-            phase_timings['audit_checks'] = (datetime.now() - phase_start).total_seconds()
+            with timing_phase('audit_checks', phase_timings):
+                results = self.audit_table(
+                    df,
+                    table_name,
+                    total_row_count=row_count,
+                    primary_key_columns=primary_key_columns,
+                    column_check_config=column_check_config,
+                    audit_mode=audit_mode,
+                    table_schema=table_schema,
+                    store_dataframe=store_dataframe
+                )
 
             # Add table metadata and phase timings to results
             if table_metadata:
@@ -507,7 +774,7 @@ class SecureTableAuditor(AuditorExporterMixin):
         file_path = Path(file_path)
         table_name = table_name or file_path.stem
 
-        print(f"📁 Loading file: {file_path}")
+        logger.info(f"Loading file: {file_path}")
 
         # Read based on extension
         if file_path.suffix.lower() == '.csv':
@@ -517,7 +784,7 @@ class SecureTableAuditor(AuditorExporterMixin):
         else:
             raise ValueError(f"Unsupported file type: {file_path.suffix}")
 
-        print(f"✅ Loaded {len(df):,} rows")
+        logger.info(f"Loaded {len(df):,} rows")
 
         # Mask PII if requested
         if mask_pii:
@@ -532,8 +799,8 @@ class SecureTableAuditor(AuditorExporterMixin):
         check_config: Optional[Dict] = None,
         total_row_count: Optional[int] = None,
         primary_key_columns: Optional[List[str]] = None,
-        column_check_config: Optional[any] = None,
-        audit_mode: str = 'full',
+        column_check_config: Optional['AuditConfig'] = None,
+        audit_mode: Union[str, AuditMode] = 'full',
         table_schema: Optional[Dict[str, str]] = None,
         store_dataframe: bool = False
     ) -> Dict:
@@ -561,12 +828,12 @@ class SecureTableAuditor(AuditorExporterMixin):
         # If we have it from the database, use that; otherwise use DataFrame length
         actual_total_rows = total_row_count if total_row_count is not None else len(df)
 
-        print(f"\n{'='*60}")
-        print(f"Auditing: {table_name}")
-        print(f"Total rows in table: {actual_total_rows:,}")
+        logger.info("=" * 60)
+        logger.info(f"Auditing: {table_name}")
+        logger.info(f"Total rows in table: {actual_total_rows:,}")
         if total_row_count is not None and len(df) < actual_total_rows:
-            print(f"Analyzing sample: {len(df):,} rows")
-        print(f"{'='*60}\n")
+            logger.info(f"Analyzing sample: {len(df):,} rows")
+        logger.info("=" * 60)
 
         # Sample if needed (only if not already sampled in DB)
         analyzed_rows = len(df)
@@ -574,7 +841,7 @@ class SecureTableAuditor(AuditorExporterMixin):
             # Only sample in-memory if we didn't already sample in DB
             df = df.sample(n=min(self.sample_size, len(df)), seed=42)
             analyzed_rows = len(df)
-            print(f"⚠️  Sampling {analyzed_rows:,} rows from loaded data\n")
+            logger.warning(f"Sampling {analyzed_rows:,} rows from loaded data")
 
         # Store original schema before type conversion
         original_schema = {col: str(df[col].dtype) for col in df.columns}
@@ -714,7 +981,7 @@ class SecureTableAuditor(AuditorExporterMixin):
         # Store potential primary key columns
         if potential_keys:
             results['potential_primary_keys'] = potential_keys
-            print(f"\n🔑 Potential primary key column(s): {', '.join(potential_keys)}")
+            logger.info(f"Potential primary key column(s): {', '.join(potential_keys)}")
 
         # Calculate duration
         end_time = datetime.now()
@@ -724,12 +991,12 @@ class SecureTableAuditor(AuditorExporterMixin):
 
         print_results(results)
 
-        # Print duration breakdown
-        print(f"\n⏱️  Audit Duration Breakdown:")
+        # Log duration breakdown
+        logger.info("Audit Duration Breakdown:")
         if 'check_durations' in results and results['check_durations']:
             for check_type, check_duration in results['check_durations'].items():
-                print(f"   • {check_type}: {check_duration:.3f}s")
-        print(f"   • Total: {duration:.2f}s\n")
+                logger.info(f"  • {check_type}: {check_duration:.3f}s")
+        logger.info(f"  • Total: {duration:.2f}s")
 
         # Store DataFrame if requested (for relationship detection)
         if store_dataframe:
@@ -756,7 +1023,7 @@ class SecureTableAuditor(AuditorExporterMixin):
         if not string_columns:
             return df, conversion_log
 
-        print(f"\n🔄 Attempting type conversions on {len(string_columns)} string column(s)...")
+        logger.info(f"Attempting type conversions on {len(string_columns)} string column(s)...")
 
         for col in string_columns:
             # Get non-null values for conversion testing
@@ -785,7 +1052,7 @@ class SecureTableAuditor(AuditorExporterMixin):
                         'success_rate': success_rate,
                         'converted_values': successful_conversions
                     })
-                    print(f"   ✓ {col}: string → int64 ({success_rate:.1%} success)")
+                    logger.info(f"  ✓ {col}: string → int64 ({success_rate:.1%} success)")
                     continue
             except Exception:
                 pass  # Integer conversion failed, try next type
@@ -806,7 +1073,7 @@ class SecureTableAuditor(AuditorExporterMixin):
                         'success_rate': success_rate,
                         'converted_values': successful_conversions
                     })
-                    print(f"   ✓ {col}: string → float64 ({success_rate:.1%} success)")
+                    logger.info(f"  ✓ {col}: string → float64 ({success_rate:.1%} success)")
                     continue
             except Exception:
                 pass  # Float conversion failed, try next type
@@ -827,7 +1094,7 @@ class SecureTableAuditor(AuditorExporterMixin):
                         'success_rate': success_rate,
                         'converted_values': successful_conversions
                     })
-                    print(f"   ✓ {col}: string → datetime ({success_rate:.1%} success)")
+                    logger.info(f"  ✓ {col}: string → datetime ({success_rate:.1%} success)")
                     continue
             except Exception:
                 pass  # Datetime conversion failed, try next type
@@ -848,15 +1115,15 @@ class SecureTableAuditor(AuditorExporterMixin):
                         'success_rate': success_rate,
                         'converted_values': successful_conversions
                     })
-                    print(f"   ✓ {col}: string → date ({success_rate:.1%} success)")
+                    logger.info(f"  ✓ {col}: string → date ({success_rate:.1%} success)")
                     continue
             except Exception:
                 pass  # Date conversion failed, keep as string
 
         if conversion_log:
-            print(f"✅ Successfully converted {len(conversion_log)} column(s) to more specific types\n")
+            logger.info(f"Successfully converted {len(conversion_log)} column(s) to more specific types")
         else:
-            print(f"ℹ️  No string columns could be converted (threshold: {conversion_threshold:.0%})\n")
+            logger.info(f"No string columns could be converted (threshold: {conversion_threshold:.0%})")
 
         return df, conversion_log
 
@@ -885,7 +1152,14 @@ class SecureTableAuditor(AuditorExporterMixin):
             'status': 'SKIPPED_COMPLEX_TYPE'
         }
 
-    def _audit_column(self, df: pl.DataFrame, col: str, check_config: Dict, primary_key_columns: Optional[List[str]] = None, audit_mode: str = 'full') -> Dict:
+    def _audit_column(
+        self,
+        df: pl.DataFrame,
+        col: str,
+        check_config: Dict,
+        primary_key_columns: Optional[List[str]] = None,
+        audit_mode: Union[str, AuditMode] = 'full'
+    ) -> Dict:
         """Audit a single column for all issues
 
         Args:
@@ -929,232 +1203,19 @@ class SecureTableAuditor(AuditorExporterMixin):
         if len(first_non_null) > 0 and first_non_null[0] == "***PII_MASKED***":
             return col_result
 
-        # String column checks
-        if dtype in [pl.Utf8, pl.String]:
-            trailing_config = check_config.get('trailing_characters', True)
-            if trailing_config:
-                before_count = len(col_result['issues'])
-                # Pass patterns parameter if it's not just True
-                if trailing_config is True:
-                    results = run_check_sync('trailing_characters', df, col, primary_key_columns)
-                else:
-                    results = run_check_sync('trailing_characters', df, col, primary_key_columns, patterns=trailing_config)
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-                col_result['checks_run'].append({
-                    'name': 'Trailing Characters',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
+        # Get applicable checks for this column's dtype
+        applicable_checks = self._get_applicable_checks(dtype, check_config)
 
-            leading_config = check_config.get('leading_characters', False)
-            if leading_config:
-                before_count = len(col_result['issues'])
-                # Pass patterns parameter if it's not just True
-                if leading_config is True:
-                    results = run_check_sync('leading_characters', df, col, primary_key_columns)
-                else:
-                    results = run_check_sync('leading_characters', df, col, primary_key_columns, patterns=leading_config)
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-                col_result['checks_run'].append({
-                    'name': 'Leading Characters',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
-
-            if check_config.get('case_duplicates', True):
-                before_count = len(col_result['issues'])
-                results = run_check_sync('case_duplicates', df, col, primary_key_columns)
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-                col_result['checks_run'].append({
-                    'name': 'Case Duplicates',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
-
-            regex_config = check_config.get('regex_patterns', check_config.get('special_chars', False))
-            if regex_config:
-                before_count = len(col_result['issues'])
-
-                # Parse config - can be string (pattern) or dict (full config)
-                # Note: True/False are not valid - must provide explicit pattern
-                if isinstance(regex_config, str):
-                    # String: treat as pattern with contains mode
-                    pattern = regex_config
-                    mode = 'contains'
-                    description = None
-                elif isinstance(regex_config, dict):
-                    # Dict: extract pattern, mode, and description
-                    pattern = regex_config.get('pattern')
-                    mode = regex_config.get('mode', 'contains')
-                    description = regex_config.get('description')
-                else:
-                    # True/False or other - skip check (no default pattern)
-                    pattern = None
-                    mode = 'contains'
-                    description = None
-
-                if pattern:
-                    results = run_check_sync('regex_pattern', df, col, primary_key_columns, pattern=pattern, mode=mode, description=description)
-                    col_result['issues'].extend([r.model_dump() for r in results])
-                    after_count = len(col_result['issues'])
-                    issues_found = after_count - before_count
-                    col_result['checks_run'].append({
-                        'name': 'Regex Pattern',
-                        'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                        'issues_count': issues_found
-                    })
-
-            if check_config.get('numeric_strings', True):
-                before_count = len(col_result['issues'])
-                results = run_check_sync('numeric_strings', df, col, primary_key_columns)
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-                col_result['checks_run'].append({
-                    'name': 'Numeric Strings',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
-
-            if check_config.get('uniqueness', False):
-                before_count = len(col_result['issues'])
-                results = run_check_sync('uniqueness', df, col, primary_key_columns)
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-                col_result['checks_run'].append({
-                    'name': 'Uniqueness',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
-
-        # Timestamp/Date checks
-        elif dtype in [pl.Datetime, pl.Date]:
-            if check_config.get('timestamp_patterns', True):
-                before_count = len(col_result['issues'])
-                results = run_check_sync('timestamp_patterns', df, col, primary_key_columns)
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-                col_result['checks_run'].append({
-                    'name': 'Timestamp Patterns',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
-
-            # Date range checks (similar to numeric range)
-            range_params = {}
-            range_desc_parts = []
-
-            if 'after' in check_config:
-                range_params['after'] = check_config['after']
-                range_desc_parts.append(f"> {check_config['after']}")
-            if 'after_or_equal' in check_config:
-                range_params['after_or_equal'] = check_config['after_or_equal']
-                range_desc_parts.append(f">= {check_config['after_or_equal']}")
-            if 'before' in check_config:
-                range_params['before'] = check_config['before']
-                range_desc_parts.append(f"< {check_config['before']}")
-            if 'before_or_equal' in check_config:
-                range_params['before_or_equal'] = check_config['before_or_equal']
-                range_desc_parts.append(f"<= {check_config['before_or_equal']}")
-
-            # Only run check if at least one range parameter is defined
-            if range_params:
-                before_count = len(col_result['issues'])
-                results = run_check_sync('date_range', df, col, primary_key_columns, **range_params)
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-
-                range_desc = ', '.join(range_desc_parts)
-                col_result['checks_run'].append({
-                    'name': f'Date Range ({range_desc})',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
-
-            if check_config.get('future_dates', True):
-                before_count = len(col_result['issues'])
-                results = run_check_sync(
-                    'future_dates', df, col, primary_key_columns,
-                    threshold_pct=getattr(self, 'outlier_threshold_pct', 0.0)
-                )
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-                col_result['checks_run'].append({
-                    'name': 'Future Dates',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
-
-            if check_config.get('uniqueness', False):
-                before_count = len(col_result['issues'])
-                results = run_check_sync('uniqueness', df, col, primary_key_columns)
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-                col_result['checks_run'].append({
-                    'name': 'Uniqueness',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
-
-        # Numeric range checks (all numeric types)
-        if dtype in [pl.Int8, pl.Int16, pl.Int32, pl.Int64,
-                     pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
-                     pl.Float32, pl.Float64]:
-            # Extract range validation parameters from check_config
-            range_params = {}
-            range_desc_parts = []
-
-            if 'greater_than' in check_config:
-                range_params['greater_than'] = check_config['greater_than']
-                range_desc_parts.append(f"> {check_config['greater_than']}")
-            if 'greater_than_or_equal' in check_config:
-                range_params['greater_than_or_equal'] = check_config['greater_than_or_equal']
-                range_desc_parts.append(f">= {check_config['greater_than_or_equal']}")
-            if 'less_than' in check_config:
-                range_params['less_than'] = check_config['less_than']
-                range_desc_parts.append(f"< {check_config['less_than']}")
-            if 'less_than_or_equal' in check_config:
-                range_params['less_than_or_equal'] = check_config['less_than_or_equal']
-                range_desc_parts.append(f"<= {check_config['less_than_or_equal']}")
-
-            # Only run check if at least one range parameter is defined
-            if range_params:
-                before_count = len(col_result['issues'])
-                results = run_check_sync('numeric_range', df, col, primary_key_columns, **range_params)
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-
-                range_desc = ', '.join(range_desc_parts)
-                col_result['checks_run'].append({
-                    'name': f'Numeric Range ({range_desc})',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
-
-            # Uniqueness check for numeric columns
-            if check_config.get('uniqueness', False):
-                before_count = len(col_result['issues'])
-                results = run_check_sync('uniqueness', df, col, primary_key_columns)
-                col_result['issues'].extend([r.model_dump() for r in results])
-                after_count = len(col_result['issues'])
-                issues_found = after_count - before_count
-                col_result['checks_run'].append({
-                    'name': 'Uniqueness',
-                    'status': 'FAILED' if issues_found > 0 else 'PASSED',
-                    'issues_count': issues_found
-                })
+        # Run all applicable checks
+        for check_name, check_params in applicable_checks:
+            self._run_check_and_track(
+                check_name=check_name,
+                df=df,
+                col=col,
+                primary_key_columns=primary_key_columns or [],
+                col_result=col_result,
+                **check_params
+            )
 
         return col_result
 

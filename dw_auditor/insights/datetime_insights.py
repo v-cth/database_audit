@@ -51,25 +51,29 @@ def generate_datetime_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict
     # Most common dates
     if config.get('most_common_dates', 0) > 0:
         top_n = config['most_common_dates']
+        total_non_null = len(non_null_series)
 
-        # Convert to date only (no time) for grouping
+        # Convert to date only (no time) for grouping and calculate percentages
         value_counts = (
             df.select(pl.col(col))
             .filter(pl.col(col).is_not_null())
             .with_columns(pl.col(col).dt.date().alias('date_only'))
             .group_by('date_only')
             .agg(pl.count().alias('count'))
+            .with_columns(
+                (pl.col('count') / total_non_null * 100).alias('percentage') if total_non_null > 0
+                else pl.lit(0.0).alias('percentage')
+            )
             .sort('count', descending=True)
             .head(top_n)
             .to_dicts()
         )
 
-        total_non_null = len(non_null_series)
         insights['most_common_dates'] = [
             {
                 'date': str(item['date_only']),
                 'count': item['count'],
-                'percentage': (item['count'] / total_non_null * 100) if total_non_null > 0 else 0
+                'percentage': item['percentage']
             }
             for item in value_counts
         ]
@@ -77,6 +81,7 @@ def generate_datetime_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict
     # Most common hours (only for datetime/timestamp, not date)
     if config.get('most_common_hours', 0) > 0 and not is_date_only:
         top_n = config['most_common_hours']
+        total_non_null = len(non_null_series)
 
         hour_counts = (
             df.select(pl.col(col))
@@ -84,17 +89,20 @@ def generate_datetime_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict
             .with_columns(pl.col(col).dt.hour().alias('hour'))
             .group_by('hour')
             .agg(pl.count().alias('count'))
+            .with_columns(
+                (pl.col('count') / total_non_null * 100).alias('percentage') if total_non_null > 0
+                else pl.lit(0.0).alias('percentage')
+            )
             .sort('count', descending=True)
             .head(top_n)
             .to_dicts()
         )
 
-        total_non_null = len(non_null_series)
         insights['most_common_hours'] = [
             {
                 'hour': item['hour'],
                 'count': item['count'],
-                'percentage': (item['count'] / total_non_null * 100) if total_non_null > 0 else 0
+                'percentage': item['percentage']
             }
             for item in hour_counts
         ]
@@ -102,6 +110,7 @@ def generate_datetime_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict
     # Most common days of week
     if config.get('most_common_days', 0) > 0:
         top_n = config['most_common_days']
+        total_non_null = len(non_null_series)
 
         # Polars weekday: Monday=1, Sunday=7
         day_names = {1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday',
@@ -113,18 +122,21 @@ def generate_datetime_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict
             .with_columns(pl.col(col).dt.weekday().alias('weekday'))
             .group_by('weekday')
             .agg(pl.count().alias('count'))
+            .with_columns(
+                (pl.col('count') / total_non_null * 100).alias('percentage') if total_non_null > 0
+                else pl.lit(0.0).alias('percentage')
+            )
             .sort('count', descending=True)
             .head(top_n)
             .to_dicts()
         )
 
-        total_non_null = len(non_null_series)
         insights['most_common_days'] = [
             {
                 'day': day_names.get(item['weekday'], f"Day {item['weekday']}"),
                 'weekday': item['weekday'],
                 'count': item['count'],
-                'percentage': (item['count'] / total_non_null * 100) if total_non_null > 0 else 0
+                'percentage': item['percentage']
             }
             for item in day_counts
         ]

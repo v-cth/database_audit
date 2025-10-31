@@ -33,6 +33,7 @@ class NumericStringsCheck(BaseCheck):
     """
 
     display_name = "Numeric Strings Detection"
+    supported_dtypes = [pl.Utf8, pl.String]
 
     def _validate_params(self) -> None:
         """Validate numeric strings parameters"""

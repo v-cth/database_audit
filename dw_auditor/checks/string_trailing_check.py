@@ -33,6 +33,7 @@ class TrailingCharactersCheck(BaseCheck):
     """
 
     display_name = "Trailing/Leading Characters"
+    supported_dtypes = [pl.Utf8, pl.String]
 
     def _validate_params(self) -> None:
         """Validate trailing characters parameters"""

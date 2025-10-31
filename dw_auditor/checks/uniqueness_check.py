@@ -34,6 +34,7 @@ class UniquenessCheck(BaseCheck):
     """
 
     display_name = "Uniqueness Validation"
+    supported_dtypes = []  # Universal: works on all data types
 
     def _validate_params(self) -> None:
         """Validate uniqueness parameters"""

@@ -28,22 +28,28 @@ def generate_string_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict:
     # Top N most frequent values
     if config.get('top_values', 0) > 0:
         top_n = config['top_values']
+        total_non_null = len(non_null_series)
+
+        # Calculate value counts and percentages using Polars expressions
         value_counts = (
             df.select(pl.col(col))
             .filter(pl.col(col).is_not_null())
             .group_by(col)
             .agg(pl.count().alias('count'))
+            .with_columns(
+                (pl.col('count') / total_non_null * 100).alias('percentage') if total_non_null > 0
+                else pl.lit(0.0).alias('percentage')
+            )
             .sort('count', descending=True)
             .head(top_n)
             .to_dicts()
         )
 
-        total_non_null = len(non_null_series)
         insights['top_values'] = [
             {
                 'value': item[col],
                 'count': item['count'],
-                'percentage': (item['count'] / total_non_null * 100) if total_non_null > 0 else 0
+                'percentage': item['percentage']
             }
             for item in value_counts
         ]

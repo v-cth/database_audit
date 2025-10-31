@@ -3,7 +3,7 @@ Base class and models for data quality checks
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Type
 from pydantic import BaseModel, Field
 import polars as pl
 
@@ -45,6 +45,7 @@ class BaseCheck(ABC):
     Attributes:
         name: Registry key for the check (set by @register_check decorator)
         display_name: Human-readable name for the check
+        supported_dtypes: List of Polars dtypes this check can handle (empty = all types)
         df: DataFrame to check
         col: Column name to check
         primary_key_columns: List of primary key columns for context in examples
@@ -53,6 +54,7 @@ class BaseCheck(ABC):
 
     name: str = None  # Set by @register_check decorator
     display_name: str = None  # Override in subclasses
+    supported_dtypes: List[Type[pl.DataType]] = []  # Override in subclasses (empty = universal)
 
     def __init__(
         self,

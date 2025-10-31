@@ -32,6 +32,7 @@ class LeadingCharactersCheck(BaseCheck):
     """
 
     display_name = "Leading Characters"
+    supported_dtypes = [pl.Utf8, pl.String]
 
     def _validate_params(self) -> None:
         """Validate leading characters parameters"""

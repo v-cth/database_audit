@@ -37,6 +37,7 @@ class TimestampPatternCheck(BaseCheck):
     """
 
     display_name = "Timestamp Pattern Detection"
+    supported_dtypes = [pl.Datetime, pl.Date]
 
     def _validate_params(self) -> None:
         """Validate timestamp pattern parameters"""

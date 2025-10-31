@@ -31,6 +31,7 @@ class CaseDuplicatesCheck(BaseCheck):
     """
 
     display_name = "Case Duplicates"
+    supported_dtypes = [pl.Utf8, pl.String]
 
     def _validate_params(self) -> None:
         """Validate case duplicates parameters"""

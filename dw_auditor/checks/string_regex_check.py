@@ -60,6 +60,7 @@ class RegexPatternCheck(BaseCheck):
     """
 
     display_name = "Regex Pattern Validation"
+    supported_dtypes = [pl.Utf8, pl.String]
 
     def _validate_params(self) -> None:
         """Validate regex pattern parameters"""
