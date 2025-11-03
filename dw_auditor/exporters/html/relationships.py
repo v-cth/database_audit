@@ -175,7 +175,7 @@ def _create_orthogonal_path(start_x: float, start_y: float, start_side: str,
         Tuple of (SVG path string, list of label positions on straight segments)
     """
     # Base clearance from edges - increased to avoid table collisions
-    base_clearance = 60
+    base_clearance = 100
     clearance = base_clearance + abs(lane_offset)
 
     # Calculate exit points (perpendicular exit from edge)
@@ -228,10 +228,10 @@ def _create_orthogonal_path(start_x: float, start_y: float, start_side: str,
         entry_y_offset = entry_y + lane_offset
 
         # Check for collision and adjust if needed
-        if _boxes_overlap_segment(all_boxes, exit_x, exit_y_offset, mid_x, exit_y_offset, margin=10):
+        if _boxes_overlap_segment(all_boxes, exit_x, exit_y_offset, mid_x, exit_y_offset, margin=20):
             # Route further out
-            exit_y_offset = exit_y + lane_offset + (80 if lane_offset >= 0 else -80)
-            entry_y_offset = entry_y + lane_offset + (80 if lane_offset >= 0 else -80)
+            exit_y_offset = exit_y + lane_offset + (120 if lane_offset >= 0 else -120)
+            entry_y_offset = entry_y + lane_offset + (120 if lane_offset >= 0 else -120)
 
         waypoints.append((exit_x, exit_y_offset))
         waypoints.append((mid_x, exit_y_offset))
@@ -246,10 +246,10 @@ def _create_orthogonal_path(start_x: float, start_y: float, start_side: str,
         entry_x_offset = entry_x + lane_offset
 
         # Check for collision and adjust if needed
-        if _boxes_overlap_segment(all_boxes, exit_x_offset, exit_y, exit_x_offset, mid_y, margin=10):
+        if _boxes_overlap_segment(all_boxes, exit_x_offset, exit_y, exit_x_offset, mid_y, margin=20):
             # Route further out
-            exit_x_offset = exit_x + lane_offset + (80 if lane_offset >= 0 else -80)
-            entry_x_offset = entry_x + lane_offset + (80 if lane_offset >= 0 else -80)
+            exit_x_offset = exit_x + lane_offset + (120 if lane_offset >= 0 else -120)
+            entry_x_offset = entry_x + lane_offset + (120 if lane_offset >= 0 else -120)
 
         waypoints.append((exit_x_offset, exit_y))
         waypoints.append((exit_x_offset, mid_y))
@@ -262,9 +262,9 @@ def _create_orthogonal_path(start_x: float, start_y: float, start_side: str,
             vert_pos = exit_y + lane_offset
 
             # Check if the vertical segment would collide
-            if _boxes_overlap_segment(all_boxes, exit_x, vert_pos, entry_x, vert_pos, margin=10):
+            if _boxes_overlap_segment(all_boxes, exit_x, vert_pos, entry_x, vert_pos, margin=20):
                 # Route further out vertically
-                vert_pos = exit_y + lane_offset + (80 if exit_y < entry_y else -80)
+                vert_pos = exit_y + lane_offset + (120 if exit_y < entry_y else -120)
 
             waypoints.append((entry_x, vert_pos))
         else:
@@ -272,9 +272,9 @@ def _create_orthogonal_path(start_x: float, start_y: float, start_side: str,
             horiz_pos = exit_x + lane_offset
 
             # Check if the horizontal segment would collide
-            if _boxes_overlap_segment(all_boxes, horiz_pos, exit_y, horiz_pos, entry_y, margin=10):
+            if _boxes_overlap_segment(all_boxes, horiz_pos, exit_y, horiz_pos, entry_y, margin=20):
                 # Route further out horizontally
-                horiz_pos = exit_x + lane_offset + (80 if exit_x < entry_x else -80)
+                horiz_pos = exit_x + lane_offset + (120 if exit_x < entry_x else -120)
 
             waypoints.append((horiz_pos, entry_y))
 
