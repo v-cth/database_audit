@@ -1,3 +1,0 @@
-table_name,total_rows,sampled,analyzed_rows,column_count,issues_found,columns_with_issues,status,duration_seconds,audit_timestamp,table_type,created_time,partition_column,partition_type,clustering_columns
-fct_avaibility_part,3877353,true,10000,13,0,0,OK,3.331373,2025-10-28 16:39:16 UTC,BASE TABLE,2025-10-22 09:22:21.004000+00:00,collected_at,TIME,station_code
-dim_station,1587,false,1587,9,0,0,OK,2.3426810000000002,2025-10-28 16:39:19 UTC,BASE TABLE,2025-10-28 01:00:51.860000+00:00,"","",""

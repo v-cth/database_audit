@@ -1,2 +1,0 @@
-table_name,total_rows,sampled,analyzed_rows,column_count,issues_found,columns_with_issues,status,duration_seconds,audit_timestamp,table_type,created_time,partition_column,partition_type,clustering_columns
-TEST_JSON,0,false,0,2,0,0,OK,0.352209,2025-10-30 13:02:21 UTC,BASE TABLE,2024-03-08 19:57:31.832000+00:00,"","",""

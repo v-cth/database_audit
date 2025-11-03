@@ -1,4 +1,0 @@
-table_name,total_rows,analyzed_rows,sampled,column_name,column_dtype,null_count,null_pct,distinct_count,issue_type,issue_count,issue_pct,suggestion,examples,audit_timestamp
-fct_avaibility_part,3877353,10000,true,station_name,string,0,0.0,1456,CASE_DUPLICATES,1,,,"[""'place du général de gaulle' → ['Place Du Général De Gaulle', 'Place du Général de Gaulle']""]",2025-10-30 18:29:42 UTC
-fct_avaibility_part,3877353,10000,true,bikes_available,int64,0,0.0,74,VALUE_NOT_GREATER_THAN,250,2.5,Values should be > 0.0,"['0', '0', '0']",2025-10-30 18:29:42 UTC
-fct_avaibility_part,3877353,10000,true,bikes_available,int64,0,0.0,74,DUPLICATE_VALUES,9926,99.26,Column should contain only unique values. Found 68 distinct value(s) with duplicates.,"['3 [count=723]', '4 [count=674]', '2 [count=660]']",2025-10-30 18:29:42 UTC

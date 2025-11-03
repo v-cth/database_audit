@@ -4,10 +4,13 @@ Snowflake adapter implementation
 
 import ibis
 import polars as pl
+import logging
 from typing import Optional, List, Dict, Any
 
 from .base import BaseAdapter
 from .utils import apply_sampling
+
+logger = logging.getLogger(__name__)
 
 
 class SnowflakeAdapter(BaseAdapter):
@@ -46,7 +49,7 @@ class SnowflakeAdapter(BaseAdapter):
 
         self.conn = ibis.snowflake.connect(**conn_kwargs)
         auth_method = "external browser" if authenticator == 'externalbrowser' else "username/password"
-        print(f"✅ Connected to SNOWFLAKE ({auth_method})")
+        logger.info(f"Connected to SNOWFLAKE ({auth_method})")
         return self.conn
 
     def _fetch_all_metadata(self, schema: str, table_names: Optional[List[str]] = None):

@@ -1,3 +1,0 @@
-table_name,column_name,data_type,status,null_count,null_pct,distinct_count
-test_datetime_checks,event_date,Date,DISCOVERED,0,0.0,4
-test_datetime_checks,delivery_date,Date,DISCOVERED,0,0.0,4

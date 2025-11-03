@@ -4,10 +4,13 @@ Database connection orchestrator that delegates to backend adapters
 
 import ibis
 import polars as pl
+import logging
 from typing import Optional, List, Dict, Any
 
 from .bigquery import BigQueryAdapter
 from .snowflake import SnowflakeAdapter
+
+logger = logging.getLogger(__name__)
 
 
 ADAPTERS = {
@@ -143,7 +146,7 @@ class DatabaseConnection:
         """Close database connection"""
         self.adapter.close()
         self.conn = None
-        print(f"🔒 Closed {self.backend.upper()} connection")
+        logger.info(f"Closed {self.backend.upper()} connection")
 
     def __enter__(self):
         """Context manager entry"""

@@ -5,10 +5,13 @@ BigQuery adapter implementation
 import ibis
 import polars as pl
 import json
+import logging
 from typing import Optional, List, Dict, Any
 
 from .base import BaseAdapter
 from .utils import qualify_query_tables, apply_sampling
+
+logger = logging.getLogger(__name__)
 
 
 class BigQueryAdapter(BaseAdapter):
@@ -44,7 +47,7 @@ class BigQueryAdapter(BaseAdapter):
             conn_kwargs['dataset_id'] = schema
 
         self.conn = ibis.bigquery.connect(**conn_kwargs)
-        print(f"✅ Connected to BIGQUERY")
+        logger.info("Connected to BIGQUERY")
         return self.conn
 
     def _fetch_all_metadata(self, schema: str, table_names: Optional[List[str]] = None):

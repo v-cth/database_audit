@@ -1,5 +1,0 @@
-table_name,column_name,data_type,status,null_count,null_pct,distinct_count
-test_numeric_checks,id,Int64,DISCOVERED,0,0.0,3
-test_numeric_checks,value_ok,Int64,DISCOVERED,0,0.0,2
-test_numeric_checks,value_too_low,Int64,DISCOVERED,0,0.0,3
-test_numeric_checks,value_too_high,Int64,DISCOVERED,0,0.0,3

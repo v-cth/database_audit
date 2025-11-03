@@ -20,9 +20,10 @@ def setup_logging(log_file: Path, log_level: str = 'INFO') -> None:
         log_file: Path to log file
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
     """
-    # Create formatter
+    # Create formatter with timestamp and log level
     formatter = logging.Formatter(
-        '%(message)s'  # Simple format for audit output
+        '%(asctime)s [%(levelname)s] %(message)s',  # Format: 2025-11-03 10:10:01 [INFO] message
+        datefmt='%Y-%m-%d %H:%M:%S'
     )
 
     # Create file handler
@@ -195,7 +196,15 @@ Examples:
         # Pre-fetch metadata once for all tables being audited
         if tables_to_audit:
             print(f"\n🔍 Pre-fetching metadata for {len(tables_to_audit)} table(s)...")
-            shared_db_conn.prefetch_metadata(config.schema, tables_to_audit)
+            # Group tables by schema to handle multi-schema audits
+            from collections import defaultdict
+            tables_by_schema = defaultdict(list)
+            for table in tables_to_audit:
+                schema = config.get_table_schema(table)
+                tables_by_schema[schema].append(table)
+            # Prefetch metadata for each schema
+            for schema, tables in tables_by_schema.items():
+                shared_db_conn.prefetch_metadata(schema, tables)
             print(f"✅ Metadata cached for all tables")
 
         db_conn = shared_db_conn  # Alias for the estimation code
@@ -215,7 +224,7 @@ Examples:
 
                 if not custom_query and not is_cross_project:
                     try:
-                        row_count = db_conn.get_row_count(table, config.schema)
+                        row_count = db_conn.get_row_count(table, config.get_table_schema(table))
                     except:
                         pass
 
@@ -239,7 +248,7 @@ Examples:
                     user_defined_primary_key = config.table_primary_keys.get(table, None)
 
                     # Get table schema
-                    table_schema = db_conn.get_table_schema(table, config.schema)
+                    table_schema = db_conn.get_table_schema(table, config.get_table_schema(table))
 
                     if table_schema:
                         # Determine columns using same logic as audit
@@ -270,7 +279,7 @@ Examples:
                 # Estimate bytes for this table
                 bytes_estimate = db_conn.estimate_bytes_scanned(
                     table_name=table,
-                    schema=config.schema,
+                    schema=config.get_table_schema(table),
                     custom_query=custom_query,
                     sample_size=sample_size,
                     sampling_method=sampling_config['method'],
@@ -342,16 +351,22 @@ Examples:
         # Pre-fetch metadata for all tables being audited
         if tables_to_audit:
             print(f"\n🔍 Pre-fetching metadata for {len(tables_to_audit)} table(s)...")
-            shared_db_conn.prefetch_metadata(config.schema, tables_to_audit)
+            # Group tables by schema to handle multi-schema audits
+            from collections import defaultdict
+            tables_by_schema = defaultdict(list)
+            for table in tables_to_audit:
+                schema = config.get_table_schema(table)
+                tables_by_schema[schema].append(table)
+            # Prefetch metadata for each schema
+            for schema, tables in tables_by_schema.items():
+                shared_db_conn.prefetch_metadata(schema, tables)
             print(f"✅ Metadata cached for all tables")
 
     # Audit tables
     all_table_results = []
     try:
         for table in tables_to_audit:
-            print(f"\n{'='*70}")
-            print(f"🔍 Auditing table: {table}")
-            print(f"{'='*70}")
+            logger.info(f"Auditing table: {table}")
 
             try:
                 # Get primary key from config if specified
@@ -394,14 +409,14 @@ Examples:
                 # Store results for summary generation
                 all_table_results.append(results)
 
-                # Print phase timings if available
+                # Log phase timings if available
                 if 'phase_timings' in results:
-                    print(f"\n⏱️  Table Audit Phase Breakdown:")
+                    logger.info("Table Audit Phase Breakdown:")
                     for phase, duration in results['phase_timings'].items():
-                        print(f"   • {phase.replace('_', ' ').title()}: {duration:.3f}s")
+                        logger.info(f"  {phase.replace('_', ' ').title()}: {duration:.3f}s")
                     # Calculate total from phase timings
                     total_table_duration = sum(results['phase_timings'].values())
-                    print(f"   • Total Table Audit: {total_table_duration:.2f}s")
+                    logger.info(f"  Total Table Audit: {total_table_duration:.2f}s")
 
                 # Create table-specific directory
                 table_dir = run_dir / table
@@ -545,11 +560,9 @@ Examples:
                     relationships_df.write_csv(str(relationships_csv))
                     print(f"📄 Relationships CSV saved to: {relationships_csv}")
 
-        print(f"\n{'='*70}")
-        print(f"✅ Audit completed! Results saved to: {run_dir}")
-        print(f"⏱️  Total duration: {total_duration:.2f} seconds")
-        print(f"📝 Logs saved to: {log_file}")
-        print(f"{'='*70}")
+        logger.info(f"Audit completed! Results saved to: {run_dir}")
+        logger.info(f"Total duration: {total_duration:.2f} seconds")
+        logger.info(f"Logs saved to: {log_file}")
 
     finally:
         # Close shared database connection

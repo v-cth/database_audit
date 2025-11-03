@@ -70,9 +70,244 @@ def _calculate_table_positions(tables: List[str], num_cols: int = 3) -> Dict[str
     return positions
 
 
+def _snap_to_grid(value: float, grid_size: int = 10) -> float:
+    """Snap a coordinate to the nearest grid point"""
+    return round(value / grid_size) * grid_size
+
+
+def _snap_to_box_edge(box_x: float, box_y: float, box_width: float, box_height: float,
+                      target_x: float, target_y: float) -> Tuple[float, float, str]:
+    """
+    Find the point on the box perimeter closest to a target point
+
+    Args:
+        box_x, box_y: Top-left corner of box
+        box_width, box_height: Box dimensions
+        target_x, target_y: Target point to connect to
+
+    Returns:
+        (x, y, side) tuple of the closest point on box edge and which side ('top', 'right', 'bottom', 'left')
+    """
+    # Calculate box center
+    center_x = box_x + box_width / 2
+    center_y = box_y + box_height / 2
+
+    # Vector from center to target
+    dx = target_x - center_x
+    dy = target_y - center_y
+
+    # Normalize if non-zero
+    if abs(dx) < 0.001 and abs(dy) < 0.001:
+        return (center_x, center_y, 'right')
+
+    # Calculate which edge to snap to based on angle
+    # Use parametric approach: find t where ray intersects box
+    t_x = float('inf')
+    t_y = float('inf')
+
+    if dx > 0:
+        t_x = (box_width / 2) / abs(dx)
+    elif dx < 0:
+        t_x = (box_width / 2) / abs(dx)
+
+    if dy > 0:
+        t_y = (box_height / 2) / abs(dy)
+    elif dy < 0:
+        t_y = (box_height / 2) / abs(dy)
+
+    # Use the smaller t (closer intersection)
+    t = min(t_x, t_y)
+
+    # Calculate intersection point
+    edge_x = center_x + dx * t
+    edge_y = center_y + dy * t
+
+    # Clamp to box bounds and determine side
+    edge_x = max(box_x, min(box_x + box_width, edge_x))
+    edge_y = max(box_y, min(box_y + box_height, edge_y))
+
+    # Determine which side we're on
+    if abs(edge_x - box_x) < 1:
+        side = 'left'
+    elif abs(edge_x - (box_x + box_width)) < 1:
+        side = 'right'
+    elif abs(edge_y - box_y) < 1:
+        side = 'top'
+    else:
+        side = 'bottom'
+
+    return (edge_x, edge_y, side)
+
+
+def _boxes_overlap_segment(box_list: List[Tuple[float, float, float, float]],
+                           x1: float, y1: float, x2: float, y2: float, margin: float = 5) -> bool:
+    """Check if a line segment intersects any box"""
+    for bx, by, bw, bh in box_list:
+        # Expand box by margin
+        if x1 == x2:  # Vertical line
+            if (bx - margin <= x1 <= bx + bw + margin and
+                not (max(y1, y2) < by - margin or min(y1, y2) > by + bh + margin)):
+                return True
+        elif y1 == y2:  # Horizontal line
+            if (by - margin <= y1 <= by + bh + margin and
+                not (max(x1, x2) < bx - margin or min(x1, x2) > bx + bw + margin)):
+                return True
+    return False
+
+
+def _create_orthogonal_path(start_x: float, start_y: float, start_side: str,
+                            end_x: float, end_y: float, end_side: str,
+                            lane_offset: float, all_boxes: List[Tuple[float, float, float, float]],
+                            corner_radius: int = 4) -> Tuple[str, List[Tuple[float, float]]]:
+    """
+    Create an orthogonal path with collision avoidance and corner rounding
+
+    Args:
+        start_x, start_y: Starting point on box edge
+        start_side: Side of starting box ('top', 'right', 'bottom', 'left')
+        end_x, end_y: Ending point on box edge
+        end_side: Side of ending box
+        lane_offset: Offset for parallel lines (lane system)
+        all_boxes: List of (x, y, w, h) for all table boxes for collision detection
+        corner_radius: Radius for rounded corners (3-6px)
+
+    Returns:
+        Tuple of (SVG path string, list of label positions on straight segments)
+    """
+    # Base clearance from edges
+    base_clearance = 35
+    clearance = base_clearance + abs(lane_offset)
+
+    # Calculate exit points (perpendicular exit from edge)
+    if start_side == 'right':
+        exit_x = start_x + clearance
+        exit_y = start_y
+    elif start_side == 'left':
+        exit_x = start_x - clearance
+        exit_y = start_y
+    elif start_side == 'top':
+        exit_x = start_x
+        exit_y = start_y - clearance
+    else:  # bottom
+        exit_x = start_x
+        exit_y = start_y + clearance
+
+    # Calculate entry points (perpendicular approach to target)
+    if end_side == 'right':
+        entry_x = end_x + clearance
+        entry_y = end_y
+    elif end_side == 'left':
+        entry_x = end_x - clearance
+        entry_y = end_y
+    elif end_side == 'top':
+        entry_x = end_x
+        entry_y = end_y - clearance
+    else:  # bottom
+        entry_x = end_x
+        entry_y = end_y + clearance
+
+    # Snap to grid for clean routing
+    exit_x = _snap_to_grid(exit_x)
+    exit_y = _snap_to_grid(exit_y)
+    entry_x = _snap_to_grid(entry_x)
+    entry_y = _snap_to_grid(entry_y)
+
+    # Build waypoints for the path
+    waypoints = [(start_x, start_y)]
+
+    # First segment: exit perpendicular from start box
+    waypoints.append((exit_x, exit_y))
+
+    # Middle routing: choose strategy based on edge orientations
+    if start_side in ['left', 'right'] and end_side in ['left', 'right']:
+        # Both horizontal edges: route with vertical segment in middle
+        mid_x = (exit_x + entry_x) / 2
+        mid_x = _snap_to_grid(mid_x)
+        # Apply lane offset to vertical rail
+        exit_y_offset = exit_y + lane_offset
+        entry_y_offset = entry_y + lane_offset
+        waypoints.append((exit_x, exit_y_offset))
+        waypoints.append((mid_x, exit_y_offset))
+        waypoints.append((mid_x, entry_y_offset))
+        waypoints.append((entry_x, entry_y_offset))
+    elif start_side in ['top', 'bottom'] and end_side in ['top', 'bottom']:
+        # Both vertical edges: route with horizontal segment in middle
+        mid_y = (exit_y + entry_y) / 2
+        mid_y = _snap_to_grid(mid_y)
+        # Apply lane offset to horizontal rail
+        exit_x_offset = exit_x + lane_offset
+        entry_x_offset = entry_x + lane_offset
+        waypoints.append((exit_x_offset, exit_y))
+        waypoints.append((exit_x_offset, mid_y))
+        waypoints.append((entry_x_offset, mid_y))
+        waypoints.append((entry_x_offset, entry_y))
+    else:
+        # Mixed: horizontal and vertical edges
+        if start_side in ['left', 'right']:
+            # Start horizontal, apply lane offset to vertical segment
+            vert_pos = exit_y + lane_offset
+            waypoints.append((entry_x, vert_pos))
+        else:
+            # Start vertical, apply lane offset to horizontal segment
+            horiz_pos = exit_x + lane_offset
+            waypoints.append((horiz_pos, entry_y))
+
+    # Last segment: enter perpendicular to target box
+    waypoints.append((entry_x, entry_y))
+    waypoints.append((end_x, end_y))
+
+    # Build SVG path with rounded corners
+    path = f"M {waypoints[0][0]},{waypoints[0][1]}"
+
+    for i in range(1, len(waypoints)):
+        curr = waypoints[i]
+        if i < len(waypoints) - 1 and corner_radius > 0:
+            # Add rounded corner
+            prev = waypoints[i - 1]
+            next_pt = waypoints[i + 1]
+
+            # Calculate vectors
+            dx_in = curr[0] - prev[0]
+            dy_in = curr[1] - prev[1]
+            dx_out = next_pt[0] - curr[0]
+            dy_out = next_pt[1] - curr[1]
+
+            # Normalize and shorten for corner
+            len_in = math.sqrt(dx_in*dx_in + dy_in*dy_in)
+            len_out = math.sqrt(dx_out*dx_out + dy_out*dy_out)
+
+            if len_in > corner_radius * 2 and len_out > corner_radius * 2:
+                # Calculate corner points
+                corner_start_x = curr[0] - (dx_in / len_in) * corner_radius
+                corner_start_y = curr[1] - (dy_in / len_in) * corner_radius
+                corner_end_x = curr[0] + (dx_out / len_out) * corner_radius
+                corner_end_y = curr[1] + (dy_out / len_out) * corner_radius
+
+                # Line to corner start, arc to corner end
+                path += f" L {corner_start_x},{corner_start_y}"
+                path += f" Q {curr[0]},{curr[1]} {corner_end_x},{corner_end_y}"
+            else:
+                path += f" L {curr[0]},{curr[1]}"
+        else:
+            path += f" L {curr[0]},{curr[1]}"
+
+    # Calculate good label positions (middle of longest straight segments)
+    label_positions = []
+    for i in range(1, len(waypoints) - 1):
+        prev = waypoints[i - 1]
+        curr = waypoints[i]
+        seg_len = math.sqrt((curr[0] - prev[0])**2 + (curr[1] - prev[1])**2)
+        if seg_len > 50:  # Only on segments long enough for labels
+            mid_x = (prev[0] + curr[0]) / 2
+            mid_y = (prev[1] + curr[1]) / 2
+            label_positions.append((mid_x, mid_y))
+
+    return path, label_positions
+
+
 def _get_crow_foot_path(relationship_type: str, direction: str, is_start: bool) -> str:
     """
-    Generate SVG path for crow's foot notation
+    Generate SVG path for crow's foot notation (deprecated, kept for compatibility)
 
     Args:
         relationship_type: Type of relationship (one-to-one, many-to-one, many-to-many)
@@ -141,8 +376,10 @@ def generate_relationships_summary_section(relationships: List[Dict], tables_met
     max_x = max(pos[0] for pos in positions.values()) + 300
     max_y = max(pos[1] for pos in positions.values()) + 250
 
-    # Build table boxes SVG
+    # Build table boxes SVG and track dimensions for endpoint snapping
     table_boxes_svg = ""
+    table_dimensions = {}  # Store box dimensions for each table
+
     for table_name in tables_list:
         x, y = positions[table_name]
         columns = _get_table_columns_for_diagram(table_name, display_relationships, tables_metadata)
@@ -155,36 +392,51 @@ def generate_relationships_summary_section(relationships: List[Dict], tables_met
         else:
             row_count_str = str(row_count)
 
-        # Calculate box height based on number of columns
+        # Calculate box dimensions based on number of columns
         total_columns = len(columns['pk']) + len(columns['fk'])
-        box_height = 60 + (total_columns * 22)  # Header + columns
+        # Reduce header and padding for tables with few/no columns
+        if total_columns == 0:
+            header_height = 35
+            column_spacing = 0
+            box_height = header_height
+        elif total_columns <= 2:
+            header_height = 38
+            column_spacing = 20
+            box_height = header_height + (total_columns * column_spacing)
+        else:
+            header_height = 40
+            column_spacing = 22
+            box_height = header_height + 20 + (total_columns * column_spacing)
+
+        box_width = 280
+        table_dimensions[table_name] = (x, y, box_width, box_height)
 
         # Create table box
         table_boxes_svg += f"""
         <g class="er-table" data-table="{table_name}">
-            <rect x="{x}" y="{y}" width="280" height="{box_height}"
+            <rect x="{x}" y="{y}" width="{box_width}" height="{box_height}"
                   fill="white" stroke="#d1d5db" stroke-width="1.5" rx="6"/>
-            <rect x="{x}" y="{y}" width="280" height="40"
+            <rect x="{x}" y="{y}" width="{box_width}" height="{header_height}"
                   fill="#6606dc" rx="6"/>
-            <rect x="{x}" y="{y + 40}" width="280" height="{box_height - 40}"
+            <rect x="{x}" y="{y + header_height}" width="{box_width}" height="{box_height - header_height}"
                   fill="white" rx="0"/>
-            <text x="{x + 140}" y="{y + 25}"
+            <text x="{x + box_width/2}" y="{y + header_height/2 + 2}"
                   font-family="Inter, sans-serif" font-size="14" font-weight="600"
                   fill="white" text-anchor="middle">{table_name}</text>
-            <text x="{x + 140}" y="{y + 36}"
+            <text x="{x + box_width/2}" y="{y + header_height - 5}"
                   font-family="Inter, sans-serif" font-size="10"
                   fill="rgba(255,255,255,0.8)" text-anchor="middle">{row_count_str} rows</text>
         """
 
         # Add columns
-        y_offset = y + 58
+        y_offset = y + header_height + 18
         for pk_col in columns['pk']:
             table_boxes_svg += f"""
             <text x="{x + 10}" y="{y_offset}"
                   font-family="'Courier New', monospace" font-size="12" font-weight="bold"
                   fill="#1f2937">🔑 {pk_col}</text>
         """
-            y_offset += 22
+            y_offset += column_spacing
 
         for fk_col in columns['fk']:
             table_boxes_svg += f"""
@@ -192,7 +444,7 @@ def generate_relationships_summary_section(relationships: List[Dict], tables_met
                   font-family="'Courier New', monospace" font-size="12"
                   fill="#4b5563">{fk_col}</text>
         """
-            y_offset += 22
+            y_offset += column_spacing
 
         table_boxes_svg += "</g>"
 
@@ -213,56 +465,44 @@ def generate_relationships_summary_section(relationships: List[Dict], tables_met
         if table1 not in positions or table2 not in positions:
             continue
 
-        x1, y1 = positions[table1]
-        x2, y2 = positions[table2]
+        # Get box dimensions for smart endpoint snapping
+        box1_x, box1_y, box1_w, box1_h = table_dimensions[table1]
+        box2_x, box2_y, box2_w, box2_h = table_dimensions[table2]
 
-        # Calculate center points of table boxes
-        center_x1 = x1 + 140
-        center_y1 = y1 + 100
-        center_x2 = x2 + 140
-        center_y2 = y2 + 100
-
-        # Calculate edge connection points (sides of boxes)
-        dx = center_x2 - center_x1
-        dy = center_y2 - center_y1
-
-        # Determine base connection points
-        if abs(dx) > abs(dy):
-            # Horizontal connection
-            if dx > 0:
-                base_start_x, base_start_y = x1 + 280, center_y1
-                base_end_x, base_end_y = x2, center_y2
-            else:
-                base_start_x, base_start_y = x1, center_y1
-                base_end_x, base_end_y = x2 + 280, center_y2
-            offset_axis = 'vertical'  # Offset vertically for horizontal lines
-        else:
-            # Vertical connection
-            if dy > 0:
-                base_start_x, base_start_y = center_x1, y1 + 150
-                base_end_x, base_end_y = center_x2, y2
-            else:
-                base_start_x, base_start_y = center_x1, y1
-                base_end_x, base_end_y = center_x2, y2 + 150
-            offset_axis = 'horizontal'  # Offset horizontally for vertical lines
+        # Calculate center points for initial direction
+        center_x1 = box1_x + box1_w / 2
+        center_y1 = box1_y + box1_h / 2
+        center_x2 = box2_x + box2_w / 2
+        center_y2 = box2_y + box2_h / 2
 
         # Draw each relationship with offset if multiple
         num_rels = len(rels)
         for i, rel in enumerate(rels):
-            # Calculate offset for multiple relationships
+            # Calculate target points (other box centers) with slight offset for multiple relations
             if num_rels > 1:
-                # Spread relationships evenly with 25px spacing
-                offset = (i - (num_rels - 1) / 2) * 25
+                # Offset perpendicular to connection line
+                dx_temp = center_x2 - center_x1
+                dy_temp = center_y2 - center_y1
+                dist_temp = math.sqrt(dx_temp*dx_temp + dy_temp*dy_temp)
+                if dist_temp > 0:
+                    # Perpendicular offset
+                    perp_x = -dy_temp / dist_temp
+                    perp_y = dx_temp / dist_temp
+                    offset_amount = (i - (num_rels - 1) / 2) * 15
+                    target_x2 = center_x2 + perp_x * offset_amount
+                    target_y2 = center_y2 + perp_y * offset_amount
+                    target_x1 = center_x1 + perp_x * offset_amount
+                    target_y1 = center_y1 + perp_y * offset_amount
+                else:
+                    target_x1, target_y1 = center_x1, center_y1
+                    target_x2, target_y2 = center_x2, center_y2
             else:
-                offset = 0
+                target_x1, target_y1 = center_x1, center_y1
+                target_x2, target_y2 = center_x2, center_y2
 
-            # Apply offset
-            if offset_axis == 'vertical':
-                start_x, start_y = base_start_x, base_start_y + offset
-                end_x, end_y = base_end_x, base_end_y + offset
-            else:
-                start_x, start_y = base_start_x + offset, base_start_y
-                end_x, end_y = base_end_x + offset, base_end_y
+            # Smart snap to closest box edges (now returns side info)
+            start_x, start_y, start_side = _snap_to_box_edge(box1_x, box1_y, box1_w, box1_h, target_x2, target_y2)
+            end_x, end_y, end_side = _snap_to_box_edge(box2_x, box2_y, box2_w, box2_h, target_x1, target_y1)
 
             # Line color based on confidence
             confidence = rel['confidence']
@@ -276,37 +516,117 @@ def generate_relationships_summary_section(relationships: List[Dict], tables_met
                 line_color = "#d1d5db"
                 line_width = 1.5
 
-            # Calculate angle for crow's foot rotation
+            # Determine cardinality labels (1 or n)
+            if rel['relationship_type'] == "one-to-one":
+                label_start = "1"
+                label_end = "1"
+            elif rel['relationship_type'] == "many-to-one":
+                if rel.get('direction') == "table1_to_table2":
+                    label_start = "n"
+                    label_end = "1"
+                elif rel.get('direction') == "table2_to_table1":
+                    label_start = "1"
+                    label_end = "n"
+                else:
+                    label_start = "1"
+                    label_end = "1"
+            elif rel['relationship_type'] == "many-to-many":
+                label_start = "n"
+                label_end = "n"
+            else:
+                label_start = "1"
+                label_end = "1"
+
+            # Calculate angle for label positioning
             angle_start = math.atan2(end_y - start_y, end_x - start_x) * 180 / math.pi
             angle_end = math.atan2(start_y - end_y, start_x - end_x) * 180 / math.pi
-
-            # Get crow's foot paths
-            crow_foot_start = _get_crow_foot_path(rel['relationship_type'], rel.get('direction', 'bidirectional'), True)
-            crow_foot_end = _get_crow_foot_path(rel['relationship_type'], rel.get('direction', 'bidirectional'), False)
 
             # Build tooltip text
             tooltip_text = f"{rel['column1']} ↔ {rel['column2']}&#10;Confidence: {confidence:.1%}&#10;Type: {rel['relationship_type']}&#10;Overlap: {rel['overlap_ratio']:.1%}&#10;Matching: {rel['matching_values']:,}"
 
-            # Add labels on the lines
+            # Calculate bezier curve with proportional tension
             mid_x = (start_x + end_x) / 2
             mid_y = (start_y + end_y) / 2
+
+            # Calculate perpendicular offset for control point (creates curve)
+            line_length = math.sqrt((end_x - start_x)**2 + (end_y - start_y)**2)
+            if line_length > 0:
+                # Perpendicular vector
+                perp_x = -(end_y - start_y) / line_length
+                perp_y = (end_x - start_x) / line_length
+                # Proportional curve tension: gentle for short lines, moderate for long lines
+                # Use logarithmic scaling to avoid extreme curves
+                if line_length < 150:
+                    curve_factor = 0.08  # Gentle curve for short lines
+                elif line_length < 350:
+                    curve_factor = 0.12  # Medium curve
+                else:
+                    curve_factor = 0.15  # Fuller curve for long lines
+                curve_amount = line_length * curve_factor
+                # Control point offset (alternate direction for multiple relationships)
+                control_offset = curve_amount * (1 if i % 2 == 0 else -1)
+                control_x = mid_x + perp_x * control_offset
+                control_y = mid_y + perp_y * control_offset
+            else:
+                control_x = mid_x
+                control_y = mid_y
+
+            # Quadratic bezier path
+            path_d = f"M {start_x},{start_y} Q {control_x},{control_y} {end_x},{end_y}"
+
+            # Calculate label positions and angles
+            dx = end_x - start_x
+            dy = end_y - start_y
+            line_len = math.sqrt(dx*dx + dy*dy)
+            if line_len > 0:
+                # Unit vector along the line
+                ux = dx / line_len
+                uy = dy / line_len
+                # Position labels 22px from endpoints
+                label_start_x = start_x + ux * 22
+                label_start_y = start_y + uy * 22
+                label_end_x = end_x - ux * 22
+                label_end_y = end_y - uy * 22
+                # Calculate rotation angle
+                angle_deg = math.atan2(dy, dx) * 180 / math.pi
+            else:
+                label_start_x, label_start_y = start_x, start_y
+                label_end_x, label_end_y = end_x, end_y
+                angle_deg = 0
+
+            # Position column name label with perpendicular offset to avoid line overlap
+            label_offset_y = -10 if i % 2 == 0 else 10
+            col_label_x = control_x
+            col_label_y = control_y + label_offset_y
 
             relationship_lines_svg += f"""
         <g class="er-relationship" data-table1="{rel['table1']}" data-table2="{rel['table2']}" data-rel-id="rel-{rel_idx}">
             <title>{tooltip_text}</title>
-            <line x1="{start_x}" y1="{start_y}" x2="{end_x}" y2="{end_y}"
-                  stroke="{line_color}" stroke-width="{line_width}" stroke-dasharray="{5 if i > 0 else 0}"/>
-            <g transform="translate({start_x},{start_y}) rotate({angle_start})">
-                <path d="{crow_foot_start}" stroke="{line_color}" stroke-width="2" fill="none"/>
-            </g>
-            <g transform="translate({end_x},{end_y}) rotate({angle_end})">
-                <path d="{crow_foot_end}" stroke="{line_color}" stroke-width="2" fill="none"/>
-            </g>
-            <!-- Label on line -->
-            <text x="{mid_x}" y="{mid_y - 5}" font-family="Inter, sans-serif" font-size="11"
-                  fill="{line_color}" text-anchor="middle" style="pointer-events: none;">
-                {rel['column1']}
+            <path d="{path_d}" stroke="{line_color}" stroke-width="{line_width}"
+                  fill="none" stroke-dasharray="{5 if i > 0 else 0}"/>
+            <!-- Cardinality labels with backgrounds -->
+            <rect x="{label_start_x - 9}" y="{label_start_y - 9}" width="18" height="18"
+                  fill="white" stroke="{line_color}" stroke-width="0.5" rx="3" opacity="0.95"/>
+            <text x="{label_start_x}" y="{label_start_y}" font-family="Inter, sans-serif" font-size="13" font-weight="700"
+                  fill="{line_color}" text-anchor="middle" dominant-baseline="middle">
+                {label_start}
             </text>
+            <rect x="{label_end_x - 9}" y="{label_end_y - 9}" width="18" height="18"
+                  fill="white" stroke="{line_color}" stroke-width="0.5" rx="3" opacity="0.95"/>
+            <text x="{label_end_x}" y="{label_end_y}" font-family="Inter, sans-serif" font-size="13" font-weight="700"
+                  fill="{line_color}" text-anchor="middle" dominant-baseline="middle">
+                {label_end}
+            </text>
+            <!-- Column name label with background and rotation -->
+            <g transform="rotate({angle_deg}, {col_label_x}, {col_label_y})">
+                <rect x="{col_label_x - len(rel['column1']) * 3.5}" y="{col_label_y - 8}"
+                      width="{len(rel['column1']) * 7}" height="16"
+                      fill="white" rx="3" opacity="0.9"/>
+                <text x="{col_label_x}" y="{col_label_y}" font-family="Inter, sans-serif" font-size="10"
+                      fill="{line_color}" text-anchor="middle" dominant-baseline="middle" font-weight="500">
+                    {rel['column1']}
+                </text>
+            </g>
         </g>
         """
             rel_idx += 1
@@ -359,13 +679,13 @@ def generate_relationships_summary_section(relationships: List[Dict], tables_met
             .er-relationship {{
                 transition: all 0.2s;
             }}
-            .er-relationship.highlighted line {{
+            .er-relationship.highlighted > path {{
                 stroke: #6606dc !important;
                 stroke-width: 3.5 !important;
             }}
-            .er-relationship.highlighted path {{
-                stroke: #6606dc !important;
-                stroke-width: 2 !important;
+            .er-relationship.highlighted text {{
+                fill: #6606dc !important;
+                font-weight: 700 !important;
             }}
             .er-relationship.dimmed {{
                 opacity: 0.2;
@@ -583,29 +903,29 @@ def generate_standalone_relationships_report(
         # Create table box
         table_boxes_svg += f"""
         <g class="er-table" data-table="{table_name}">
-            <rect x="{x}" y="{y}" width="280" height="{box_height}"
+            <rect x="{x}" y="{y}" width="{box_width}" height="{box_height}"
                   fill="white" stroke="#d1d5db" stroke-width="1.5" rx="6"/>
-            <rect x="{x}" y="{y}" width="280" height="40"
+            <rect x="{x}" y="{y}" width="{box_width}" height="{header_height}"
                   fill="#6606dc" rx="6"/>
-            <rect x="{x}" y="{y + 40}" width="280" height="{box_height - 40}"
+            <rect x="{x}" y="{y + header_height}" width="{box_width}" height="{box_height - header_height}"
                   fill="white" rx="0"/>
-            <text x="{x + 140}" y="{y + 25}"
+            <text x="{x + box_width/2}" y="{y + header_height/2 + 2}"
                   font-family="Inter, sans-serif" font-size="14" font-weight="600"
                   fill="white" text-anchor="middle">{table_name}</text>
-            <text x="{x + 140}" y="{y + 36}"
+            <text x="{x + box_width/2}" y="{y + header_height - 5}"
                   font-family="Inter, sans-serif" font-size="10"
                   fill="rgba(255,255,255,0.8)" text-anchor="middle">{row_count_str} rows</text>
         """
 
         # Add columns
-        y_offset = y + 58
+        y_offset = y + header_height + 18
         for pk_col in columns['pk']:
             table_boxes_svg += f"""
             <text x="{x + 10}" y="{y_offset}"
                   font-family="'Courier New', monospace" font-size="12" font-weight="bold"
                   fill="#1f2937">🔑 {pk_col}</text>
         """
-            y_offset += 22
+            y_offset += column_spacing
 
         for fk_col in columns['fk']:
             table_boxes_svg += f"""
@@ -613,7 +933,7 @@ def generate_standalone_relationships_report(
                   font-family="'Courier New', monospace" font-size="12"
                   fill="#4b5563">{fk_col}</text>
         """
-            y_offset += 22
+            y_offset += column_spacing
 
         table_boxes_svg += "</g>"
 
@@ -692,37 +1012,117 @@ def generate_standalone_relationships_report(
                 line_color = "#d1d5db"
                 line_width = 1.5
 
-            # Calculate angles for crow's foot rotation
+            # Determine cardinality labels (1 or n)
+            if rel['relationship_type'] == "one-to-one":
+                label_start = "1"
+                label_end = "1"
+            elif rel['relationship_type'] == "many-to-one":
+                if rel.get('direction') == "table1_to_table2":
+                    label_start = "n"
+                    label_end = "1"
+                elif rel.get('direction') == "table2_to_table1":
+                    label_start = "1"
+                    label_end = "n"
+                else:
+                    label_start = "1"
+                    label_end = "1"
+            elif rel['relationship_type'] == "many-to-many":
+                label_start = "n"
+                label_end = "n"
+            else:
+                label_start = "1"
+                label_end = "1"
+
+            # Calculate angle for label positioning
             angle_start = math.atan2(end_y - start_y, end_x - start_x) * 180 / math.pi
             angle_end = math.atan2(start_y - end_y, start_x - end_x) * 180 / math.pi
-
-            # Get crow's foot paths
-            crow_foot_start = _get_crow_foot_path(rel['relationship_type'], rel.get('direction', 'bidirectional'), True)
-            crow_foot_end = _get_crow_foot_path(rel['relationship_type'], rel.get('direction', 'bidirectional'), False)
 
             # Build tooltip text
             tooltip_text = f"{rel['column1']} ↔ {rel['column2']}&#10;Confidence: {confidence:.1%}&#10;Type: {rel['relationship_type']}&#10;Overlap: {rel['overlap_ratio']:.1%}&#10;Matching: {rel['matching_values']:,}"
 
-            # Add labels on the lines
+            # Calculate bezier curve with proportional tension
             mid_x = (start_x + end_x) / 2
             mid_y = (start_y + end_y) / 2
+
+            # Calculate perpendicular offset for control point (creates curve)
+            line_length = math.sqrt((end_x - start_x)**2 + (end_y - start_y)**2)
+            if line_length > 0:
+                # Perpendicular vector
+                perp_x = -(end_y - start_y) / line_length
+                perp_y = (end_x - start_x) / line_length
+                # Proportional curve tension: gentle for short lines, moderate for long lines
+                # Use logarithmic scaling to avoid extreme curves
+                if line_length < 150:
+                    curve_factor = 0.08  # Gentle curve for short lines
+                elif line_length < 350:
+                    curve_factor = 0.12  # Medium curve
+                else:
+                    curve_factor = 0.15  # Fuller curve for long lines
+                curve_amount = line_length * curve_factor
+                # Control point offset (alternate direction for multiple relationships)
+                control_offset = curve_amount * (1 if i % 2 == 0 else -1)
+                control_x = mid_x + perp_x * control_offset
+                control_y = mid_y + perp_y * control_offset
+            else:
+                control_x = mid_x
+                control_y = mid_y
+
+            # Quadratic bezier path
+            path_d = f"M {start_x},{start_y} Q {control_x},{control_y} {end_x},{end_y}"
+
+            # Calculate label positions and angles
+            dx = end_x - start_x
+            dy = end_y - start_y
+            line_len = math.sqrt(dx*dx + dy*dy)
+            if line_len > 0:
+                # Unit vector along the line
+                ux = dx / line_len
+                uy = dy / line_len
+                # Position labels 22px from endpoints
+                label_start_x = start_x + ux * 22
+                label_start_y = start_y + uy * 22
+                label_end_x = end_x - ux * 22
+                label_end_y = end_y - uy * 22
+                # Calculate rotation angle
+                angle_deg = math.atan2(dy, dx) * 180 / math.pi
+            else:
+                label_start_x, label_start_y = start_x, start_y
+                label_end_x, label_end_y = end_x, end_y
+                angle_deg = 0
+
+            # Position column name label with perpendicular offset to avoid line overlap
+            label_offset_y = -10 if i % 2 == 0 else 10
+            col_label_x = control_x
+            col_label_y = control_y + label_offset_y
 
             relationship_lines_svg += f"""
         <g class="er-relationship" data-table1="{rel['table1']}" data-table2="{rel['table2']}" data-rel-id="rel-{rel_idx}">
             <title>{tooltip_text}</title>
-            <line x1="{start_x}" y1="{start_y}" x2="{end_x}" y2="{end_y}"
-                  stroke="{line_color}" stroke-width="{line_width}" stroke-dasharray="{5 if i > 0 else 0}"/>
-            <g transform="translate({start_x},{start_y}) rotate({angle_start})">
-                <path d="{crow_foot_start}" stroke="{line_color}" stroke-width="2" fill="none"/>
-            </g>
-            <g transform="translate({end_x},{end_y}) rotate({angle_end})">
-                <path d="{crow_foot_end}" stroke="{line_color}" stroke-width="2" fill="none"/>
-            </g>
-            <!-- Label on line -->
-            <text x="{mid_x}" y="{mid_y - 5}" font-family="Inter, sans-serif" font-size="11"
-                  fill="{line_color}" text-anchor="middle" style="pointer-events: none;">
-                {rel['column1']}
+            <path d="{path_d}" stroke="{line_color}" stroke-width="{line_width}"
+                  fill="none" stroke-dasharray="{5 if i > 0 else 0}"/>
+            <!-- Cardinality labels with backgrounds -->
+            <rect x="{label_start_x - 9}" y="{label_start_y - 9}" width="18" height="18"
+                  fill="white" stroke="{line_color}" stroke-width="0.5" rx="3" opacity="0.95"/>
+            <text x="{label_start_x}" y="{label_start_y}" font-family="Inter, sans-serif" font-size="13" font-weight="700"
+                  fill="{line_color}" text-anchor="middle" dominant-baseline="middle">
+                {label_start}
             </text>
+            <rect x="{label_end_x - 9}" y="{label_end_y - 9}" width="18" height="18"
+                  fill="white" stroke="{line_color}" stroke-width="0.5" rx="3" opacity="0.95"/>
+            <text x="{label_end_x}" y="{label_end_y}" font-family="Inter, sans-serif" font-size="13" font-weight="700"
+                  fill="{line_color}" text-anchor="middle" dominant-baseline="middle">
+                {label_end}
+            </text>
+            <!-- Column name label with background and rotation -->
+            <g transform="rotate({angle_deg}, {col_label_x}, {col_label_y})">
+                <rect x="{col_label_x - len(rel['column1']) * 3.5}" y="{col_label_y - 8}"
+                      width="{len(rel['column1']) * 7}" height="16"
+                      fill="white" rx="3" opacity="0.9"/>
+                <text x="{col_label_x}" y="{col_label_y}" font-family="Inter, sans-serif" font-size="10"
+                      fill="{line_color}" text-anchor="middle" dominant-baseline="middle" font-weight="500">
+                    {rel['column1']}
+                </text>
+            </g>
         </g>
         """
             rel_idx += 1
@@ -818,13 +1218,13 @@ def generate_standalone_relationships_report(
         .er-relationship {{
             transition: all 0.2s;
         }}
-        .er-relationship.highlighted line {{
+        .er-relationship.highlighted > path {{
             stroke: #6606dc !important;
             stroke-width: 3.5 !important;
         }}
-        .er-relationship.highlighted path {{
-            stroke: #6606dc !important;
-            stroke-width: 2 !important;
+        .er-relationship.highlighted text {{
+            fill: #6606dc !important;
+            font-weight: 700 !important;
         }}
         .er-relationship.dimmed {{
             opacity: 0.2;
