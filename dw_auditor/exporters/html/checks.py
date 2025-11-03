@@ -169,7 +169,7 @@ def _generate_issues_section(results: Dict, has_issues: bool) -> str:
 """
 
                 # Display threshold and operator for numeric range violations
-                if 'threshold' in issue and 'operator' in issue:
+                if 'threshold' in issue and 'operator' in issue and issue['threshold'] is not None and issue['operator'] is not None:
                     html += f"""
             <div class="issue-stats">
                 <strong>Expected:</strong> value {issue['operator']} {issue['threshold']}

@@ -481,7 +481,7 @@ Examples:
                             rel_str = f"{rel['table1']}.{rel['column1']} ↔ {rel['table2']}.{rel['column2']}"
 
                         print(f"   • {rel_str}")
-                        print(f"     Confidence: {rel['confidence']:.1%} | Type: {rel['relationship_type']} | Matching values: {rel['matching_values']}")
+                        print(f"     Confidence: {rel['confidence']:.1%} | Type: {rel['relationship_type']} | Matching values: {rel['matching_values']} | Overlap: {rel['overlap_ratio']:.1%}")
 
                 # Remove DataFrames from results to save memory (no longer needed)
                 for result in all_table_results:

@@ -130,6 +130,11 @@ class PolarsRelationshipDetector:
                         df1.get_column(col1), df2.get_column(col2)
                     )
 
+                    # Calculate overlap ratio for export
+                    overlap_ratio = self._calculate_value_overlap(
+                        df1.get_column(col1), df2.get_column(col2)
+                    )
+
                     relationship = {
                         'table1': table1,
                         'column1': col1,
@@ -140,7 +145,8 @@ class PolarsRelationshipDetector:
                         'direction': rel_info['direction'],
                         'matching_values': self._get_matching_values_count(
                             df1.get_column(col1), df2.get_column(col2)
-                        )
+                        ),
+                        'overlap_ratio': overlap_ratio
                     }
                     relationships.append(relationship)
 
