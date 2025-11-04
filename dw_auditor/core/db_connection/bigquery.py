@@ -10,6 +10,7 @@ from typing import Optional, List, Dict, Any
 
 from .base import BaseAdapter
 from .utils import qualify_query_tables, apply_sampling
+from .metadata_helpers import should_skip_query, split_columns_pk_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -95,9 +96,8 @@ class BigQueryAdapter(BaseAdapter):
 
         # Query 1: Tables (+ row counts when same-project) (filtered)
         try:
-            logger.debug(f"[metadata] bq TABLES schema={schema} filter={table_names if table_names else 'ALL'}")
-            if self._last_tables_sig.get(schema) == tables_sig:
-                logger.debug(f"[metadata] bq TABLES schema={schema} skipped (duplicate)")
+            if should_skip_query(schema, table_names, self._last_tables_sig, "bq TABLES"):
+                pass  # Skip query
             else:
                 if not self.source_project_id:
                     # Same-project: join INFORMATION_SCHEMA.TABLES with __TABLES__ once
@@ -116,6 +116,7 @@ class BigQueryAdapter(BaseAdapter):
                     WHERE t.table_type IN ('BASE TABLE', 'TABLE') {table_filter_tables}
                     ORDER BY t.table_name
                     """
+                    logger.debug(f"[query] BigQuery metadata tables query:\n{tables_query}")
                     self._tables_df = self.conn.sql(tables_query).to_polars()
                     # Backwards-compat: also expose rowcount-like frame for existing users
                     self._rowcount_df = self._tables_df.select([
@@ -134,6 +135,7 @@ class BigQueryAdapter(BaseAdapter):
                     WHERE t.table_type IN ('BASE TABLE', 'TABLE') {table_filter_tables}
                     ORDER BY t.table_name
                     """
+                    logger.debug(f"[query] BigQuery metadata tables query (cross-project):\n{tables_query}")
                     self._tables_df = self.conn.sql(tables_query).to_polars()
                     self._rowcount_df = pl.DataFrame()
                     self._last_tables_sig[schema] = tables_sig
@@ -144,9 +146,8 @@ class BigQueryAdapter(BaseAdapter):
 
         # Query 2: Columns + Primary Keys (single joined query), then split to two frames
         try:
-            logger.debug(f"[metadata] bq COLUMNS+PK schema={schema} filter={table_names if table_names else 'ALL'}")
-            if self._last_columns_sig.get(schema) == tables_sig:
-                logger.debug(f"[metadata] bq COLUMNS+PK schema={schema} skipped (duplicate)")
+            if should_skip_query(schema, table_names, self._last_columns_sig, "bq COLUMNS+PK"):
+                pass  # Skip query
             else:
                 columns_pk_query = f"""
             WITH pk AS (
@@ -175,33 +176,26 @@ class BigQueryAdapter(BaseAdapter):
             {table_filter_columns}
             ORDER BY c.table_name, c.ordinal_position
             """
+                logger.debug(f"[query] BigQuery metadata columns+PK query:\n{columns_pk_query}")
                 combined_df = self.conn.sql(columns_pk_query).to_polars()
 
-            # Build columns dataframe
-            self._columns_df = combined_df.select([
-                pl.col("table_name"),
-                pl.col("column_name"),
-                pl.col("data_type"),
-                pl.col("ordinal_position"),
-                pl.col("is_partitioning_column"),
-                pl.col("clustering_ordinal_position"),
-            ])
-
-            # Build primary keys dataframe
-            if combined_df.height > 0:
-                self._pk_df = (
-                    combined_df
-                    .filter(pl.col("is_pk") == True)  # noqa: E712
-                    .select([
-                        pl.col("table_name"),
-                        pl.col("column_name"),
-                        pl.col("pk_ordinal_position").alias("ordinal_position"),
-                    ])
-                    .sort(["table_name", "ordinal_position"])
+                # Split into columns and PK DataFrames
+                base_columns_df, self._pk_df = split_columns_pk_dataframe(
+                    combined_df,
+                    is_pk_column="is_pk",
+                    pk_ordinal_column="pk_ordinal_position"
                 )
-            else:
-                self._pk_df = pl.DataFrame()
-            if self._last_columns_sig.get(schema) != tables_sig:
+
+                # Add BigQuery-specific columns (partition, clustering)
+                self._columns_df = base_columns_df.select([
+                    pl.col("table_name"),
+                    pl.col("column_name"),
+                    pl.col("data_type"),
+                    pl.col("ordinal_position"),
+                    pl.col("is_partitioning_column"),
+                    pl.col("clustering_ordinal_position"),
+                ])
+
                 self._last_columns_sig[schema] = tables_sig
         except Exception as e:
             print(f"Could not fetch columns/primary key metadata: {e}")
@@ -258,6 +252,7 @@ class BigQueryAdapter(BaseAdapter):
                     custom_query, table_name, dataset
                 )
 
+            logger.debug(f"[query] BigQuery custom query:\n{custom_query}")
             result = self.conn.sql(custom_query)
         else:
             table = self.get_table(table_name, schema)
@@ -271,6 +266,13 @@ class BigQueryAdapter(BaseAdapter):
                 table = table.limit(limit)
 
             result = table
+
+            # Log the compiled SQL query
+            try:
+                compiled_query = ibis.to_sql(result)
+                logger.debug(f"[query] BigQuery generated query:\n{compiled_query}")
+            except Exception as e:
+                logger.debug(f"[query] Could not compile query to SQL: {e}")
 
         return result.to_polars()
 

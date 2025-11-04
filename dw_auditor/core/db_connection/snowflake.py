@@ -9,6 +9,7 @@ from typing import Optional, List, Dict, Any
 
 from .base import BaseAdapter
 from .utils import apply_sampling
+from .metadata_helpers import split_columns_pk_dataframe, normalize_snowflake_columns
 
 logger = logging.getLogger(__name__)
 
@@ -110,10 +111,11 @@ class SnowflakeAdapter(BaseAdapter):
               {table_filter}
             ORDER BY table_name
             """
+            logger.debug(f"[query] Snowflake metadata tables query:\n{tables_query}")
             self._tables_df = self.conn.sql(tables_query).to_polars()
 
             # Normalize column names to lowercase
-            self._tables_df = self._tables_df.rename({
+            self._tables_df = normalize_snowflake_columns(self._tables_df, {
                 'TABLE_NAME': 'table_name',
                 'TABLE_TYPE': 'table_type',
                 'CREATED': 'creation_time',
@@ -161,10 +163,11 @@ class SnowflakeAdapter(BaseAdapter):
               {table_filter_columns}
             ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION
             """
+            logger.debug(f"[query] Snowflake metadata columns+PK query:\n{columns_pk_query}")
             combined_df = self.conn.sql(columns_pk_query).to_polars()
 
             # Normalize metadata column names to lowercase (keep actual Snowflake column names as-is)
-            combined_df = combined_df.rename({
+            combined_df = normalize_snowflake_columns(combined_df, {
                 'TABLE_NAME': 'table_name',
                 'COLUMN_NAME': 'column_name',
                 'DATA_TYPE': 'data_type',
@@ -173,28 +176,12 @@ class SnowflakeAdapter(BaseAdapter):
                 'PK_ORDINAL_POSITION': 'pk_ordinal_position'
             })
 
-            # Build columns dataframe
-            self._columns_df = combined_df.select([
-                pl.col('table_name'),
-                pl.col('column_name'),
-                pl.col('data_type'),
-                pl.col('ordinal_position')
-            ])
-
-            # Build primary keys dataframe
-            if combined_df.height > 0:
-                self._pk_df = (
-                    combined_df
-                    .filter(pl.col('is_pk') == True)  # noqa: E712
-                    .select([
-                        pl.col('table_name'),
-                        pl.col('column_name'),
-                        pl.col('pk_ordinal_position').alias('ordinal_position')
-                    ])
-                    .sort(['table_name', 'ordinal_position'])
-                )
-            else:
-                self._pk_df = pl.DataFrame()
+            # Split into columns and PK DataFrames
+            self._columns_df, self._pk_df = split_columns_pk_dataframe(
+                combined_df,
+                is_pk_column='is_pk',
+                pk_ordinal_column='pk_ordinal_position'
+            )
         except Exception as e:
             print(f"⚠️  Could not fetch columns/primary key metadata: {e}")
             self._columns_df = pl.DataFrame()
@@ -249,6 +236,7 @@ class SnowflakeAdapter(BaseAdapter):
             self.connect()
 
         if custom_query:
+            logger.debug(f"[query] Snowflake custom query:\n{custom_query}")
             result = self.conn.sql(custom_query)
         else:
             table = self.get_table(table_name, schema)
@@ -262,6 +250,13 @@ class SnowflakeAdapter(BaseAdapter):
                 table = table.limit(limit)
 
             result = table
+
+            # Log the compiled SQL query
+            try:
+                compiled_query = ibis.to_sql(result)
+                logger.debug(f"[query] Snowflake generated query:\n{compiled_query}")
+            except Exception as e:
+                logger.debug(f"[query] Could not compile query to SQL: {e}")
 
         return result.to_polars()
 

@@ -62,6 +62,7 @@ Examples:
   python audit.py --check                 # Check mode (quality checks only)
   python audit.py --insight               # Insight mode (profiling only)
   python audit.py --discover              # Discovery mode (metadata only)
+  python audit.py --log-level DEBUG       # Enable debug logging (shows SQL queries)
         """
     )
     parser.add_argument(
@@ -82,6 +83,12 @@ Examples:
         '--yes', '-y',
         action='store_true',
         help='Automatically answer yes to prompts (proceed without confirmation)'
+    )
+    parser.add_argument(
+        '--log-level',
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
+        default='INFO',
+        help='Set logging level (default: INFO). Use DEBUG to see executed queries.'
     )
     mode_group.add_argument(
         '--insight', '-i',
@@ -126,7 +133,7 @@ Examples:
 
     # Set up logging to file
     log_file = run_dir / "audit.log"
-    setup_logging(log_file, log_level='INFO')
+    setup_logging(log_file, log_level=args.log_level)
 
     # Get logger for main script
     logger = logging.getLogger(__name__)
