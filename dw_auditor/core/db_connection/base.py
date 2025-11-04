@@ -159,6 +159,7 @@ class BaseAdapter(ABC):
         metadata = {
             'table_name': str(table_info['table_name'][0]),
             'table_type': str(table_info['table_type'][0]) if table_info['table_type'][0] is not None else None,
+            'description': str(table_info['description'][0]) if 'description' in table_info.columns and table_info['description'][0] is not None else None,
             'created_time': str(table_info['creation_time'][0]) if 'creation_time' in table_info.columns and table_info['creation_time'][0] is not None else None,
         }
 

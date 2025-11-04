@@ -1,3 +1,55 @@
+Metadata-Version: 2.4
+Name: dw-auditor
+Version: 1.0.0
+Summary: High-performance data quality auditing for BigQuery & Snowflake with automatic relationship detection
+Author-email: Valentin Cathelain <valentin@example.com>
+Maintainer-email: Valentin Cathelain <valentin@example.com>
+License: MIT
+Project-URL: Homepage, https://github.com/yourusername/database_audit
+Project-URL: Documentation, https://github.com/yourusername/database_audit/blob/main/README.md
+Project-URL: Repository, https://github.com/yourusername/database_audit
+Project-URL: Bug Tracker, https://github.com/yourusername/database_audit/issues
+Project-URL: Changelog, https://github.com/yourusername/database_audit/blob/main/CHANGELOG.md
+Keywords: data-quality,data-warehouse,bigquery,snowflake,data-profiling,data-validation,etl,data-engineering
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Database
+Classifier: Topic :: Software Development :: Quality Assurance
+Classifier: Topic :: Software Development :: Testing
+Classifier: Typing :: Typed
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: polars>=0.20.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: ibis-framework[duckdb]>=9.0.0
+Requires-Dist: ibis-framework[bigquery]>=9.0.0
+Requires-Dist: ibis-framework[snowflake]>=9.0.0
+Requires-Dist: google-cloud-bigquery>=3.0.0
+Requires-Dist: snowflake-connector-python>=3.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+Provides-Extra: docs
+Requires-Dist: mkdocs>=1.5.0; extra == "docs"
+Requires-Dist: mkdocs-material>=9.0.0; extra == "docs"
+Provides-Extra: rich
+Requires-Dist: rich>=13.0.0; extra == "rich"
+Requires-Dist: tqdm>=4.65.0; extra == "rich"
+Provides-Extra: all
+Requires-Dist: dw-auditor[dev,docs,rich]; extra == "all"
+
 # Data Warehouse Table Auditor
 
 **High-performance data quality auditing for BigQuery & Snowflake with automatic relationship detection.**

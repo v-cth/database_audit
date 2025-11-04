@@ -147,7 +147,7 @@ class BigQueryAdapter(BaseAdapter):
                 else:
                     # Cross-project: cannot use __TABLES__ across projects; only TABLES
                     tables_query = f"""
-                    SELECT '{schema}' AS schema_name, t.table_name, t.table_type, t.creation_time
+                    SELECT '{schema}' AS schema_name, t.table_name, t.table_type, t.creation_time, t.description
                     FROM `{project_for_metadata}.{schema}.INFORMATION_SCHEMA.TABLES` t
                     WHERE t.table_type IN ('BASE TABLE', 'TABLE', 'VIEW', 'MATERIALIZED VIEW') {table_filter_tables}
                     ORDER BY t.table_name

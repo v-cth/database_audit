@@ -104,7 +104,8 @@ class SnowflakeAdapter(BaseAdapter):
                 last_altered,
                 row_count,
                 bytes,
-                clustering_key
+                clustering_key,
+                comment AS description
             FROM {database}.INFORMATION_SCHEMA.TABLES
             WHERE table_schema = '{schema_name}'
               AND table_type IN ('BASE TABLE', 'VIEW', 'MATERIALIZED VIEW')
@@ -122,7 +123,8 @@ class SnowflakeAdapter(BaseAdapter):
                 'LAST_ALTERED': 'modified_at',
                 'ROW_COUNT': 'row_count',
                 'BYTES': 'size_bytes',
-                'CLUSTERING_KEY': 'clustering_key'
+                'CLUSTERING_KEY': 'clustering_key',
+                'DESCRIPTION': 'description'
             })
 
             # Add created_at as alias for creation_time for consistency with BigQuery

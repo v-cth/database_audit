@@ -171,6 +171,10 @@ def _generate_metadata_section(results: Dict) -> str:
         if 'table_type' in metadata:
             html += meta_item("Type", metadata['table_type'])
 
+        # Table description
+        if 'description' in metadata and metadata['description']:
+            html += meta_item("Description", metadata['description'])
+
         # Schema
         if 'schema' in metadata:
             html += meta_item("Schema", metadata['schema'])
