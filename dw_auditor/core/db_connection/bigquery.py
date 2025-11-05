@@ -111,7 +111,6 @@ class BigQueryAdapter(BaseAdapter):
                         t.table_name,
                         t.table_type,
                         t.creation_time,
-                        t.description,
                         rt.row_count,
                         rt.size_bytes,
                         TIMESTAMP_MILLIS(rt.creation_time) AS created_at,
@@ -151,7 +150,7 @@ class BigQueryAdapter(BaseAdapter):
                 else:
                     # Cross-project: cannot use __TABLES__ across projects; only TABLES
                     tables_query = f"""
-                    SELECT '{schema}' AS schema_name, t.table_name, t.table_type, t.creation_time, t.description
+                    SELECT '{schema}' AS schema_name, t.table_name, t.table_type, t.creation_time
                     FROM `{project_for_metadata}.{schema}.INFORMATION_SCHEMA.TABLES` t
                     WHERE t.table_type IN ('BASE TABLE', 'TABLE', 'VIEW', 'MATERIALIZED VIEW') {table_filter_tables}
                     ORDER BY t.table_name
@@ -196,6 +195,14 @@ class BigQueryAdapter(BaseAdapter):
                     ON tc.constraint_name = kcu.constraint_name
                     AND tc.table_name = kcu.table_name
                 WHERE tc.constraint_type = 'PRIMARY KEY' {table_filter_qualified}
+            ),
+            col_desc AS (
+                SELECT
+                    table_name,
+                    column_name,
+                    description
+                FROM `{project_for_metadata}.{schema}.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS`
+                {table_filter_columns}
             )
             SELECT
                 '{schema}' AS schema_name,
@@ -205,11 +212,14 @@ class BigQueryAdapter(BaseAdapter):
                 c.ordinal_position,
                 c.is_partitioning_column,
                 c.clustering_ordinal_position,
+                cd.description,
                 CASE WHEN pk.column_name IS NOT NULL THEN TRUE ELSE FALSE END AS is_pk,
                 pk.pk_ordinal_position
             FROM `{project_for_metadata}.{schema}.INFORMATION_SCHEMA.COLUMNS` c
             LEFT JOIN pk
                 ON c.table_name = pk.table_name AND c.column_name = pk.column_name
+            LEFT JOIN col_desc cd
+                ON c.table_name = cd.table_name AND c.column_name = cd.column_name
             {table_filter_columns}
             ORDER BY c.table_name, c.ordinal_position
             """
@@ -223,7 +233,7 @@ class BigQueryAdapter(BaseAdapter):
                     pk_ordinal_column="pk_ordinal_position"
                 )
 
-                # Add BigQuery-specific columns (partition, clustering)
+                # Add BigQuery-specific columns (partition, clustering, description)
                 new_columns_df = base_columns_df.select([
                     pl.col("schema_name"),
                     pl.col("table_name"),
@@ -232,6 +242,7 @@ class BigQueryAdapter(BaseAdapter):
                     pl.col("ordinal_position"),
                     pl.col("is_partitioning_column"),
                     pl.col("clustering_ordinal_position"),
+                    pl.col("description"),
                 ])
 
                 # Append to existing DataFrames

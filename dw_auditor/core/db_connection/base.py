@@ -235,6 +235,27 @@ class BaseAdapter(ABC):
             for row in table_cols.iter_rows(named=True)
         }
 
+    def get_column_descriptions(self, table_name: str, schema: Optional[str] = None) -> Dict[str, Optional[str]]:
+        """Get column descriptions by filtering cached columns_df"""
+        effective_schema = schema or self.connection_params.get('schema')
+        if not effective_schema:
+            return {}
+
+        self._ensure_metadata(effective_schema, [table_name])
+
+        # Check if description column exists in columns_df
+        if 'description' not in self._columns_df.columns:
+            return {}
+
+        table_cols = self._columns_df.filter(
+            (pl.col('schema_name') == effective_schema) & (pl.col('table_name') == table_name)
+        )
+
+        return {
+            str(row['column_name']): str(row['description']) if row['description'] is not None else None
+            for row in table_cols.iter_rows(named=True)
+        }
+
     def get_primary_key_columns(self, table_name: str, schema: Optional[str] = None) -> List[str]:
         """Get primary key columns by filtering cached pk_df"""
         effective_schema = schema or self.connection_params.get('schema')

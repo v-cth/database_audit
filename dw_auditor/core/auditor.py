@@ -879,6 +879,15 @@ class SecureTableAuditor(AuditorExporterMixin):
         potential_keys = []
         check_durations = {}
 
+        # Fetch column descriptions if available
+        column_descriptions = {}
+        if db_conn:
+            try:
+                column_descriptions = db_conn.get_column_descriptions(table_name, schema)
+            except Exception:
+                # Silently ignore if descriptions not available
+                pass
+
         # Iterate over all columns in schema (if provided), otherwise just loaded columns
         all_columns = list(table_schema.keys()) if table_schema else df.columns
 
@@ -893,7 +902,8 @@ class SecureTableAuditor(AuditorExporterMixin):
                     'null_count': 'N/A',
                     'null_pct': 'N/A',
                     'distinct_count': 'N/A',
-                    'status': 'NOT_LOADED'
+                    'status': 'NOT_LOADED',
+                    'description': column_descriptions.get(col, None)
                 }
                 continue  # Skip to next column
 
@@ -947,7 +957,8 @@ class SecureTableAuditor(AuditorExporterMixin):
                 'null_count': col_results['null_count'],
                 'null_pct': col_results['null_pct'],
                 'distinct_count': col_results['distinct_count'],
-                'status': status
+                'status': status,
+                'description': column_descriptions.get(col, None)
             }
 
             # Add source type if this column was converted

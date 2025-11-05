@@ -156,6 +156,7 @@ class SnowflakeAdapter(BaseAdapter):
                 c.COLUMN_NAME,
                 c.DATA_TYPE,
                 c.ORDINAL_POSITION,
+                c.COMMENT,
                 IFF(pk.COLUMN_NAME IS NOT NULL, TRUE, FALSE) AS IS_PK,
                 pk.PK_ORDINAL_POSITION
             FROM {database}.INFORMATION_SCHEMA.COLUMNS c
@@ -174,6 +175,7 @@ class SnowflakeAdapter(BaseAdapter):
                 'COLUMN_NAME': 'column_name',
                 'DATA_TYPE': 'data_type',
                 'ORDINAL_POSITION': 'ordinal_position',
+                'COMMENT': 'description',
                 'IS_PK': 'is_pk',
                 'PK_ORDINAL_POSITION': 'pk_ordinal_position'
             })

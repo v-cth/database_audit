@@ -282,6 +282,7 @@ def _generate_column_summary_table(results: Dict) -> str:
                     <th>Null Count</th>
                     <th>Null %</th>
                     <th>Distinct Values</th>
+                    <th>Description</th>
                 </tr>
             </thead>
             <tbody>
@@ -329,6 +330,10 @@ def _generate_column_summary_table(results: Dict) -> str:
         bold_class = ' class="td-bold"' if is_primary_key else ''
         error_class = ' class="td-error"' if null_pct_numeric > 10 else ''
 
+        # Get description
+        description = col_data.get('description', None)
+        description_display = description if description else ''
+
         html += f"""                <tr>
                     <td{bold_class}>{col_name_display}</td>
                     <td>{dtype_display}</td>
@@ -336,6 +341,7 @@ def _generate_column_summary_table(results: Dict) -> str:
                     <td>{null_display}</td>
                     <td{error_class}>{null_pct_display}</td>
                     <td>{distinct_display}</td>
+                    <td>{description_display}</td>
                 </tr>
 """
 
