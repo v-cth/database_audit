@@ -2,12 +2,24 @@
 Export run-level summary of multiple table audits
 """
 
+import logging
 from typing import List, Dict
-import polars as pl
 from pathlib import Path
 
+try:
+    import polars as pl
+    HAS_POLARS = True
+except ImportError:
+    HAS_POLARS = False
+    pl = None  # type: ignore
 
-def export_run_summary_to_dataframe(all_results: List[Dict]) -> pl.DataFrame:
+from .exceptions import ExporterError, InvalidResultsError, FileExportError, PathValidationError
+from .utils import escape_html, validate_file_path
+
+logger = logging.getLogger(__name__)
+
+
+def export_run_summary_to_dataframe(all_results: List[Dict]) -> 'pl.DataFrame':
     """
     Export summary of all audited tables to a DataFrame
 
@@ -16,55 +28,81 @@ def export_run_summary_to_dataframe(all_results: List[Dict]) -> pl.DataFrame:
 
     Returns:
         DataFrame with one row per table showing high-level metrics
+
+    Raises:
+        ExporterError: If Polars is not installed or processing fails
+        InvalidResultsError: If all_results is not a list
     """
+    # Check if Polars is available
+    if not HAS_POLARS:
+        logger.error("Polars is not installed")
+        raise ExporterError(
+            "Polars is required for DataFrame export. "
+            "Install it with: pip install polars"
+        )
+
+    # Validate input
+    if not isinstance(all_results, list):
+        raise InvalidResultsError(f"all_results must be a list, got: {type(all_results)}")
+
     summary_rows = []
 
-    for results in all_results:
-        # Count issues
-        total_issues = 0
-        columns_with_issues = 0
+    try:
+        for results in all_results:
+            # Count issues
+            total_issues = 0
+            columns_with_issues = 0
 
-        for col_name, col_data in results.get('columns', {}).items():
-            issues = col_data.get('issues', [])
-            if issues:
-                total_issues += len(issues)
-                columns_with_issues += 1
+            for col_name, col_data in results.get('columns', {}).items():
+                issues = col_data.get('issues', [])
+                if issues:
+                    total_issues += len(issues)
+                    columns_with_issues += 1
 
-        # Determine status
-        if total_issues == 0:
-            status = 'OK'
-        elif columns_with_issues <= len(results.get('column_summary', {})) // 2:
-            status = 'WARNING'
-        else:
-            status = 'ERROR'
+            # Determine status
+            if total_issues == 0:
+                status = 'OK'
+            elif columns_with_issues <= len(results.get('column_summary', {})) // 2:
+                status = 'WARNING'
+            else:
+                status = 'ERROR'
 
-        # Get table metadata
-        table_metadata = results.get('table_metadata', {})
+            # Get table metadata
+            table_metadata = results.get('table_metadata', {})
 
-        # Extract partition and clustering info
-        partition_col = table_metadata.get('partition_column', '')
-        partition_type = table_metadata.get('partition_type', '')
-        clustering_cols = ', '.join(table_metadata.get('clustering_columns', [])) if 'clustering_columns' in table_metadata else table_metadata.get('clustering_key', '')
+            # Extract partition and clustering info
+            partition_col = table_metadata.get('partition_column', '')
+            partition_type = table_metadata.get('partition_type', '')
+            clustering_cols = ', '.join(table_metadata.get('clustering_columns', [])) if 'clustering_columns' in table_metadata else table_metadata.get('clustering_key', '')
 
-        summary_rows.append({
-            'table_name': results.get('table_name', 'unknown'),
-            'total_rows': results.get('total_rows', 0),
-            'sampled': results.get('sampled', False),
-            'analyzed_rows': results.get('analyzed_rows', 0),
-            'column_count': len(results.get('column_summary', {})),
-            'issues_found': total_issues,
-            'columns_with_issues': columns_with_issues,
-            'status': status,
-            'duration_seconds': sum(results.get('phase_timings', {}).values()),
-            'audit_timestamp': results.get('timestamp', ''),
-            'table_type': table_metadata.get('table_type', ''),
-            'created_time': str(table_metadata.get('created_time', '')),
-            'partition_column': partition_col,
-            'partition_type': partition_type,
-            'clustering_columns': clustering_cols
-        })
+            summary_rows.append({
+                'table_name': results.get('table_name', 'unknown'),
+                'total_rows': results.get('total_rows', 0),
+                'sampled': results.get('sampled', False),
+                'analyzed_rows': results.get('analyzed_rows', 0),
+                'column_count': len(results.get('column_summary', {})),
+                'issues_found': total_issues,
+                'columns_with_issues': columns_with_issues,
+                'status': status,
+                'duration_seconds': sum(results.get('phase_timings', {}).values()),
+                'audit_timestamp': results.get('timestamp', ''),
+                'table_type': table_metadata.get('table_type', ''),
+                'created_time': str(table_metadata.get('created_time', '')),
+                'partition_column': partition_col,
+                'partition_type': partition_type,
+                'clustering_columns': clustering_cols
+            })
 
-    return pl.DataFrame(summary_rows)
+        df = pl.DataFrame(summary_rows)
+        logger.info(f"Created run summary DataFrame with {len(df)} rows")
+        return df
+
+    except (KeyError, TypeError, AttributeError) as e:
+        logger.error(f"Error processing run summary: {e}")
+        raise ExporterError(f"Failed to process run summary: {e}") from e
+    except Exception as e:
+        logger.error(f"Failed to create DataFrame: {e}")
+        raise ExporterError(f"Failed to create DataFrame: {e}") from e
 
 
 def export_run_summary_to_json(all_results: List[Dict], file_path: str = None, relationships: List[Dict] = None) -> Dict:
@@ -246,10 +284,10 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
         else:
             status_badge = '<span class="status-badge-error">Error</span>'
 
-        # Build row HTML
+        # Build row HTML (escape table_name to prevent XSS)
         table_rows_html += f"""
                     <tr>
-                        <td>{table_name}</td>
+                        <td>{escape_html(table_name)}</td>
                         <td>{total_rows:,}</td>
                         <td>{analyzed_rows:,}</td>
                         <td>{column_count}</td>
@@ -297,7 +335,7 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
         <header>
             <h1 class="page-title">Audit Run Summary</h1>
             <div class="header-meta">
-                <span>Generated: {run_timestamp}</span>
+                <span>Generated: {escape_html(run_timestamp)}</span>
                 <span>Duration: {total_duration:.2f}s</span>
             </div>
         </header>
@@ -361,8 +399,14 @@ def export_run_summary_to_html(all_results: List[Dict], file_path: str = "summar
 </html>
 """
 
-    # Write HTML file
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(html)
-
-    return file_path
+    # Validate and write HTML file
+    try:
+        validated_path = validate_file_path(file_path)
+        validated_path.write_text(html, encoding='utf-8')
+        logger.info(f"Run summary HTML exported to: {validated_path}")
+        return str(validated_path.resolve())
+    except PathValidationError:
+        raise
+    except (OSError, IOError) as e:
+        logger.error(f"Failed to write HTML file: {e}")
+        raise FileExportError(f"Failed to write file '{file_path}': {e}") from e
