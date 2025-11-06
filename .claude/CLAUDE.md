@@ -23,9 +23,9 @@ source audit_env/bin/activate && python audit.py --discover          # Metadata 
 
 **File Organization**:
 - `audit.py`: Main CLI entry point
-- `dw_auditor/core/`: Fundamental classes (auditor, config, base_check, registry, runner)
+- `dw_auditor/core/`: Fundamental classes (auditor, config, base_check, base_insight, registries, runners)
 - `dw_auditor/checks/`: 11 data quality check classes (auto-registered)
-- `dw_auditor/insights/`: Profiling functions (numeric, datetime, string)
+- `dw_auditor/insights/`: Insight classes (atomic + type-specific composites)
 - `dw_auditor/exporters/html/`: 5-file modular HTML generator
 
 **Core Principles**:
@@ -68,6 +68,51 @@ class MyCheck(BaseCheck):
 
 Then import in `checks/__init__.py` and use: `run_check_sync('my_check', df, col, pk_cols, ...)`
 
+## Insights Framework (Class-Based)
+
+**Architecture**: Hybrid approach with atomic insights + type-specific composites (similar to Check Framework)
+
+**Core Components**:
+- `core/base_insight.py`: Base class with unified interface (`generate()`, `_validate_params()`)
+- `core/insight_registry.py`: `@register_insight(name)` decorator for auto-registration
+- `core/insight_runner.py`: `run_insight_sync()` execution API
+
+**Atomic Insights** (Reusable across types):
+- `top_values`: Most frequent values (universal - works on all types)
+- `quantiles`: Statistical percentiles (numeric only)
+- `length_stats`: Min/max/avg string length (string only)
+
+**Type-Specific Composites** (4 total):
+- **Numeric** (`numeric_insights`): min, max, mean, std, quantiles, top_values
+- **String** (`string_insights`): top_values, length_stats
+- **Datetime** (`datetime_insights`): min_date, max_date, date_range_days, most_common_dates/hours/days, timezone
+- **Boolean** (`boolean_insights`): boolean_distribution (True/False/Null)
+
+**Adding an Insight**:
+```python
+from dw_auditor.core.base_insight import BaseInsight, InsightResult
+from dw_auditor.core.insight_registry import register_insight
+
+@register_insight("my_insight")
+class MyInsight(BaseInsight):
+    display_name = "My Insight"
+    supported_dtypes = [pl.Int64, pl.Float64]  # Empty = universal
+
+    def _validate_params(self):
+        self.config = MyInsightParams(**self.params)  # Pydantic validation
+
+    async def generate(self) -> List[InsightResult]:
+        # Insight logic
+        return [InsightResult(type='my_metric', value=123)]
+```
+
+Then import in `insights/__init__.py` or `column_insights.py` and use: `run_insight_sync('my_insight', df, col, **params)`
+
+**Key Differences from Checks**:
+- Returns `List[InsightResult]` (measurements) vs `List[CheckResult]` (violations)
+- No primary key context needed (insights are aggregates, not row-level)
+- HTML exporter has helper function `_insights_to_dict()` to convert List[InsightResult] to Dict for rendering
+
 ## Primary Key Detection
 
 **Logic** (`auditor.py:660`): Auto-detects columns where `distinct_count == analyzed_rows` AND `null_count == 0`
@@ -107,6 +152,15 @@ Then import in `checks/__init__.py` and use: `run_check_sync('my_check', df, col
 **HTML**: Use `format_number()` helper for thousand separators, avoid label overlap with vertical stacking
 
 ## Recent Changes (October 2025-November 2025)
+
+**Nov 6**: Class-based insights framework (hybrid architecture)
+- Refactored function-based insights to class-based system matching checks framework
+- Created `BaseInsight`, `InsightResult`, registry, and runner infrastructure
+- Atomic insights: `top_values` (universal), `quantiles` (numeric), `length_stats` (string)
+- Type-specific composites: `NumericInsights`, `StringInsights`, `DatetimeInsights`, `BooleanInsights`
+- Pydantic validation for all insight parameters
+- Returns `List[InsightResult]` throughout entire pipeline (clean architecture, no backward compatibility)
+- HTML exporter converts List[InsightResult] to Dict for rendering
 
 **Nov 6**: Enhanced date_outliers check
 - Configurable problematic years list (default: [1900, 1970, 2099, 2999, 9999])

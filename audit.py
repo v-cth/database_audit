@@ -47,7 +47,7 @@ def setup_logging(log_file: Path, log_level: str = 'INFO') -> None:
 
     # Configure root logger
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(logging.DEBUG)  # Allow DEBUG to file, handlers control console
     root_logger.addHandler(file_handler)
     root_logger.addHandler(console_handler)
 
@@ -55,6 +55,10 @@ def setup_logging(log_file: Path, log_level: str = 'INFO') -> None:
     for logger_name in ['dw_auditor.core.auditor', 'dw_auditor']:
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.DEBUG)
+
+    # Silence noisy third-party loggers
+    for noisy_logger in ['asyncio', 'urllib3', 'google', 'googleapiclient']:
+        logging.getLogger(noisy_logger).setLevel(logging.WARNING)
 
 
 def initialize_run_directory(config: AuditConfig, timestamp: str) -> Path:
