@@ -32,18 +32,21 @@ def generate_numeric_insights(df: pl.DataFrame, col: str, config: Dict) -> Dict:
         insights['max'] = float(non_null_series.max())
     if config.get('mean', False):
         insights['mean'] = round(float(non_null_series.mean()), 4)
-    if config.get('median', False):
-        insights['median'] = float(non_null_series.median())
     if config.get('std', False):
         insights['std'] = round(float(non_null_series.std()), 4)
 
-    # Quantiles/Percentiles
-    quantiles = config.get('quantiles', [])
-    if quantiles:
+    # Quantiles/Percentiles (median is Q2/p50, so no separate config needed)
+    quantiles_config = config.get('quantiles', True)  # Default to True
+    if quantiles_config and quantiles_config is not False:
+        # If quantiles is True, use standard quartiles [Q1, Q2, Q3]
+        if quantiles_config is True:
+            quantiles = [0.25, 0.5, 0.75]
         quantile_values = {}
         for q in quantiles:
             quantile_values[f'p{int(q*100)}'] = float(non_null_series.quantile(q))
         insights['quantiles'] = quantile_values
+        # Set median for convenience (it's the same as p50)
+        insights['median'] = insights['quantiles'].get('p50')
 
     # Top N most frequent values
     if config.get('top_values', 0) > 0:
