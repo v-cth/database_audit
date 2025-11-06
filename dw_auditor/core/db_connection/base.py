@@ -218,10 +218,19 @@ class BaseAdapter(ABC):
 
         return metadata
 
-    def get_table_schema(self, table_name: str, schema: Optional[str] = None) -> Dict[str, str]:
-        """Get column names and data types by filtering cached columns_df"""
+    def get_table_schema(self, table_name: str, schema: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
+        """
+        Get column metadata (data types and descriptions) by filtering cached columns_df
+
+        Returns:
+            Dict mapping column_name to {'data_type': str, 'description': Optional[str]}
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
         effective_schema = schema or self.connection_params.get('schema')
         if not effective_schema:
+            logger.debug(f"No effective schema for table {table_name}")
             return {}
 
         self._ensure_metadata(effective_schema, [table_name])
@@ -230,31 +239,22 @@ class BaseAdapter(ABC):
             (pl.col('schema_name') == effective_schema) & (pl.col('table_name') == table_name)
         )
 
-        return {
-            str(row['column_name']): str(row['data_type'])
-            for row in table_cols.iter_rows(named=True)
-        }
+        # Check if description column exists
+        has_descriptions = 'description' in self._columns_df.columns
+        if not has_descriptions:
+            logger.debug(f"'description' column not found in columns_df for {table_name}")
 
-    def get_column_descriptions(self, table_name: str, schema: Optional[str] = None) -> Dict[str, Optional[str]]:
-        """Get column descriptions by filtering cached columns_df"""
-        effective_schema = schema or self.connection_params.get('schema')
-        if not effective_schema:
-            return {}
+        logger.debug(f"Found {len(table_cols)} columns for {effective_schema}.{table_name}")
 
-        self._ensure_metadata(effective_schema, [table_name])
+        result = {}
+        for row in table_cols.iter_rows(named=True):
+            col_name = str(row['column_name'])
+            result[col_name] = {
+                'data_type': str(row['data_type']),
+                'description': str(row['description']) if has_descriptions and row['description'] is not None else None
+            }
 
-        # Check if description column exists in columns_df
-        if 'description' not in self._columns_df.columns:
-            return {}
-
-        table_cols = self._columns_df.filter(
-            (pl.col('schema_name') == effective_schema) & (pl.col('table_name') == table_name)
-        )
-
-        return {
-            str(row['column_name']): str(row['description']) if row['description'] is not None else None
-            for row in table_cols.iter_rows(named=True)
-        }
+        return result
 
     def get_primary_key_columns(self, table_name: str, schema: Optional[str] = None) -> List[str]:
         """Get primary key columns by filtering cached pk_df"""

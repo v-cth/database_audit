@@ -99,8 +99,13 @@ class DatabaseConnection:
         """Get primary key column names"""
         return self.adapter.get_primary_key_columns(table_name, schema)
 
-    def get_table_schema(self, table_name: str, schema: Optional[str] = None) -> Dict[str, str]:
-        """Get table column names and their data types"""
+    def get_table_schema(self, table_name: str, schema: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
+        """
+        Get table schema with column metadata (data types and descriptions)
+
+        Returns:
+            Dict mapping column_name to {'data_type': str, 'description': Optional[str]}
+        """
         return self.adapter.get_table_schema(table_name, schema)
 
     def estimate_bytes_scanned(

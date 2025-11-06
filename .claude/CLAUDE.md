@@ -1,6 +1,7 @@
 Prefer a modular, extensible architecture that avoids unnecessary coupling between components.
 Communicate clearly and concisely, prioritizing relevant information and avoiding verbosity.
 Adhere to industry best practices, including clean code principles, consistent naming conventions, and maintainable design patterns.
+I don't need backward compatibility. If you thing you have to do it, first ask me.
 
 # Data Warehouse Table Auditor
 
@@ -107,6 +108,19 @@ Then import in `checks/__init__.py` and use: `run_check_sync('my_check', df, col
 
 ## Recent Changes (October 2025-November 2025)
 
+**Nov 6**: Enhanced date_outliers check
+- Configurable problematic years list (default: [1900, 1970, 2099, 2999, 9999])
+- Added `min_suspicious_count` threshold to filter noise
+- Context-aware suggestions (1900 → "missing birthdates", 1970 → "Unix epoch", 9999 → "never expires")
+- Smart duplicate prevention (don't report problematic years already caught as too old/future)
+- Better error messages showing exact years and distances from thresholds
+
+**Nov 6**: Merged get_table_schema and get_column_descriptions
+- Single query now fetches both data types and descriptions
+- `get_table_schema()` returns `{col: {'data_type': str, 'description': str}}`
+- Removed backward compatibility, cleaner architecture
+- Column descriptions now display in HTML and JSON exports
+
 **Nov 4**: Simplified threshold strategy
 - Removed percentage-based reporting thresholds (80%, 90%, 95%)
 - All checks now report issues regardless of percentage affected
@@ -124,4 +138,4 @@ Then import in `checks/__init__.py` and use: `run_check_sync('my_check', df, col
 
 ---
 
-**Last Updated**: November 2025
+**Last Updated**: November 6, 2025
