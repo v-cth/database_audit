@@ -121,7 +121,8 @@ class SecureTableAuditor(AuditorExporterMixin):
         schema: Optional[str],
         user_primary_key: Optional[List[str]],
         custom_query: Optional[str],
-        backend: str
+        backend: str,
+        project_id: Optional[str] = None
     ) -> Tuple[Dict, Optional[int], List[str]]:
         """
         Get table metadata including row count and primary key columns
@@ -133,6 +134,7 @@ class SecureTableAuditor(AuditorExporterMixin):
             user_primary_key: User-defined primary key columns
             custom_query: Custom query if any
             backend: Database backend
+            project_id: Optional project ID for cross-project queries (BigQuery only)
 
         Returns:
             Tuple of (metadata dict, row count, primary key columns)
@@ -143,7 +145,7 @@ class SecureTableAuditor(AuditorExporterMixin):
 
         # Get table metadata (including UID and row count)
         try:
-            table_metadata = db_conn.get_table_metadata(table_name, schema)
+            table_metadata = db_conn.get_table_metadata(table_name, schema, project_id)
             if table_metadata:
                 if 'table_uid' in table_metadata:
                     logger.info(f"Table UID: {table_metadata['table_uid']}")
@@ -216,7 +218,8 @@ class SecureTableAuditor(AuditorExporterMixin):
         columns_to_load: Optional[List[str]],
         should_sample: bool,
         sampling_method: str,
-        sampling_key_column: Optional[str]
+        sampling_key_column: Optional[str],
+        project_id: Optional[str] = None
     ) -> pl.DataFrame:
         """
         Load data from database
@@ -230,6 +233,7 @@ class SecureTableAuditor(AuditorExporterMixin):
             should_sample: Whether to sample
             sampling_method: Sampling method
             sampling_key_column: Key column for sampling
+            project_id: Optional project ID for cross-project queries (BigQuery only)
 
         Returns:
             Polars DataFrame with loaded data
@@ -247,7 +251,8 @@ class SecureTableAuditor(AuditorExporterMixin):
             sample_size=self.sample_size if should_sample else None,
             sampling_method=sampling_method,
             sampling_key_column=sampling_key_column,
-            columns=columns_to_load if columns_to_load else None
+            columns=columns_to_load if columns_to_load else None,
+            project_id=project_id
         )
 
         logger.info(f"Loaded {len(df):,} rows into memory")
@@ -653,10 +658,13 @@ class SecureTableAuditor(AuditorExporterMixin):
                 should_close_conn = True
 
         try:
+            # Extract project_id for cross-project queries (BigQuery only)
+            project_id = connection_params.get('project_id') if backend == 'bigquery' else None
+
             # Get table metadata
             with timing_phase('metadata', phase_timings):
                 table_metadata, row_count, primary_key_columns = self._get_table_metadata(
-                    db_conn, table_name, schema, user_primary_key, custom_query, backend
+                    db_conn, table_name, schema, user_primary_key, custom_query, backend, project_id
                 )
 
             # Get table schema and determine which columns to load (optimization)
@@ -665,7 +673,7 @@ class SecureTableAuditor(AuditorExporterMixin):
                 table_schema = None
                 try:
                     # Get table schema (column names and types)
-                    table_schema = db_conn.get_table_schema(table_name, schema)
+                    table_schema = db_conn.get_table_schema(table_name, schema, project_id)
 
                     if table_schema:
                         # Get filter configuration
@@ -709,7 +717,7 @@ class SecureTableAuditor(AuditorExporterMixin):
             with timing_phase('data_loading', phase_timings):
                 df = self._load_data(
                     db_conn, table_name, schema, custom_query, columns_to_load,
-                    should_sample, sampling_method, sampling_key_column
+                    should_sample, sampling_method, sampling_key_column, project_id
                 )
 
             # For custom queries, the row count is the result set size

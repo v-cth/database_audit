@@ -170,12 +170,13 @@ def audit_tables(
             custom_query = config.table_queries.get(table, None)
             user_defined_primary_key = config.table_primary_keys.get(table, None)
             table_schema = config.get_table_schema(table)
+            table_connection_params = config.get_table_connection_params(table)
 
             # Run audit
             results = auditor.audit_from_database(
                 table_name=table,
                 backend=config.backend,
-                connection_params=config.connection_params,
+                connection_params=table_connection_params,
                 schema=table_schema,
                 mask_pii=config.mask_pii,
                 custom_pii_keywords=config.custom_pii_keywords,
