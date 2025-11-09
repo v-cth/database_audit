@@ -93,58 +93,40 @@ class BigQueryAdapter(BaseAdapter):
         table_filter_qualified = filters['qualified']
         table_filter_columns = filters['columns']
 
-        # Query 1: Tables (+ row counts when same-project) (filtered)
+        # Query 1: Tables + row counts (filtered)
+        # Note: __TABLES__ works for both same-project and cross-project queries
         try:
-            # Check if we're querying cross-project (different from connection project)
-            is_cross_project = project_id and project_id != self.connection_params.get('project_id')
+            tables_query = f"""
+            SELECT
+                '{schema}' AS schema_name,
+                t.table_name,
+                t.table_type,
+                t.creation_time,
+                rt.row_count,
+                rt.size_bytes,
+                TIMESTAMP_MILLIS(rt.creation_time) AS created_at,
+                TIMESTAMP_MILLIS(rt.last_modified_time) AS modified_at
+            FROM `{project_for_metadata}.{schema}.INFORMATION_SCHEMA.TABLES` t
+            LEFT JOIN `{project_for_metadata}.{schema}.__TABLES__` rt
+                ON rt.table_id = t.table_name
+            WHERE t.table_type IN ('BASE TABLE', 'TABLE', 'VIEW', 'MATERIALIZED VIEW') {table_filter_tables}
+            ORDER BY t.table_name
+            """
+            logger.debug(f"[query] BigQuery metadata tables query:\n{tables_query}")
+            new_tables_df = self.conn.sql(tables_query).to_polars()
 
-            if not is_cross_project:
-                # Same-project: join INFORMATION_SCHEMA.TABLES with __TABLES__ once
-                tables_query = f"""
-                SELECT
-                    '{schema}' AS schema_name,
-                    t.table_name,
-                    t.table_type,
-                    t.creation_time,
-                    rt.row_count,
-                    rt.size_bytes,
-                    TIMESTAMP_MILLIS(rt.creation_time) AS created_at,
-                    TIMESTAMP_MILLIS(rt.last_modified_time) AS modified_at
-                FROM `{project_for_metadata}.{schema}.INFORMATION_SCHEMA.TABLES` t
-                LEFT JOIN `{project_for_metadata}.{schema}.__TABLES__` rt
-                    ON rt.table_id = t.table_name
-                WHERE t.table_type IN ('BASE TABLE', 'TABLE', 'VIEW', 'MATERIALIZED VIEW') {table_filter_tables}
-                ORDER BY t.table_name
-                """
-                logger.debug(f"[query] BigQuery metadata tables query:\n{tables_query}")
-                new_tables_df = self.conn.sql(tables_query).to_polars()
+            # Store in cache entry
+            cache_entry['tables_df'] = new_tables_df
 
-                # Store in cache entry
-                cache_entry['tables_df'] = new_tables_df
-
-                # Also expose rowcount-like frame
-                cache_entry['rowcount_df'] = new_tables_df.select([
-                    pl.col("schema_name"),
-                    pl.col("table_name").alias("table_id"),
-                    pl.col("row_count"),
-                    pl.col("size_bytes"),
-                    pl.col("created_at"),
-                    pl.col("modified_at"),
-                ])
-            else:
-                # Cross-project: cannot use __TABLES__ across projects; only TABLES
-                tables_query = f"""
-                SELECT '{schema}' AS schema_name, t.table_name, t.table_type, t.creation_time
-                FROM `{project_for_metadata}.{schema}.INFORMATION_SCHEMA.TABLES` t
-                WHERE t.table_type IN ('BASE TABLE', 'TABLE', 'VIEW', 'MATERIALIZED VIEW') {table_filter_tables}
-                ORDER BY t.table_name
-                """
-                logger.debug(f"[query] BigQuery metadata tables query (cross-project):\n{tables_query}")
-                new_tables_df = self.conn.sql(tables_query).to_polars()
-
-                # Store in cache entry
-                cache_entry['tables_df'] = new_tables_df
-                cache_entry['rowcount_df'] = pl.DataFrame()
+            # Also expose rowcount-like frame
+            cache_entry['rowcount_df'] = new_tables_df.select([
+                pl.col("schema_name"),
+                pl.col("table_name").alias("table_id"),
+                pl.col("row_count"),
+                pl.col("size_bytes"),
+                pl.col("created_at"),
+                pl.col("modified_at"),
+            ])
         except Exception as e:
             logger.error(f"Could not fetch tables/rowcount metadata: {e}")
             cache_entry['tables_df'] = pl.DataFrame()

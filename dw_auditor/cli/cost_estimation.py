@@ -80,18 +80,13 @@ def estimate_bigquery_costs(
         table_conn_params = config.get_table_connection_params(table)
         project_id = table_conn_params.get('project_id') if config.backend == 'bigquery' else None
 
-        # For estimation, avoid metadata lookups to prevent duplicate queries
-        is_cross_project = hasattr(db_conn, 'source_project_id') and db_conn.source_project_id
-
-        # Determine sample size for estimation (no row_count checks to avoid metadata)
+        # Determine sample size for estimation
+        # Note: We don't check row_count here to avoid duplicate metadata queries
+        # (metadata is already prefetched above)
         should_sample = False
         sample_size = None
         if custom_query:
             should_sample = False
-        elif is_cross_project:
-            # Heuristic without row_count
-            should_sample = False
-            sample_size = None
 
         # Temporarily set source_project_id for cross-project byte estimation
         original_source_project = getattr(db_conn.adapter, 'source_project_id', None)
