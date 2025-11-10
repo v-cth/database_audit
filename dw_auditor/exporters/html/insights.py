@@ -380,54 +380,6 @@ def _render_numeric_insights(insights: List[Any], thousand_separator: str = ",",
                 </div>
             </div>
 """
-
-    # Fallback for incomplete data
-    elif 'min' in insights_dict or 'max' in insights_dict or 'mean' in insights_dict:
-        html += """
-            <div class="insight-section">
-                <h4 class="insight-header">Numeric Statistics:</h4>
-                <div class="numeric-stats-container">
-"""
-        if 'min' in insights_dict:
-            html += f"""
-                    <div class="numeric-stat-item">
-                        <span class="numeric-stat-label">Min:</span>
-                        <span class="numeric-stat-value">{insights_dict['min']:.2f}</span>
-                    </div>
-"""
-        if 'max' in insights_dict:
-            html += f"""
-                    <div class="numeric-stat-item">
-                        <span class="numeric-stat-label">Max:</span>
-                        <span class="numeric-stat-value">{insights_dict['max']:.2f}</span>
-                    </div>
-"""
-        if 'mean' in insights_dict:
-            html += f"""
-                    <div class="numeric-stat-item">
-                        <span class="numeric-stat-label">Mean:</span>
-                        <span class="numeric-stat-value">{insights_dict['mean']:.2f}</span>
-                    </div>
-"""
-        if 'median' in insights_dict:
-            html += f"""
-                    <div class="numeric-stat-item">
-                        <span class="numeric-stat-label">Median:</span>
-                        <span class="numeric-stat-value">{insights_dict['median']:.2f}</span>
-                    </div>
-"""
-        if 'std' in insights_dict:
-            html += f"""
-                    <div class="numeric-stat-item">
-                        <span class="numeric-stat-label">Std Dev:</span>
-                        <span class="numeric-stat-value">{insights_dict['std']:.2f}</span>
-                    </div>
-"""
-        html += """
-                </div>
-            </div>
-"""
-
     return html
 
 
