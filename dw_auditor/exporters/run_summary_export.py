@@ -33,10 +33,8 @@ def export_run_summary_to_dataframe(all_results: List[Dict]) -> pl.DataFrame:
         # Determine status
         if total_issues == 0:
             status = 'OK'
-        elif columns_with_issues <= len(results.get('column_summary', {})) // 2:
-            status = 'WARNING'
         else:
-            status = 'ERROR'
+            status = 'WARNING'
 
         # Get table metadata
         table_metadata = results.get('table_metadata', {})
@@ -109,10 +107,8 @@ def export_run_summary_to_json(all_results: List[Dict], file_path: str = None, r
         # Determine status
         if table_issues == 0:
             status = 'OK'
-        elif columns_with_issues <= len(results.get('column_summary', {})) // 2:
-            status = 'WARNING'
         else:
-            status = 'ERROR'
+            status = 'WARNING'
 
         status_counts[status] += 1
 
