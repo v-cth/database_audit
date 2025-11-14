@@ -25,6 +25,10 @@ class TableConfig(BaseModel):
     database: Optional[str] = Field(None, description="Override database (project_id for BigQuery, database for Snowflake)")
     table_schema: Optional[str] = Field(None, alias="schema", serialization_alias="schema", description="Override schema (dataset for BigQuery, schema for Snowflake)")
 
+    # Per-table column filtering
+    include_columns: Optional[List[str]] = Field(None, description="Columns to include (overrides global filters)")
+    exclude_columns: Optional[List[str]] = Field(None, description="Columns to exclude (overrides global filters)")
+
     @field_validator('primary_key')
     @classmethod
     def normalize_primary_key(cls, v):
@@ -235,6 +239,8 @@ class AuditConfig:
         self.table_queries = {}
         self.table_databases = {}  # Renamed: stores table-level database overrides
         self.table_schemas = {}     # Stores table-level schema overrides
+        self.table_include_columns = {}  # Per-table column includes
+        self.table_exclude_columns = {}  # Per-table column excludes
 
         for table_entry in self._model.tables:
             if isinstance(table_entry, str):
@@ -251,6 +257,12 @@ class AuditConfig:
                     self.table_databases[table_entry.name] = table_entry.database
                 if table_entry.table_schema:
                     self.table_schemas[table_entry.name] = table_entry.table_schema
+
+                # Store per-table column filters
+                if table_entry.include_columns:
+                    self.table_include_columns[table_entry.name] = table_entry.include_columns
+                if table_entry.exclude_columns:
+                    self.table_exclude_columns[table_entry.name] = table_entry.exclude_columns
 
         # Table filtering
         if self._model.table_filters:
@@ -428,6 +440,26 @@ class AuditConfig:
         """
         # Return table-specific schema if defined, otherwise use default_schema
         return self.table_schemas.get(table_name, self.default_schema)
+
+    def get_table_column_filters(self, table_name: str) -> Dict[str, List[str]]:
+        """
+        Get column filters for a specific table
+
+        Args:
+            table_name: Name of the table
+
+        Returns:
+            Dictionary with 'include_columns' and 'exclude_columns' lists
+            (per-table filters override global filters)
+        """
+        # Per-table filters take precedence over global filters
+        include_cols = self.table_include_columns.get(table_name) or self.include_columns
+        exclude_cols = self.table_exclude_columns.get(table_name) or self.exclude_columns
+
+        return {
+            'include_columns': include_cols,
+            'exclude_columns': exclude_cols
+        }
 
     def get_table_connection_params(self, table_name: str) -> Dict:
         """

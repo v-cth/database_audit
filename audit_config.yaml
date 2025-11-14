@@ -18,9 +18,9 @@ database:
     # If not specified, uses Application Default Credentials (gcloud auth)
 
     # Required for Snowflake (if using Snowflake):
-    # account: "my-account"
-    # user: "my-user"
-    # password: "my-password"
+    # account: "OOQYWEC-ND51384"
+    # user: "VALENTIN"
+    # password: "ProfilerSF7$"
     # warehouse: "my-warehouse"  # Optional
     # role: "my-role"            # Optional
 
@@ -46,10 +46,16 @@ tables:
   - name: crime
     database: bigquery-public-data
     schema: chicago_crime
+    exclude_columns: ["description", "domestic"]
+
 
   # Table with custom query (for filtering or joining)
   # - name: recent_transactions
   #   query: "SELECT * FROM transactions WHERE created_at > NOW() - INTERVAL '30 days'"
+
+  # Table with per-table column filtering (overrides global filters)
+  # - name: large_table
+  #   exclude_columns: ["description", "metadata", "raw_data"]  # Exclude heavy columns
 
 
 # Sampling Configuration
