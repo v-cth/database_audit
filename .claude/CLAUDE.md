@@ -129,7 +129,7 @@ Then import in `insights/__init__.py` or `column_insights.py` and use: `run_insi
    - Verify 95% success threshold
    - Apply conversion only if verification passes
 
-**Conversion Order**: int64 → float64 → datetime → date
+**Conversion Order**: int64 → float64 → date → datetime
 
 **Usage**:
 ```python

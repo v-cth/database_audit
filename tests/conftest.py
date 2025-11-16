@@ -4,6 +4,7 @@ Shared pytest fixtures and utilities for testing
 
 import pytest
 import polars as pl
+import asyncio
 from datetime import datetime, date, timedelta
 
 
@@ -200,3 +201,47 @@ def get_result_by_type(results, result_type):
         if result.type == result_type:
             return result
     return None
+
+
+def run_check_sync(check):
+    """
+    Helper to run async check synchronously for testing
+
+    Args:
+        check: Check instance with async run() method
+
+    Returns:
+        List of CheckResult objects
+    """
+    return asyncio.run(check.run())
+
+
+def run_insight_sync(insight):
+    """
+    Helper to run async insight synchronously for testing
+
+    Args:
+        insight: Insight instance with async generate() method
+
+    Returns:
+        List of InsightResult objects
+    """
+    return asyncio.run(insight.generate())
+
+
+# Register helpers for pytest
+class Helpers:
+    """Container for pytest helper functions"""
+
+    @staticmethod
+    def run_check_sync(check):
+        return run_check_sync(check)
+
+    @staticmethod
+    def run_insight_sync(insight):
+        return run_insight_sync(insight)
+
+
+def pytest_configure(config):
+    """Register pytest helpers"""
+    pytest.helpers = Helpers()

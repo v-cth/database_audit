@@ -22,7 +22,11 @@ class CheckResult(BaseModel):
         pattern: Pattern string for regex/string checks (optional)
         mode: Mode of operation for complex checks (optional)
         description: Custom description of the issue (optional)
+
+    Additional fields can be added by specific checks as needed.
     """
+    model_config = {"extra": "allow"}
+
     type: str
     count: int
     pct: Optional[float] = None

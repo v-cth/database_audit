@@ -20,10 +20,10 @@ class TestTrailingCharactersCheck:
         )
         results = pytest.helpers.run_check_sync(check)
 
-        # Should find trailing spaces
+        # Should find trailing spaces (hello , world , data , text , value )
         assert_has_result_type(results, 'TRAILING_CHARACTERS')
         trailing_result = [r for r in results if r.type == 'TRAILING_CHARACTERS' and r.pattern == ' '][0]
-        assert trailing_result.count == 6
+        assert trailing_result.count == 5
 
     def test_default_patterns_leading_space(self, sample_string_df):
         """Test detection of leading spaces with default patterns"""
@@ -34,10 +34,10 @@ class TestTrailingCharactersCheck:
         )
         results = pytest.helpers.run_check_sync(check)
 
-        # Should find leading spaces
+        # Should find leading spaces ( hello,  world,  data,  text,  value)
         assert_has_result_type(results, 'LEADING_CHARACTERS')
         leading_result = [r for r in results if r.type == 'LEADING_CHARACTERS' and r.pattern == ' '][0]
-        assert leading_result.count == 6
+        assert leading_result.count == 5
 
     def test_both_leading_and_trailing(self, sample_string_df):
         """Test detection of both leading and trailing spaces"""
@@ -63,10 +63,10 @@ class TestTrailingCharactersCheck:
         )
         results = pytest.helpers.run_check_sync(check)
 
-        # Should find trailing underscores
+        # Should find trailing underscores (hello_, world_, data_, text_, value_)
         assert_has_result_type(results, 'TRAILING_CHARACTERS')
         result = [r for r in results if r.type == 'TRAILING_CHARACTERS'][0]
-        assert result.count == 6
+        assert result.count == 5
 
     def test_multiple_patterns(self):
         """Test multiple custom patterns"""

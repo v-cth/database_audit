@@ -26,6 +26,7 @@ __pycache__/
 #audit_config.yaml
 audit_results/
 
+.hypothesis
 
 # Environments
 audit_env
