@@ -127,13 +127,50 @@ database:
     default_database: "MY_DB"
     default_schema: "MY_SCHEMA"
     account: "ACCOUNT"
-    USER: "USER"
+    user: "USER"
     password: "PWD"
 
 tables:
   - name: users
   - name: orders
 ```
+
+### Using Environment Variables (Recommended for Credentials)
+
+**Protect sensitive credentials by using environment variables instead of hardcoding them in YAML:**
+
+#### Supported Formats
+```yaml
+database:
+  backend: "snowflake"
+  connection_params:
+    default_database: "MY_DB"
+    default_schema: "MY_SCHEMA"
+    account: "${SNOWFLAKE_ACCOUNT}"              # Basic format
+    user: "$SNOWFLAKE_USER"                      # Short format
+    password: "${SNOWFLAKE_PASSWORD}"
+    warehouse: "${SNOWFLAKE_WAREHOUSE:-COMPUTE_WH}"  # With default value
+```
+
+#### Usage
+```bash
+# Set environment variables
+export SNOWFLAKE_ACCOUNT="OOQYWEC-ND51384"
+export SNOWFLAKE_USER="my_user"
+export SNOWFLAKE_PASSWORD="my_password"
+
+# Run audit
+dw_auditor run
+
+# Or inline
+SNOWFLAKE_PASSWORD="secret" dw_auditor run
+```
+
+**Benefits:**
+- ✅ Keep credentials out of version control
+- ✅ Different credentials per environment (dev/staging/prod)
+- ✅ Works with CI/CD secrets management
+- ✅ Supports default values: `${VAR:-default}`
 
 ### Multi-Schema Auditing
 ```yaml
@@ -215,7 +252,8 @@ dw_auditor run --insight             # Profiling only
 
 ### Authentication
 **BigQuery**: Use `gcloud auth application-default login` or set `credentials_path` in config
-**Snowflake**: Check username/password or use `authenticator: externalbrowser` for SSO
+**Snowflake**: Use environment variables for credentials (see Configuration Examples) or `authenticator: externalbrowser` for SSO
+**Security**: Always use environment variables for passwords - never commit credentials to git
 
 ### Performance
 - Sampling is always database-native via Ibis (fast & secure)
@@ -277,7 +315,7 @@ security:
 - Raw column data
 - Full table contents
 - PII values
-- Credentials
+- Credentials (use environment variables to keep them out of config files)
 
 ---
 
