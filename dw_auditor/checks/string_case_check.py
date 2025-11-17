@@ -37,7 +37,7 @@ class CaseDuplicatesCheck(BaseCheck):
         """Validate case duplicates parameters"""
         self.config = CaseDuplicatesParams(**self.params)
 
-    async def run(self) -> List[CheckResult]:
+    def run(self) -> List[CheckResult]:
         """Execute case duplicates check
 
         Returns:

@@ -92,7 +92,7 @@ class BaseCheck(ABC):
         pass
 
     @abstractmethod
-    async def run(self) -> List[CheckResult]:
+    def run(self) -> List[CheckResult]:
         """Execute the check and return results
 
         Returns:

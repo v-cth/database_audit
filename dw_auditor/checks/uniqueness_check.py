@@ -40,7 +40,7 @@ class UniquenessCheck(BaseCheck):
         """Validate uniqueness parameters"""
         self.config = UniquenessParams(**self.params)
 
-    async def run(self) -> List[CheckResult]:
+    def run(self) -> List[CheckResult]:
         """Execute uniqueness check
 
         Returns:

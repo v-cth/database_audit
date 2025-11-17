@@ -66,7 +66,7 @@ class RegexPatternCheck(BaseCheck):
         """Validate regex pattern parameters"""
         self.config = RegexPatternParams(**self.params)
 
-    async def run(self) -> List[CheckResult]:
+    def run(self) -> List[CheckResult]:
         """Execute regex pattern check
 
         Returns:

@@ -63,7 +63,7 @@ class NumericRangeCheck(BaseCheck):
         """Validate numeric range parameters"""
         self.config = NumericRangeParams(**self.params)
 
-    async def run(self) -> List[CheckResult]:
+    def run(self) -> List[CheckResult]:
         """Execute numeric range validation
 
         Returns:

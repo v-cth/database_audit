@@ -37,7 +37,7 @@ class TimestampPatternCheck(BaseCheck):
         """Validate timestamp pattern parameters"""
         self.config = TimestampPatternParams(**self.params)
 
-    async def run(self) -> List[CheckResult]:
+    def run(self) -> List[CheckResult]:
         """Execute timestamp pattern check
 
         Returns:
