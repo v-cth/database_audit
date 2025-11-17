@@ -6,6 +6,8 @@ from typing import Dict, List, Union, Optional, Any, Literal
 from pathlib import Path
 import yaml
 import fnmatch
+import os
+import re
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 
@@ -205,6 +207,65 @@ class AuditConfigModel(BaseModel):
 
 
 # ============================================================================
+# Environment Variable Substitution
+# ============================================================================
+
+def _substitute_env_vars(value: Any) -> Any:
+    """
+    Recursively substitute environment variables in configuration values
+
+    Supports multiple formats:
+    - ${VAR_NAME}
+    - $VAR_NAME
+    - ${VAR_NAME:-default_value}  (with default)
+
+    Args:
+        value: Configuration value (can be str, dict, list, or other)
+
+    Returns:
+        Value with environment variables substituted
+    """
+    if isinstance(value, str):
+        # Pattern: ${VAR_NAME} or ${VAR_NAME:-default}
+        def replace_with_default(match):
+            var_name = match.group(1)
+            default_value = match.group(2) if match.group(2) else None
+            env_value = os.environ.get(var_name)
+            if env_value is not None:
+                return env_value
+            elif default_value is not None:
+                return default_value
+            else:
+                raise ValueError(f"Environment variable '{var_name}' is not set and no default value provided")
+
+        # First try ${VAR_NAME:-default} pattern
+        value = re.sub(r'\$\{([A-Za-z_][A-Za-z0-9_]*)(:-([^}]*))?\}', replace_with_default, value)
+
+        # Then try $VAR_NAME pattern (simpler, no default)
+        def replace_simple(match):
+            var_name = match.group(1)
+            env_value = os.environ.get(var_name)
+            if env_value is not None:
+                return env_value
+            else:
+                raise ValueError(f"Environment variable '{var_name}' is not set")
+
+        value = re.sub(r'\$([A-Za-z_][A-Za-z0-9_]*)', replace_simple, value)
+
+        return value
+
+    elif isinstance(value, dict):
+        return {k: _substitute_env_vars(v) for k, v in value.items()}
+
+    elif isinstance(value, list):
+        return [_substitute_env_vars(item) for item in value]
+
+    else:
+        # Return other types as-is (int, bool, None, etc.)
+        return value
+
+
+# ============================================================================
 # AuditConfig Class (wrapper around Pydantic model)
 # ============================================================================
 
@@ -213,6 +274,9 @@ class AuditConfig:
 
     def __init__(self, config_dict: Dict):
         """Initialize from dictionary (parsed from YAML) with Pydantic validation"""
+        # Substitute environment variables
+        config_dict = _substitute_env_vars(config_dict)
+
         # Validate config using Pydantic model
         try:
             self._model = AuditConfigModel(**config_dict)
@@ -343,14 +407,20 @@ class AuditConfig:
             base_config = self.column_check_defaults.get('string', {}).copy()
         elif 'datetime' in dtype_key or 'date' in dtype_key:
             base_config = self.column_check_defaults.get('datetime', {}).copy()
+        elif 'int' in dtype_key or 'float' in dtype_key or 'decimal' in dtype_key or 'numeric' in dtype_key:
+            base_config = self.column_check_defaults.get('numeric', {}).copy()
         else:
             base_config = {}
 
-        # Apply table-level overrides
-        if table_name in self.column_check_overrides:
-            table_config = self.column_check_overrides[table_name]
-            if column_name in table_config:
-                column_overrides = table_config[column_name]
+        # Apply table-level overrides (case-insensitive lookup)
+        # Normalize to lowercase for lookup since Snowflake returns uppercase column names
+        table_name_lower = table_name.lower()
+        column_name_lower = column_name.lower()
+
+        if table_name_lower in self.column_check_overrides:
+            table_config = self.column_check_overrides[table_name_lower]
+            if column_name_lower in table_config:
+                column_overrides = table_config[column_name_lower]
                 base_config.update(column_overrides)
 
         return base_config
@@ -375,16 +445,20 @@ class AuditConfig:
             base_config = self.column_insights_defaults.get('datetime', {}).copy()
         elif 'bool' in dtype_key:
             base_config = self.column_insights_defaults.get('boolean', {}).copy()
-        elif 'int' in dtype_key or 'float' in dtype_key:
+        elif 'int' in dtype_key or 'float' in dtype_key or 'decimal' in dtype_key or 'numeric' in dtype_key:
             base_config = self.column_insights_defaults.get('numeric', {}).copy()
         else:
             base_config = {}
 
-        # Apply table-level overrides
-        if table_name in self.column_insights_overrides:
-            table_config = self.column_insights_overrides[table_name]
-            if column_name in table_config:
-                column_overrides = table_config[column_name]
+        # Apply table-level overrides (case-insensitive lookup)
+        # Normalize to lowercase for lookup since Snowflake returns uppercase column names
+        table_name_lower = table_name.lower()
+        column_name_lower = column_name.lower()
+
+        if table_name_lower in self.column_insights_overrides:
+            table_config = self.column_insights_overrides[table_name_lower]
+            if column_name_lower in table_config:
+                column_overrides = table_config[column_name_lower]
                 base_config.update(column_overrides)
 
         return base_config
