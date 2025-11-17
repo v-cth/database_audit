@@ -2,24 +2,23 @@
 Insight execution API - runs insights by name via the registry
 """
 
-import asyncio
 from typing import List, Optional, Any, Dict
 import polars as pl
-from .insight_registry import get_insight, insight_exists
+from .insight_registry import get_insight, insight_exists, list_insights
 from .base_insight import InsightResult
 
 
-async def run_insight(
+def run_insight_sync(
     insight_name: str,
     df: pl.DataFrame,
     col: str,
     **params
 ) -> List[InsightResult]:
-    """Run a column insight by name (async version)
+    """Run a column insight by name
 
     This is the primary API for executing insights. It looks up the insight
     in the registry, instantiates it with the provided parameters, and
-    executes it asynchronously.
+    executes it.
 
     Args:
         insight_name: Name of the insight to run (e.g., "top_values")
@@ -35,7 +34,7 @@ async def run_insight(
         ValidationError: If parameters are invalid for the insight
 
     Example:
-        results = await run_insight(
+        results = run_insight_sync(
             "top_values",
             df,
             col="category",
@@ -49,60 +48,6 @@ async def run_insight(
     insight_class = get_insight(insight_name)
 
     if insight_class is None:
-        available = ", ".join(sorted(get_insight.__globals__['INSIGHT_REGISTRY'].keys()))
-        raise ValueError(
-            f"Unknown insight: '{insight_name}'. "
-            f"Available insights: {available}"
-        )
-
-    # Instantiate insight (this validates params via Pydantic)
-    insight_instance = insight_class(
-        df=df,
-        col=col,
-        **params
-    )
-
-    # Execute insight
-    return await insight_instance.generate()
-
-
-def run_insight_sync(
-    insight_name: str,
-    df: pl.DataFrame,
-    col: str,
-    **params
-) -> List[InsightResult]:
-    """Run a column insight by name (synchronous version)
-
-    This is a convenience wrapper around run_insight() that handles the
-    asyncio event loop. Use this when calling from synchronous code.
-
-    Args:
-        insight_name: Name of the insight to run
-        df: Polars DataFrame to analyze
-        col: Column name to analyze
-        **params: Insight-specific parameters
-
-    Returns:
-        List of InsightResult objects representing computed insights
-
-    Raises:
-        ValueError: If insight_name is not registered
-        ValidationError: If parameters are invalid for the insight
-
-    Example:
-        results = run_insight_sync(
-            "top_values",
-            df,
-            col="category",
-            limit=10
-        )
-    """
-    # Look up insight class in registry
-    insight_class = get_insight(insight_name)
-
-    if insight_class is None:
-        from .insight_registry import list_insights
         available = ", ".join(sorted(list_insights()))
         raise ValueError(
             f"Unknown insight: '{insight_name}'. "
@@ -116,16 +61,16 @@ def run_insight_sync(
         **params
     )
 
-    # Execute insight (now synchronous)
+    # Execute insight
     return insight_instance.generate()
 
 
-async def run_multiple_insights(
+def run_multiple_insights(
     insights: List[Dict[str, Any]],
     df: pl.DataFrame,
     col: str
 ) -> Dict[str, List[InsightResult]]:
-    """Run multiple insights on the same column concurrently
+    """Run multiple insights on the same column sequentially
 
     Args:
         insights: List of insight configurations, each with 'name' and optional params
@@ -141,30 +86,20 @@ async def run_multiple_insights(
             {'name': 'max'},
             {'name': 'top_values', 'limit': 10}
         ]
-        results = await run_multiple_insights(insights, df, col="price")
+        results = run_multiple_insights(insights, df, col="price")
     """
-    tasks = []
-    insight_names = []
+    output = {}
 
     for insight_config in insights:
         insight_name = insight_config['name']
         params = {k: v for k, v in insight_config.items() if k != 'name'}
 
-        task = run_insight(insight_name, df, col, **params)
-        tasks.append(task)
-        insight_names.append(insight_name)
-
-    # Run all insights concurrently
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    # Package results
-    output = {}
-    for name, result in zip(insight_names, results):
-        if isinstance(result, Exception):
+        try:
+            result = run_insight_sync(insight_name, df, col, **params)
+            output[insight_name] = result
+        except Exception as e:
             # Store exception for error handling
-            output[name] = result
-        else:
-            output[name] = result
+            output[insight_name] = e
 
     return output
 

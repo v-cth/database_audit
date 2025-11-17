@@ -43,7 +43,7 @@ class FutureDateCheck(BaseCheck):
         """Validate future date parameters"""
         self.config = FutureDateParams(**self.params)
 
-    async def run(self) -> List[CheckResult]:
+    def run(self) -> List[CheckResult]:
         """Execute future date check
 
         Returns:

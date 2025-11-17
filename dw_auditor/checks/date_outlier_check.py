@@ -59,7 +59,7 @@ class DateOutlierCheck(BaseCheck):
         if self.config.min_year >= self.config.max_year:
             raise ValueError(f"min_year ({self.config.min_year}) must be less than max_year ({self.config.max_year})")
 
-    async def run(self) -> List[CheckResult]:
+    def run(self) -> List[CheckResult]:
         """Execute date outlier check
 
         Returns:

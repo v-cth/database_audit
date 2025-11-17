@@ -45,7 +45,7 @@ class LeadingCharactersCheck(BaseCheck):
             # Convert string to list of individual characters
             self.config.patterns = list(self.config.patterns)
 
-    async def run(self) -> List[CheckResult]:
+    def run(self) -> List[CheckResult]:
         """Execute leading characters check
 
         Returns:

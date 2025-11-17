@@ -56,7 +56,7 @@ class DateRangeCheck(BaseCheck):
         """Validate date range parameters"""
         self.config = DateRangeParams(**self.params)
 
-    async def run(self) -> List[CheckResult]:
+    def run(self) -> List[CheckResult]:
         """Execute date range check
 
         Returns:

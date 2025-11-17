@@ -2,25 +2,24 @@
 Check execution API - runs checks by name via the registry
 """
 
-import asyncio
 from typing import List, Optional, Any, Dict
 import polars as pl
 from .registry import get_check, check_exists
 from .base_check import CheckResult
 
 
-async def run_check(
+def run_check_sync(
     check_name: str,
     df: pl.DataFrame,
     col: str,
     primary_key_columns: Optional[List[str]] = None,
     **params
 ) -> List[CheckResult]:
-    """Run a data quality check by name (async version)
+    """Run a data quality check by name
 
     This is the primary API for executing checks. It looks up the check
     in the registry, instantiates it with the provided parameters, and
-    executes it asynchronously.
+    executes it.
 
     Args:
         check_name: Name of the check to run (e.g., "numeric_range")
@@ -37,7 +36,7 @@ async def run_check(
         ValidationError: If parameters are invalid for the check
 
     Example:
-        results = await run_check(
+        results = run_check_sync(
             "numeric_range",
             df,
             col="price",
@@ -67,55 +66,16 @@ async def run_check(
     )
 
     # Execute check
-    return await check_instance.run()
+    return check_instance.run()
 
 
-def run_check_sync(
-    check_name: str,
-    df: pl.DataFrame,
-    col: str,
-    primary_key_columns: Optional[List[str]] = None,
-    **params
-) -> List[CheckResult]:
-    """Run a data quality check by name (synchronous version)
-
-    This is a convenience wrapper around run_check() that handles the
-    asyncio event loop. Use this when calling from synchronous code.
-
-    Args:
-        check_name: Name of the check to run
-        df: Polars DataFrame to check
-        col: Column name to check
-        primary_key_columns: Optional list of primary key columns for context
-        **params: Check-specific parameters
-
-    Returns:
-        List of CheckResult objects representing issues found
-
-    Raises:
-        ValueError: If check_name is not registered
-        ValidationError: If parameters are invalid for the check
-
-    Example:
-        results = run_check_sync(
-            "numeric_range",
-            df,
-            col="price",
-            greater_than=0
-        )
-    """
-    return asyncio.run(
-        run_check(check_name, df, col, primary_key_columns, **params)
-    )
-
-
-async def run_multiple_checks(
+def run_multiple_checks(
     checks: List[Dict[str, Any]],
     df: pl.DataFrame,
     col: str,
     primary_key_columns: Optional[List[str]] = None
 ) -> Dict[str, List[CheckResult]]:
-    """Run multiple checks on the same column concurrently
+    """Run multiple checks on the same column sequentially
 
     Args:
         checks: List of check configurations, each with 'name' and optional params
@@ -131,30 +91,20 @@ async def run_multiple_checks(
             {'name': 'numeric_range', 'greater_than': 0},
             {'name': 'numeric_range', 'less_than': 100}
         ]
-        results = await run_multiple_checks(checks, df, col="price")
+        results = run_multiple_checks(checks, df, col="price")
     """
-    tasks = []
-    check_names = []
+    output = {}
 
     for check_config in checks:
         check_name = check_config['name']
         params = {k: v for k, v in check_config.items() if k != 'name'}
 
-        task = run_check(check_name, df, col, primary_key_columns, **params)
-        tasks.append(task)
-        check_names.append(check_name)
-
-    # Run all checks concurrently
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    # Package results
-    output = {}
-    for name, result in zip(check_names, results):
-        if isinstance(result, Exception):
+        try:
+            result = run_check_sync(check_name, df, col, primary_key_columns, **params)
+            output[check_name] = result
+        except Exception as e:
             # Store exception for error handling
-            output[name] = result
-        else:
-            output[name] = result
+            output[check_name] = e
 
     return output
 
