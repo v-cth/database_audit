@@ -86,7 +86,7 @@ class TypeConverter:
         total_non_null: int
     ) -> Optional[Tuple[pl.DataFrame, Dict]]:
         """
-        Try conversion types in sequence: int → float → datetime → date
+        Try conversion types in sequence: int → float → date → datetime
 
         Returns:
             Tuple of (modified DataFrame, log entry) if successful, None otherwise
@@ -109,20 +109,20 @@ class TypeConverter:
         if result:
             return result
 
-        # 3. Try DATETIME conversion
-        result = self._try_type_conversion(
-            df, col, total_non_null,
-            converter_func=lambda s: s.str.to_datetime(strict=False),
-            type_name='datetime'
-        )
-        if result:
-            return result
-
-        # 4. Try DATE conversion
+        # 3. Try DATE conversion (before datetime, as it's more specific)
         result = self._try_type_conversion(
             df, col, total_non_null,
             converter_func=lambda s: s.str.to_date(strict=False),
             type_name='date'
+        )
+        if result:
+            return result
+
+        # 4. Try DATETIME conversion
+        result = self._try_type_conversion(
+            df, col, total_non_null,
+            converter_func=lambda s: s.str.to_datetime(strict=False),
+            type_name='datetime'
         )
         if result:
             return result

@@ -45,6 +45,10 @@ class CaseDuplicatesCheck(BaseCheck):
         """
         results = []
 
+        # Early return for empty DataFrame or all null values
+        if len(self.df) == 0 or self.df[self.col].null_count() == len(self.df):
+            return results
+
         # Get non-null values and group by lowercase
         case_analysis = (
             self.df.select(pl.col(self.col))

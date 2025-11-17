@@ -2,7 +2,7 @@
 Numeric range validation check
 """
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, model_validator
 from typing import Optional, List
 from ..core.base_check import BaseCheck, CheckResult
 from ..core.registry import register_check
@@ -25,15 +25,17 @@ class NumericRangeParams(BaseModel):
     less_than: Optional[float] = None
     less_than_or_equal: Optional[float] = None
 
-    @validator('less_than', 'less_than_or_equal', 'greater_than', 'greater_than_or_equal')
-    def at_least_one_param(cls, v, values):
+    @model_validator(mode='after')
+    def at_least_one_param(self):
         """Ensure at least one range parameter is provided"""
-        # If this is the last field and nothing has been set yet, raise error
-        all_values = list(values.values()) + ([v] if v is not None else [])
-        if not any(val is not None for val in all_values):
-            if len(values) == 3:  # We're on the last field
-                raise ValueError("At least one range parameter must be provided")
-        return v
+        if all(v is None for v in [
+            self.greater_than,
+            self.greater_than_or_equal,
+            self.less_than,
+            self.less_than_or_equal
+        ]):
+            raise ValueError("At least one range parameter must be provided")
+        return self
 
 
 @register_check("numeric_range")
