@@ -1,0 +1,343 @@
+"""
+Databricks adapter implementation
+"""
+
+import ibis
+import polars as pl
+import logging
+import os
+from typing import Optional, List, Dict, Any
+
+from .base import BaseAdapter
+from .utils import qualify_query_tables, apply_sampling
+from .metadata_helpers import should_skip_query, split_columns_pk_dataframe, build_table_filters
+
+logger = logging.getLogger(__name__)
+
+
+class DatabricksAdapter(BaseAdapter):
+    """Databricks-specific adapter with Unity Catalog and cross-catalog support"""
+
+    def __init__(self, **connection_params):
+        super().__init__(**connection_params)
+        self.source_catalog = connection_params.get('source_catalog')
+
+    def connect(self) -> ibis.BaseBackend:
+        """Establish Databricks connection with OAuth/AAD or token authentication"""
+        if self.conn is not None:
+            return self.conn
+
+        # Map unified naming to Databricks-specific terms
+        default_database = self.connection_params.get('default_database')  # Databricks catalog
+        default_schema = self.connection_params.get('default_schema', 'default')  # Databricks schema
+
+        # Connection parameters
+        server_hostname = self.connection_params.get('server_hostname')
+        http_path = self.connection_params.get('http_path')
+
+        # Authentication parameters (priority: auth_type → access_token → env vars)
+        auth_type = self.connection_params.get('auth_type')
+        access_token = self.connection_params.get('access_token')
+        username = self.connection_params.get('username')
+        password = self.connection_params.get('password')
+
+        # Validate required parameters
+        if not server_hostname:
+            # Try environment variable
+            server_hostname = os.environ.get('DATABRICKS_SERVER_HOSTNAME')
+            if not server_hostname:
+                raise ValueError("Databricks requires 'server_hostname' (or env: DATABRICKS_SERVER_HOSTNAME)")
+
+        if not http_path:
+            # Try environment variable
+            http_path = os.environ.get('DATABRICKS_HTTP_PATH')
+            if not http_path:
+                raise ValueError("Databricks requires 'http_path' (or env: DATABRICKS_HTTP_PATH)")
+
+        conn_kwargs = {
+            'server_hostname': server_hostname,
+            'http_path': http_path,
+        }
+
+        # Set authentication
+        if auth_type:
+            conn_kwargs['auth_type'] = auth_type
+            if auth_type in ['databricks-oauth', 'azure-oauth', 'oauth']:
+                # OAuth/AAD authentication - no token needed, uses browser flow
+                logger.info("Using OAuth/AAD authentication")
+            if username and password:
+                conn_kwargs['username'] = username
+                conn_kwargs['password'] = password
+        elif access_token:
+            conn_kwargs['access_token'] = access_token
+            logger.info("Using Personal Access Token authentication")
+        else:
+            # Try environment variable
+            access_token = os.environ.get('DATABRICKS_TOKEN')
+            if access_token:
+                conn_kwargs['access_token'] = access_token
+                logger.info("Using Personal Access Token from environment")
+            else:
+                raise ValueError("Databricks requires authentication: 'auth_type' for OAuth/AAD or 'access_token' for token-based auth")
+
+        # Set default catalog and schema if provided
+        if default_database:
+            conn_kwargs['catalog'] = default_database
+        if default_schema:
+            conn_kwargs['schema'] = default_schema
+
+        self.conn = ibis.databricks.connect(**conn_kwargs)
+        logger.info(f"Connected to DATABRICKS (catalog={default_database}, schema={default_schema})")
+        return self.conn
+
+    def _fetch_all_metadata(self, schema: str, table_names: Optional[List[str]] = None, project_id: Optional[str] = None):
+        """Fetch metadata for schema in fewer queries (filtered by table_names if provided)
+
+        Args:
+            schema: Schema name
+            table_names: Optional list of specific table names to fetch (if None, fetch all)
+            project_id: Optional catalog name for cross-catalog queries (Databricks uses catalogs, not projects)
+        """
+        if self.conn is None:
+            self.connect()
+
+        # Use provided project_id (catalog) or fall back to source_catalog or default_database
+        catalog_for_metadata = project_id or self.source_catalog or self.connection_params.get('default_database')
+
+        if not catalog_for_metadata:
+            raise ValueError("Databricks requires a catalog name for metadata queries")
+
+        cache_key = (project_id, schema)
+
+        # Initialize cache entry if it doesn't exist
+        if cache_key not in self._metadata_cache:
+            self._metadata_cache[cache_key] = {
+                'tables_df': None,
+                'columns_df': None,
+                'pk_df': None,
+                'rowcount_df': None,
+                'fetched_tables': None if table_names is None else set(table_names)
+            }
+
+        cache_entry = self._metadata_cache[cache_key]
+
+        # Build WHERE clause filters for table filtering
+        filters = build_table_filters(table_names)
+        table_filter_tables = filters['tables']
+        table_filter_only = filters['only']
+        table_filter_qualified = filters['qualified']
+        table_filter_columns = filters['columns']
+
+        # Query 1: Tables metadata from INFORMATION_SCHEMA
+        try:
+            tables_query = f"""
+            SELECT
+                '{schema}' AS schema_name,
+                table_name,
+                table_type,
+                created AS creation_time,
+                comment AS description
+            FROM `{catalog_for_metadata}`.`{schema}`.INFORMATION_SCHEMA.TABLES
+            WHERE table_schema = '{schema}'
+                AND table_type IN ('BASE TABLE', 'TABLE', 'VIEW', 'MANAGED', 'EXTERNAL')
+                {table_filter_tables}
+            ORDER BY table_name
+            """
+            logger.debug(f"[query] Databricks metadata tables query:\n{tables_query}")
+            new_tables_df = self.conn.sql(tables_query).to_polars()
+
+            # Store in cache entry
+            cache_entry['tables_df'] = new_tables_df
+
+            # Databricks doesn't have a direct equivalent to __TABLES__ for row counts
+            # Row counts need to be fetched separately (or we return None)
+            cache_entry['rowcount_df'] = pl.DataFrame({
+                'schema_name': [],
+                'table_id': [],
+                'row_count': [],
+                'size_bytes': [],
+                'created_at': [],
+                'modified_at': []
+            })
+        except Exception as e:
+            logger.error(f"Could not fetch tables metadata: {e}")
+            cache_entry['tables_df'] = pl.DataFrame()
+            cache_entry['rowcount_df'] = pl.DataFrame()
+
+        # Query 2: Columns + Primary Keys (single joined query), then split to two frames
+        try:
+            # Note: Unity Catalog supports PRIMARY KEY constraints in INFORMATION_SCHEMA
+            columns_pk_query = f"""
+            WITH pk AS (
+                SELECT
+                    tc.table_name,
+                    kcu.column_name,
+                    kcu.ordinal_position AS pk_ordinal_position
+                FROM `{catalog_for_metadata}`.`{schema}`.INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+                JOIN `{catalog_for_metadata}`.`{schema}`.INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+                    ON tc.constraint_name = kcu.constraint_name
+                    AND tc.table_name = kcu.table_name
+                    AND tc.table_schema = kcu.table_schema
+                WHERE tc.constraint_type = 'PRIMARY KEY'
+                    AND tc.table_schema = '{schema}'
+                    {table_filter_qualified}
+            )
+            SELECT
+                '{schema}' AS schema_name,
+                c.table_name,
+                c.column_name,
+                c.data_type,
+                c.ordinal_position,
+                c.comment AS description,
+                CASE WHEN pk.column_name IS NOT NULL THEN TRUE ELSE FALSE END AS is_pk,
+                pk.pk_ordinal_position
+            FROM `{catalog_for_metadata}`.`{schema}`.INFORMATION_SCHEMA.COLUMNS c
+            LEFT JOIN pk
+                ON c.table_name = pk.table_name AND c.column_name = pk.column_name
+            WHERE c.table_schema = '{schema}' {table_filter_columns}
+            ORDER BY c.table_name, c.ordinal_position
+            """
+            logger.debug(f"[query] Databricks metadata columns+PK query:\n{columns_pk_query}")
+            combined_df = self.conn.sql(columns_pk_query).to_polars()
+
+            # Split into columns and PK DataFrames
+            base_columns_df, new_pk_df = split_columns_pk_dataframe(
+                combined_df,
+                is_pk_column="is_pk",
+                pk_ordinal_column="pk_ordinal_position"
+            )
+
+            # Add Databricks-specific columns (just description for now)
+            new_columns_df = base_columns_df.select([
+                pl.col("schema_name"),
+                pl.col("table_name"),
+                pl.col("column_name"),
+                pl.col("data_type"),
+                pl.col("ordinal_position"),
+                pl.col("description"),
+            ])
+
+            # Store in cache entry
+            cache_entry['columns_df'] = new_columns_df
+            cache_entry['pk_df'] = new_pk_df
+        except Exception as e:
+            logger.error(f"Could not fetch columns/primary key metadata: {e}")
+            cache_entry['columns_df'] = pl.DataFrame()
+            cache_entry['pk_df'] = pl.DataFrame()
+
+        # Update fetched_tables tracking
+        cache_entry['fetched_tables'] = None if table_names is None else set(table_names)
+
+    def get_table(self, table_name: str, schema: Optional[str] = None, project_id: Optional[str] = None) -> ibis.expr.types.Table:
+        """Get Databricks table reference
+
+        Args:
+            table_name: Name of the table
+            schema: Schema name
+            project_id: Optional catalog name for cross-catalog queries
+        """
+        if self.conn is None:
+            self.connect()
+
+        # Determine the catalog to use (priority: parameter > source_catalog > default_database)
+        target_catalog = project_id or self.source_catalog
+        schema_name = schema or self.connection_params.get('default_schema')
+
+        # Cross-catalog query support
+        if target_catalog and target_catalog != self.connection_params.get('default_database'):
+            if not schema_name:
+                raise ValueError("schema is required for Databricks cross-catalog queries")
+
+            # Use three-level namespace: catalog.schema.table
+            full_table_name = f"`{target_catalog}`.`{schema_name}`.`{table_name}`"
+            return self.conn.sql(f"SELECT * FROM {full_table_name}")
+
+        # Normal flow (same catalog)
+        if schema_name:
+            full_name = f"{schema_name}.{table_name}"
+            return self.conn.table(full_name)
+        else:
+            return self.conn.table(table_name)
+
+    def execute_query(
+        self,
+        table_name: str,
+        schema: Optional[str] = None,
+        limit: Optional[int] = None,
+        custom_query: Optional[str] = None,
+        sample_size: Optional[int] = None,
+        sampling_method: str = 'random',
+        sampling_key_column: Optional[str] = None,
+        columns: Optional[List[str]] = None,
+        project_id: Optional[str] = None
+    ) -> pl.DataFrame:
+        """Execute Databricks query"""
+        if self.conn is None:
+            self.connect()
+
+        if custom_query:
+            schema_name = schema or self.connection_params.get('default_schema')
+            target_catalog = project_id or self.source_catalog
+
+            # Qualify table references in custom query
+            if target_catalog and schema_name:
+                custom_query = qualify_query_tables(
+                    custom_query, table_name, schema_name, target_catalog
+                )
+            elif schema_name:
+                custom_query = qualify_query_tables(
+                    custom_query, table_name, schema_name
+                )
+
+            logger.debug(f"[query] Databricks custom query:\n{custom_query}")
+            result = self.conn.sql(custom_query)
+        else:
+            table = self.get_table(table_name, schema, project_id)
+
+            if columns:
+                table = table.select(columns)
+
+            if sample_size:
+                table = apply_sampling(table, sample_size, sampling_method, sampling_key_column)
+            elif limit:
+                table = table.limit(limit)
+
+            result = table
+
+            # Log the compiled SQL query
+            try:
+                compiled_query = ibis.to_sql(result)
+                logger.debug(f"[query] Databricks generated query:\n{compiled_query}")
+            except Exception as e:
+                logger.debug(f"[query] Could not compile query to SQL: {e}")
+
+        return result.to_polars()
+
+    def estimate_bytes_scanned(
+        self,
+        table_name: str,
+        schema: Optional[str] = None,
+        custom_query: Optional[str] = None,
+        sample_size: Optional[int] = None,
+        sampling_method: str = 'random',
+        sampling_key_column: Optional[str] = None,
+        columns: Optional[List[str]] = None
+    ) -> Optional[int]:
+        """Databricks doesn't support cost estimation like BigQuery"""
+        logger.debug("Cost estimation not supported for Databricks")
+        return None
+
+    def list_tables(self, schema: Optional[str] = None) -> List[str]:
+        """List tables using Ibis native method"""
+        if self.conn is None:
+            self.connect()
+
+        if schema:
+            return self.conn.list_tables(database=schema)
+        else:
+            return self.conn.list_tables()
+
+    def _build_table_uid(self, table_name: str, schema: str) -> str:
+        """Build Databricks table UID: catalog.schema.table"""
+        catalog = self.source_catalog or self.connection_params.get('default_database')
+        return f"{catalog}.{schema}.{table_name}"
