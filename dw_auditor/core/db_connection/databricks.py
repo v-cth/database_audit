@@ -9,42 +9,11 @@ import os
 from typing import Optional, List, Dict, Any
 
 from .base import BaseAdapter
-from .utils import apply_sampling
+from .utils import apply_sampling, qualify_query_tables
 from .metadata_helpers import should_skip_query, split_columns_pk_dataframe, build_table_filters
 
 logger = logging.getLogger(__name__)
 
-
-def qualify_databricks_query_tables(query: str, table_name: str, schema: str, catalog: str) -> str:
-    """
-    Rewrite SQL query to use fully-qualified Databricks table names
-
-    Databricks requires each part to be backticked separately: `catalog`.`schema`.`table`
-    (not `catalog.schema.table` as a single identifier)
-
-    Args:
-        query: SQL query string
-        table_name: Unqualified table name to replace
-        schema: Schema name
-        catalog: Catalog name
-
-    Returns:
-        Modified query with qualified table names
-    """
-    import re
-
-    # Create fully qualified name with each part backticked separately
-    full_table_name = f"`{catalog}`.`{schema}`.`{table_name}`"
-
-    # Replace in FROM clauses
-    pattern = r'\bFROM\s+' + re.escape(table_name) + r'\b'
-    query = re.sub(pattern, f'FROM {full_table_name}', query, flags=re.IGNORECASE)
-
-    # Replace in JOIN clauses
-    pattern = r'\bJOIN\s+' + re.escape(table_name) + r'\b'
-    query = re.sub(pattern, f'JOIN {full_table_name}', query, flags=re.IGNORECASE)
-
-    return query
 
 
 class DatabricksAdapter(BaseAdapter):
@@ -122,24 +91,24 @@ class DatabricksAdapter(BaseAdapter):
         logger.info(f"Connected to DATABRICKS (catalog={default_database}, schema={default_schema})")
         return self.conn
 
-    def _fetch_all_metadata(self, schema: str, table_names: Optional[List[str]] = None, project_id: Optional[str] = None):
+    def _fetch_all_metadata(self, schema: str, table_names: Optional[List[str]] = None, database_id: Optional[str] = None):
         """Fetch metadata for schema in fewer queries (filtered by table_names if provided)
 
         Args:
             schema: Schema name
             table_names: Optional list of specific table names to fetch (if None, fetch all)
-            project_id: Optional catalog name for cross-catalog queries (Databricks uses catalogs, not projects)
+            database_id: Optional catalog name for cross-catalog queries (Databricks uses catalogs, not projects)
         """
         if self.conn is None:
             self.connect()
 
-        # Use provided project_id (catalog) or fall back to source_catalog or default_database
-        catalog_for_metadata = project_id or self.source_catalog or self.connection_params.get('default_database')
+        # Use provided database_id (catalog) or fall back to source_catalog or default_database
+        catalog_for_metadata = database_id or self.source_catalog or self.connection_params.get('default_database')
 
         if not catalog_for_metadata:
             raise ValueError("Databricks requires a catalog name for metadata queries")
 
-        cache_key = (project_id, schema)
+        cache_key = (database_id, schema)
 
         # Initialize cache entry if it doesn't exist
         if cache_key not in self._metadata_cache:
@@ -196,15 +165,12 @@ class DatabricksAdapter(BaseAdapter):
 
                     try:
                         # Use DESCRIBE EXTENDED to get detailed table metadata
-                        # Note: Must use raw_sql() instead of sql() to avoid Ibis introspection
                         desc_query = f"DESCRIBE EXTENDED `{catalog_for_metadata}`.`{schema}`.`{table_name}`"
                         logger.debug(f"[query] Databricks table details: {desc_query}")
 
-                        # Execute raw SQL and fetch results manually
-                        with self.conn._safe_raw_sql(desc_query) as cur:
-                            result = cur.fetchall()
-                            columns = [desc[0] for desc in cur.description]
-                            desc_df = pl.DataFrame(result, schema=columns, orient='row')
+                        # Execute raw SQL and fetch results
+                        result = self.conn.raw_sql(desc_query)
+                        desc_df = result.to_polars()
 
                         # Parse the key-value pairs from DESCRIBE EXTENDED output
                         # Format: col_name='Statistics', data_type='1497 bytes, 7 rows'
@@ -324,19 +290,19 @@ class DatabricksAdapter(BaseAdapter):
         # Update fetched_tables tracking
         cache_entry['fetched_tables'] = None if table_names is None else set(table_names)
 
-    def get_table(self, table_name: str, schema: Optional[str] = None, project_id: Optional[str] = None) -> ibis.expr.types.Table:
+    def get_table(self, table_name: str, schema: Optional[str] = None, database_id: Optional[str] = None) -> ibis.expr.types.Table:
         """Get Databricks table reference
 
         Args:
             table_name: Name of the table
             schema: Schema name
-            project_id: Optional catalog name for cross-catalog queries
+            database_id: Optional catalog name for cross-catalog queries
         """
         if self.conn is None:
             self.connect()
 
         # Determine the catalog to use (priority: parameter > source_catalog > default_database)
-        target_catalog = project_id or self.source_catalog
+        target_catalog = database_id or self.source_catalog
         schema_name = schema or self.connection_params.get('default_schema')
 
         # Cross-catalog query support
@@ -365,7 +331,7 @@ class DatabricksAdapter(BaseAdapter):
         sampling_method: str = 'random',
         sampling_key_column: Optional[str] = None,
         columns: Optional[List[str]] = None,
-        project_id: Optional[str] = None
+        database_id: Optional[str] = None
     ) -> pl.DataFrame:
         """Execute Databricks query"""
         if self.conn is None:
@@ -373,24 +339,24 @@ class DatabricksAdapter(BaseAdapter):
 
         if custom_query:
             schema_name = schema or self.connection_params.get('default_schema')
-            target_catalog = project_id or self.source_catalog or self.connection_params.get('default_database')
+            target_catalog = database_id or self.source_catalog or self.connection_params.get('default_database')
 
             # Qualify table references in custom query
             # For Databricks, always use catalog.schema.table format with each part backticked
             if target_catalog and schema_name:
-                custom_query = qualify_databricks_query_tables(
-                    custom_query, table_name, schema_name, target_catalog
+                custom_query = qualify_query_tables(
+                    custom_query, table_name, schema_name, target_catalog, dialect='databricks'
                 )
             elif schema_name:
                 # Fallback if no catalog (shouldn't happen for Databricks)
-                custom_query = qualify_databricks_query_tables(
-                    custom_query, table_name, schema_name, 'main'
+                custom_query = qualify_query_tables(
+                    custom_query, table_name, schema_name, 'main', dialect='databricks'
                 )
 
             logger.debug(f"[query] Databricks custom query:\n{custom_query}")
             result = self.conn.sql(custom_query)
         else:
-            table = self.get_table(table_name, schema, project_id)
+            table = self.get_table(table_name, schema, database_id)
 
             if columns:
                 table = table.select(columns)
