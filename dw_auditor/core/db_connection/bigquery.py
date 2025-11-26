@@ -21,7 +21,8 @@ class BigQueryAdapter(BaseAdapter):
 
     def __init__(self, **connection_params):
         super().__init__(**connection_params)
-        self.source_project_id = connection_params.get('source_project_id')
+        super().__init__(**connection_params)
+
 
     def connect(self) -> ibis.BaseBackend:
         """Establish BigQuery connection"""
@@ -71,8 +72,8 @@ class BigQueryAdapter(BaseAdapter):
         if self.conn is None:
             self.connect()
 
-        # Use provided database_id or fall back to source_project_id or default_database
-        project_for_metadata = database_id or self.source_project_id or self.connection_params.get('default_database')
+        # Use provided database_id or fall back to default_database
+        project_for_metadata = database_id or self.connection_params.get('default_database')
         
         # Ensure project_for_metadata is not empty string
         if not project_for_metadata:
@@ -223,8 +224,8 @@ class BigQueryAdapter(BaseAdapter):
         if self.conn is None:
             self.connect()
 
-        # Determine the project to use (priority: parameter > source_project_id > default_database)
-        target_project = database_id or self.source_project_id
+        # Determine the project to use (priority: parameter > default_database)
+        target_project = database_id or self.connection_params.get('default_database')
         dataset = schema or self.connection_params.get('default_schema')
 
         # Cross-project query support
@@ -251,7 +252,7 @@ class BigQueryAdapter(BaseAdapter):
     ) -> str:
         """Qualify table names in BigQuery custom query"""
         dataset = schema or self.connection_params.get('default_schema')
-        target_project = database_id or self.source_project_id
+        target_project = database_id or self.connection_params.get('default_database')
 
         if target_project and dataset:
             return qualify_query_tables(
@@ -285,9 +286,9 @@ class BigQueryAdapter(BaseAdapter):
             dataset = schema or self.connection_params.get('default_schema')
 
             if custom_query:
-                if self.source_project_id and dataset:
+                if dataset:
                     query = qualify_query_tables(
-                        custom_query, table_name, dataset, self.source_project_id
+                        custom_query, table_name, dataset, self.connection_params.get('default_database')
                     )
                 elif dataset:
                     query = qualify_query_tables(
@@ -296,8 +297,8 @@ class BigQueryAdapter(BaseAdapter):
                 else:
                     query = custom_query
             else:
-                if self.source_project_id and dataset:
-                    full_table_name = f"`{self.source_project_id}.{dataset}.{table_name}`"
+                if dataset:
+                    full_table_name = f"`{self.connection_params.get('default_database')}.{dataset}.{table_name}`"
                 elif dataset:
                     full_table_name = f"`{dataset}.{table_name}`"
                 else:
@@ -332,5 +333,5 @@ class BigQueryAdapter(BaseAdapter):
 
     def _get_database_id(self) -> Optional[str]:
         """Get BigQuery project ID"""
-        return self.source_project_id or self.connection_params.get('default_database')
+        return self.connection_params.get('default_database')
 

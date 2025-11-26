@@ -5,7 +5,7 @@ Minimal configuration template for dw_auditor
 MINIMAL_CONFIG_TEMPLATE = """# Data Warehouse Audit Configuration
 # ============================================================================
 # Quick start configuration - Edit the values below with your database details
-# For full documentation, see: https://github.com/your-repo/database_audit
+# For full documentation, see: https://github.com/v-cth/database_audit
 
 # Database Connection
 # ----------------------------------------------------------------------------
@@ -37,9 +37,6 @@ database:
     # BIGQUERY CONNECTION
     # ==================================================
     # Uncomment and configure if using BigQuery:
-    # backend: "bigquery"
-    # default_database: "your-project-id"
-    # default_schema: "your-dataset"
     # credentials_path: "/path/to/service-account.json"  # Optional
     # If credentials_path not specified, uses: gcloud auth application-default login
 
@@ -47,9 +44,6 @@ database:
     # DATABRICKS CONNECTION (recommended: use environment variables)
     # ==================================================
     # Uncomment and configure if using Databricks:
-    # backend: "databricks"
-    # default_database: "main"            # Your Unity Catalog name
-    # default_schema: "default"           # Your schema name
     # server_hostname: "${DATABRICKS_SERVER_HOSTNAME}"  # e.g., "myworkspace.cloud.databricks.com"
     # http_path: "${DATABRICKS_HTTP_PATH}"              # e.g., "/sql/1.0/warehouses/abc123"
     #
@@ -64,8 +58,7 @@ database:
     # username: "${DATABRICKS_USERNAME}"
     # password: "${DATABRICKS_PASSWORD}"
     #
-    # Cross-catalog queries (optional, similar to BigQuery cross-project):
-    # source_catalog: "other_catalog"  # Query tables from different catalog
+
 
 # Tables to Audit
 # ----------------------------------------------------------------------------
@@ -76,9 +69,6 @@ tables:
   # - orders
   #
   # Cross-schema/database tables:
-  # - name: dim_users
-  #   schema: analytics
-  #
   # - name: events
   #   database: other-project
   #   schema: raw_data
@@ -122,6 +112,10 @@ column_insights:
   defaults:
     numeric:
       quantiles: true  # Calculate percentiles
+      min: true
+      max: true
+      mean: true
+      std_dev: true
     string:
       top_values: 10     # Show 10 most frequent values
 

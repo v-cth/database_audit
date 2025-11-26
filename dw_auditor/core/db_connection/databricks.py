@@ -21,7 +21,8 @@ class DatabricksAdapter(BaseAdapter):
 
     def __init__(self, **connection_params):
         super().__init__(**connection_params)
-        self.source_catalog = connection_params.get('source_catalog')
+        super().__init__(**connection_params)
+
 
     def connect(self) -> ibis.BaseBackend:
         """Establish Databricks connection with OAuth/AAD or token authentication"""
@@ -102,8 +103,8 @@ class DatabricksAdapter(BaseAdapter):
         if self.conn is None:
             self.connect()
 
-        # Use provided database_id (catalog) or fall back to source_catalog or default_database
-        catalog_for_metadata = database_id or self.source_catalog or self.connection_params.get('default_database')
+        # Use provided database_id (catalog) or fall back to default_database
+        catalog_for_metadata = database_id or self.connection_params.get('default_database')
 
         if not catalog_for_metadata:
             raise ValueError("Databricks requires a catalog name for metadata queries")
@@ -301,8 +302,8 @@ class DatabricksAdapter(BaseAdapter):
         if self.conn is None:
             self.connect()
 
-        # Determine the catalog to use (priority: parameter > source_catalog > default_database)
-        target_catalog = database_id or self.source_catalog
+        # Determine the catalog to use (priority: parameter > default_database)
+        target_catalog = database_id or self.connection_params.get('default_database')
         schema_name = schema or self.connection_params.get('default_schema')
 
         # Cross-catalog query support
@@ -331,7 +332,7 @@ class DatabricksAdapter(BaseAdapter):
     ) -> str:
         """Qualify table names in Databricks custom query"""
         schema_name = schema or self.connection_params.get('default_schema')
-        target_catalog = database_id or self.source_catalog or self.connection_params.get('default_database')
+        target_catalog = database_id or self.connection_params.get('default_database')
 
         # For Databricks, always use catalog.schema.table format
         if target_catalog and schema_name:
@@ -347,5 +348,5 @@ class DatabricksAdapter(BaseAdapter):
 
     def _get_database_id(self) -> Optional[str]:
         """Get Databricks catalog name"""
-        return self.source_catalog or self.connection_params.get('default_database')
+        return self.connection_params.get('default_database')
 

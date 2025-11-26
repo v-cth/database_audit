@@ -326,7 +326,7 @@ class BaseAdapter(ABC):
         cache_entry = self._metadata_cache[cache_key]
         columns_df = cache_entry.get('columns_df')
 
-        if columns_df is None:
+        if columns_df is None or columns_df.is_empty():
             return {}
 
         table_cols = columns_df.filter(

@@ -35,11 +35,9 @@ class DatabaseConnection:
             **connection_params: Backend-specific connection parameters
                 For BigQuery cross-project queries:
                     project_id: Your billing project
-                    source_project_id: Source project containing the data (optional)
                     schema: Default dataset/schema
                 For Databricks cross-catalog queries:
                     default_database: Your default catalog
-                    source_catalog: Source catalog containing the data (optional)
                     default_schema: Default schema
         """
         if backend.lower() not in self.SUPPORTED_BACKENDS:
@@ -55,11 +53,8 @@ class DatabaseConnection:
         adapter_class = ADAPTERS[self.backend]
         self.adapter = adapter_class(**connection_params)
 
-        # Expose source_project_id/source_catalog for backward compatibility
-        if hasattr(self.adapter, 'source_project_id'):
-            self.source_project_id = self.adapter.source_project_id
-        if hasattr(self.adapter, 'source_catalog'):
-            self.source_catalog = self.adapter.source_catalog
+
+
 
         self.conn = None
 
