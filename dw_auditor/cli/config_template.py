@@ -27,9 +27,9 @@ database:
     # Note: Use 'export' and single quotes (especially if password contains special chars like $)
     #
     # Then reference them here (keeps credentials out of version control):
-    account: "${SNOWFLAKE_ACCOUNT}"
-    user: "${SNOWFLAKE_USER}"
-    password: "${SNOWFLAKE_PASSWORD}"
+    # account: "${SNOWFLAKE_ACCOUNT}"
+    # user: "${SNOWFLAKE_USER}"
+    # password: "${SNOWFLAKE_PASSWORD}"
     # warehouse: "${SNOWFLAKE_WAREHOUSE:-COMPUTE_WH}"  # Optional, with default value
     # role: "${SNOWFLAKE_ROLE}"                        # Optional
 
