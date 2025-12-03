@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dw-auditor"
-version = "0.2.0"
+version = "0.2.2"
 description = "High-performance data quality auditing for BigQuery, Snowflake & Databricks"
 requires-python = ">=3.10"
 readme = "README.md"
