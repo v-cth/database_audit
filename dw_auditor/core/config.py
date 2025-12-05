@@ -294,14 +294,46 @@ class AuditConfig:
 
     def __init__(self, config_dict: Dict):
         """Initialize from dictionary (parsed from YAML) with Pydantic validation"""
+        # Extract backend before substitution to provide better error messages
+        backend = config_dict.get('database', {}).get('backend', 'unknown')
+
         # Substitute environment variables
-        config_dict = _substitute_env_vars(config_dict)
+        try:
+            config_dict = _substitute_env_vars(config_dict)
+        except ValueError as e:
+            # Provide helpful error message about which backend is configured
+            raise ValueError(
+                f"\n{'='*70}\n"
+                f"Configuration Error: Missing Environment Variable\n"
+                f"{'='*70}\n"
+                f"Backend configured: {backend}\n\n"
+                f"{str(e)}\n\n"
+                f"Please edit your 'audit_config.yaml' file:\n"
+                f"  1. Set the correct backend (bigquery/snowflake/databricks)\n"
+                f"  2. Comment out connection params for backends you're NOT using\n"
+                f"  3. Uncomment and configure params for your chosen backend\n"
+                f"  4. Either set environment variables or hardcode values (not recommended)\n"
+                f"{'='*70}"
+            ) from e
 
         # Validate config using Pydantic model
         try:
             self._model = AuditConfigModel(**config_dict)
         except Exception as e:
-            raise ValueError(f"Configuration validation failed: {str(e)}") from e
+            # Provide helpful error message for backend-specific issues
+            error_msg = str(e)
+            if backend == 'snowflake' and ('account' in error_msg or 'user' in error_msg or 'password' in error_msg):
+                raise ValueError(
+                    f"\nBackend '{backend}' requires: account, user, password\n"
+                    f"Edit 'audit_config.yaml' to uncomment Snowflake params or change backend."
+                ) from e
+            elif backend == 'databricks' and ('server_hostname' in error_msg or 'http_path' in error_msg or 'auth' in error_msg):
+                raise ValueError(
+                    f"\nBackend '{backend}' requires: server_hostname, http_path, authentication\n"
+                    f"Edit 'audit_config.yaml' to uncomment Databricks params or change backend."
+                ) from e
+            else:
+                raise ValueError(f"\nConfiguration error for backend '{backend}':\n{error_msg}\n") from e
 
         # Audit metadata
         self.audit_version = self._model.version
