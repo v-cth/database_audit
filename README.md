@@ -28,7 +28,7 @@ dw-auditor takes a different approach: **built-in checks run automatically** on 
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -63,7 +63,7 @@ open audit_results/audit_run_*/summary.html
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 - **Quality Checks** - Detect trailing spaces, case duplicates, regex patterns, range violations, future dates, and more
 
@@ -80,7 +80,7 @@ open audit_results/audit_run_*/summary.html
 
 ---
 
-## 📋 What You Can Audit
+## What You Can Audit
 
 - **Tables & Views** - Tables, views, and materialized views
 - **Multiple Schemas** - Audit across datasets/databases in one run
@@ -88,7 +88,7 @@ open audit_results/audit_run_*/summary.html
 
 ---
 
-## 🎯 Use Cases
+## Use Cases
 
 - **Data Migration** - Validate data before/after migrations
 - **Post-ETL Quality Gates** - Catch issues in transformation pipelines
@@ -98,7 +98,7 @@ open audit_results/audit_run_*/summary.html
 
 ---
 
-## 📊 Example Output
+## Example Output
 
 ### Console
 ```
@@ -110,8 +110,8 @@ user_id             int64       ✓ OK        0 (0.0%)
 email               string      ✗ ERROR     2 (1.2%)
 created_at          datetime    ✓ OK        0 (0.0%)
 
-🔍 Issues Found:
-⚠️  EMAIL REGEX: 2 values don't match pattern
+Issues Found:
+   EMAIL REGEX: 2 values don't match pattern
    Examples: 'invalid.email@', 'user@domain'
 ```
 
@@ -123,7 +123,7 @@ created_at          datetime    ✓ OK        0 (0.0%)
 
 ---
 
-## ⚙️ Configuration Examples
+## Configuration Examples
 
 ### Minimal Setup
 #### BigQuery
@@ -257,7 +257,7 @@ relationship_detection:
 
 ---
 
-## 🔧 Advanced Usage
+## Advanced Usage
 
 ### Initialize Config
 ```bash
@@ -282,17 +282,15 @@ dw_auditor run --insight             # Profiling only
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - **[Configuration Reference](./audit_config.yaml)** - Inline documentation for all options
 - **[Quality Checks Guide](./doc/checks.md)** - All checks with examples
 - **[Data Insights Guide](./doc/insights.md)** - All insights with examples
 
-
-
 ---
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Installation
 **PyPI**: `pip install dw-auditor` or `uv pip install dw-auditor`
@@ -320,7 +318,7 @@ Always use environment variables for passwords - never commit credentials to git
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 Built on modern Python data tools:
 - **Ibis** - Database abstraction (lazy SQL generation, no data exports)
@@ -329,7 +327,7 @@ Built on modern Python data tools:
 
 ---
 
-## 🔐 Security Features
+## Security Features
 
 **Built-in security controls to protect sensitive data:**
 
@@ -370,7 +368,7 @@ security:
 
 ---
 
-## 📝 License
+## License
 
 MIT License - See [LICENSE](./LICENSE) file
 
