@@ -46,13 +46,13 @@ uv pip install dw-auditor
 # 1. Create config file
 dw_auditor init
 
-# 2. Set your credentials as environment variables (recommended)
+# 2. Edit audit_config.yaml with your database details
+# Update backend, default_database, default_schema, and tables
+
+# 3. Set your credentials as environment variables (if you don't use browser authentification)
 export SNOWFLAKE_ACCOUNT='your-account'
 export SNOWFLAKE_USER='your-username'
 export SNOWFLAKE_PASSWORD='your-password'
-
-# 3. Edit audit_config.yaml with your database details
-# Update backend, default_database, default_schema, and tables
 
 # 4. Run the audit
 dw_auditor run
@@ -102,7 +102,7 @@ open audit_results/audit_run_*/summary.html
 
 ### Console
 ```
-📋 Column Summary (All Columns):
+Column Summary (All Columns):
 ==================================================
 Column Name          Type        Status      Nulls
 --------------------------------------------------
@@ -132,7 +132,7 @@ database:
   backend: "bigquery"
   connection_params:
     default_database: "my-project"
-    default_schema: "analytics"
+    default_schema: "my-dataset"
 
 tables:
   - name: users
@@ -146,9 +146,9 @@ database:
   connection_params:
     default_database: "MY_DB"
     default_schema: "MY_SCHEMA"
-    account: "ACCOUNT"
-    user: "USER"
-    password: "PWD"
+    account: "${SNOWFLAKE_ACCOUNT}" 
+    user: "${SNOWFLAKE_USER}" 
+    password: "${SNOWFLAKE_PASSWORD}"
 
 tables:
   - name: users
@@ -207,8 +207,8 @@ dw_auditor run
 **Option 2: Export directly**
 ```bash
 # Set environment variables (use single quotes for special chars)
-export SNOWFLAKE_ACCOUNT='OOQYWEC-ND51384'
-export SNOWFLAKE_USER='my_user'
+export SNOWFLAKE_ACCOUNT='your-account'
+export SNOWFLAKE_USER='your-username'
 export SNOWFLAKE_PASSWORD='my_password'
 
 # Run audit
