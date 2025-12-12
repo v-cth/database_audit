@@ -316,8 +316,6 @@ Built on modern Python data tools:
 - **Polars** - Fast DataFrame processing
 - **Pydantic** - Type-safe configuration validation
 
-**Design**: All computation happens in your database. No data is exported to files.
-
 ---
 
 ## 🔐 Security Features
